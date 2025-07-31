@@ -14,6 +14,7 @@ const DashboardScreen = () => {
   const activeJobs = jobs.filter(job => job.status === 'in-progress').length;
   const completedJobs = jobs.filter(job => job.status === 'completed').length;
   const pendingQuotes = jobs.filter(job => job.status === 'quote').length;
+  const approvedInvoices = jobs.filter(job => job.status === 'approved').length;
   
   const totalRevenue = jobs
     .filter(job => job.status === 'completed')
@@ -91,17 +92,27 @@ const DashboardScreen = () => {
 
         <View className="flex-row mb-6">
           <StatCard
-            title="Completed"
-            value={completedJobs}
-            icon="checkmark-circle"
-            color="bg-green-500"
-          />
-          <StatCard
             title="Quotes"
             value={pendingQuotes}
             icon="document-text"
             color="bg-yellow-500"
           />
+          <StatCard
+            title="Invoices"
+            value={approvedInvoices}
+            icon="receipt"
+            color="bg-blue-500"
+          />
+        </View>
+
+        <View className="flex-row mb-6">
+          <StatCard
+            title="Completed"
+            value={completedJobs}
+            icon="checkmark-circle"
+            color="bg-green-500"
+          />
+          <View className="flex-1 mx-1" />
         </View>
 
         {/* Revenue Card */}
@@ -168,8 +179,8 @@ const DashboardScreen = () => {
                         {formatCurrency(job.total)}
                       </Text>
                       <View className={`px-2 py-1 rounded-full mt-1 ${getStatusColor(job.status)}`}>
-                        <Text className="text-xs font-medium capitalize">
-                          {job.status.replace('-', ' ')}
+                        <Text className="text-xs font-medium">
+                          {job.status === 'quote' ? 'Quote' : job.status === 'approved' ? 'Invoice' : job.status.replace('-', ' ')}
                         </Text>
                       </View>
                     </View>

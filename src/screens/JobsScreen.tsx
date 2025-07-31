@@ -18,7 +18,7 @@ const JobsScreen = () => {
   const statusOptions = [
     { key: null, label: 'All' },
     { key: 'quote', label: 'Quotes' },
-    { key: 'approved', label: 'Approved' },
+    { key: 'approved', label: 'Invoices' },
     { key: 'in-progress', label: 'In Progress' },
     { key: 'completed', label: 'Completed' },
     { key: 'cancelled', label: 'Cancelled' },
@@ -45,6 +45,17 @@ const JobsScreen = () => {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'quote': return 'Quote';
+      case 'approved': return 'Invoice';
+      case 'in-progress': return 'In Progress';
+      case 'completed': return 'Completed';
+      case 'cancelled': return 'Cancelled';
+      default: return status;
     }
   };
 
@@ -87,8 +98,8 @@ const JobsScreen = () => {
               {formatCurrency(job.total)}
             </Text>
             <View className={`px-3 py-1 rounded-full mt-2 ${getStatusColor(job.status)}`}>
-              <Text className="text-xs font-semibold capitalize">
-                {job.status.replace('-', ' ')}
+              <Text className="text-xs font-semibold">
+                {getStatusLabel(job.status)}
               </Text>
             </View>
           </View>
