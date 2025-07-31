@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { format } from 'date-fns';
+import { initializeMockData } from '../utils/mockData';
 
 const DashboardScreen = () => {
   const insets = useSafeAreaInsets();
   const { jobs, customers, parts, laborItems } = useJobStore();
+
+  // Initialize mock data on first load
+  useEffect(() => {
+    initializeMockData();
+  }, []);
 
   // Calculate stats
   const totalJobs = jobs.length;
