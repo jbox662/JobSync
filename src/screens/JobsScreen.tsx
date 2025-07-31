@@ -61,26 +61,33 @@ const JobsScreen = () => {
     return (
       <Pressable
         onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
-        className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100"
+        className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 2,
+        }}
       >
-        <View className="flex-row items-start justify-between">
+        <View className="flex-row items-start justify-between mb-3">
           <View className="flex-1">
-            <Text className="font-semibold text-gray-900 text-lg" numberOfLines={1}>
+            <Text className="font-bold text-gray-900 text-lg" numberOfLines={1}>
               {job.title}
             </Text>
-            <Text className="text-gray-600 text-sm mt-1">
-              {customer?.name || 'Unknown Customer'}
-            </Text>
-            <Text className="text-gray-500 text-xs mt-1">
-              Updated {format(new Date(job.updatedAt), 'MMM d, yyyy')}
-            </Text>
+            <View className="flex-row items-center mt-2">
+              <View className="w-2 h-2 bg-gray-400 rounded-full mr-2" />
+              <Text className="text-gray-600 text-sm">
+                {customer?.name || 'Unknown Customer'}
+              </Text>
+            </View>
           </View>
-          <View className="items-end ml-3">
-            <Text className="font-bold text-gray-900 text-lg">
+          <View className="items-end">
+            <Text className="font-bold text-gray-900 text-xl">
               {formatCurrency(job.total)}
             </Text>
             <View className={`px-3 py-1 rounded-full mt-2 ${getStatusColor(job.status)}`}>
-              <Text className="text-xs font-medium capitalize">
+              <Text className="text-xs font-semibold capitalize">
                 {job.status.replace('-', ' ')}
               </Text>
             </View>
@@ -88,26 +95,27 @@ const JobsScreen = () => {
         </View>
         
         {job.description && (
-          <Text className="text-gray-600 text-sm mt-3" numberOfLines={2}>
+          <Text className="text-gray-600 text-base mt-2 leading-5" numberOfLines={2}>
             {job.description}
           </Text>
         )}
 
-        <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-100">
           <View className="flex-row items-center">
-            <Ionicons name="list-outline" size={16} color="#6B7280" />
-            <Text className="text-gray-600 text-sm ml-1">
+            <View className="w-8 h-8 bg-blue-50 rounded-lg items-center justify-center mr-2">
+              <Ionicons name="list" size={16} color="#3B82F6" />
+            </View>
+            <Text className="text-gray-700 text-sm font-medium">
               {job.items.length} items
             </Text>
           </View>
-          {job.dueDate && (
-            <View className="flex-row items-center">
-              <Ionicons name="calendar-outline" size={16} color="#6B7280" />
-              <Text className="text-gray-600 text-sm ml-1">
-                Due {format(new Date(job.dueDate), 'MMM d')}
-              </Text>
-            </View>
-          )}
+          
+          <View className="flex-row items-center">
+            <Ionicons name="time-outline" size={16} color="#6B7280" />
+            <Text className="text-gray-500 text-xs ml-1">
+              {format(new Date(job.updatedAt), 'MMM d')}
+            </Text>
+          </View>
         </View>
       </Pressable>
     );
@@ -116,23 +124,23 @@ const JobsScreen = () => {
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header with Search and Add Button */}
-      <View className="bg-white px-4 py-3 border-b border-gray-200">
-        <View className="flex-row items-center">
-          <View className="flex-1 bg-gray-100 rounded-lg px-3 py-2 mr-3">
+      <View className="bg-white px-4 py-4 shadow-sm">
+        <View className="flex-row items-center space-x-3">
+          <View className="flex-1 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
             <View className="flex-row items-center">
               <Ionicons name="search" size={20} color="#6B7280" />
               <TextInput
                 placeholder="Search jobs..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                className="flex-1 ml-2 text-gray-900"
+                className="flex-1 ml-3 text-gray-900 text-base"
                 placeholderTextColor="#9CA3AF"
               />
             </View>
           </View>
           <Pressable
             onPress={() => navigation.navigate('CreateJob', {})}
-            className="bg-blue-600 rounded-lg px-4 py-2"
+            className="bg-blue-600 rounded-xl px-4 py-3 shadow-sm"
           >
             <Ionicons name="add" size={24} color="white" />
           </Pressable>
@@ -140,55 +148,79 @@ const JobsScreen = () => {
       </View>
 
       {/* Status Filter */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="bg-white border-b border-gray-200"
-        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
-      >
-        {statusOptions.map((option) => (
-          <Pressable
-            key={option.key || 'all'}
-            onPress={() => setSelectedStatus(option.key)}
-            className={`px-4 py-2 rounded-full mr-2 ${
-              selectedStatus === option.key
-                ? 'bg-blue-600'
-                : 'bg-gray-100'
-            }`}
-          >
-            <Text
-              className={`text-sm font-medium ${
+      <View className="bg-white">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
+        >
+          {statusOptions.map((option) => (
+            <Pressable
+              key={option.key || 'all'}
+              onPress={() => setSelectedStatus(option.key)}
+              className={`px-5 py-3 rounded-full mr-3 border ${
                 selectedStatus === option.key
-                  ? 'text-white'
-                  : 'text-gray-600'
+                  ? 'bg-blue-600 border-blue-600'
+                  : 'bg-white border-gray-200'
               }`}
+              style={{
+                shadowColor: selectedStatus === option.key ? '#3B82F6' : '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: selectedStatus === option.key ? 0.2 : 0.1,
+                shadowRadius: 4,
+                elevation: selectedStatus === option.key ? 3 : 1,
+              }}
             >
-              {option.label}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+              <Text
+                className={`text-sm font-semibold ${
+                  selectedStatus === option.key
+                    ? 'text-white'
+                    : 'text-gray-700'
+                }`}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Jobs List */}
-      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1 px-4" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 20, paddingBottom: 20 }}
+      >
         {filteredJobs.length === 0 ? (
-          <View className="flex-1 items-center justify-center py-16">
-            <Ionicons name="briefcase-outline" size={64} color="#D1D5DB" />
-            <Text className="text-gray-500 text-lg font-medium mt-4">
+          <View className="flex-1 items-center justify-center py-20">
+            <View className="w-24 h-24 bg-gray-100 rounded-full items-center justify-center mb-6">
+              <Ionicons name="briefcase-outline" size={48} color="#9CA3AF" />
+            </View>
+            <Text className="text-gray-900 text-xl font-semibold mb-2">
               {searchQuery || selectedStatus ? 'No jobs found' : 'No jobs yet'}
             </Text>
-            <Text className="text-gray-400 text-sm mt-1 text-center">
+            <Text className="text-gray-500 text-base text-center mb-8 px-8">
               {searchQuery || selectedStatus 
-                ? 'Try adjusting your search or filters'
-                : 'Create your first job to get started'
+                ? 'Try adjusting your search or filters to find what you\'re looking for'
+                : 'Create your first job to start tracking your work and managing invoices'
               }
             </Text>
             {!searchQuery && !selectedStatus && (
               <Pressable
                 onPress={() => navigation.navigate('CreateJob', {})}
-                className="bg-blue-600 rounded-lg px-6 py-3 mt-6"
+                className="bg-blue-600 rounded-xl px-8 py-4 shadow-lg"
+                style={{
+                  shadowColor: '#3B82F6',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
               >
-                <Text className="text-white font-semibold">Create Job</Text>
+                <View className="flex-row items-center">
+                  <Ionicons name="add-circle-outline" size={20} color="white" />
+                  <Text className="text-white font-semibold text-base ml-2">Create Job</Text>
+                </View>
               </Pressable>
             )}
           </View>
@@ -197,7 +229,7 @@ const JobsScreen = () => {
             {filteredJobs.map((job) => (
               <JobCard key={job.id} job={job} />
             ))}
-            <View className="h-4" />
+            <View className="h-6" />
           </>
         )}
       </ScrollView>
