@@ -9,6 +9,8 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 // Import screens
 import DashboardScreen from '../screens/DashboardScreen';
 import JobsScreen from '../screens/JobsScreen';
+import QuotesScreen from '../screens/QuotesScreen';
+import InvoicesScreen from '../screens/InvoicesScreen';
 import CustomersScreen from '../screens/CustomersScreen';
 import PartsScreen from '../screens/PartsScreen';
 import LaborScreen from '../screens/LaborScreen';
@@ -22,6 +24,8 @@ import CreateLaborScreen from '../screens/CreateLaborScreen';
 export type RootDrawerParamList = {
   Dashboard: undefined;
   Jobs: undefined;
+  Quotes: undefined;
+  Invoices: undefined;
   Customers: undefined;
   Parts: undefined;
   Labor: undefined;
@@ -48,6 +52,8 @@ const CustomDrawerContent = (props: any) => {
   const menuItems = [
     { name: 'Dashboard', icon: 'home-outline', label: 'Dashboard' },
     { name: 'Jobs', icon: 'briefcase-outline', label: 'Jobs' },
+    { name: 'Quotes', icon: 'document-text-outline', label: 'Quotes' },
+    { name: 'Invoices', icon: 'receipt-outline', label: 'Invoices' },
     { name: 'Customers', icon: 'people-outline', label: 'Customers' },
     { name: 'Parts', icon: 'construct-outline', label: 'Parts' },
     { name: 'Labor', icon: 'time-outline', label: 'Labor' },
@@ -160,6 +166,16 @@ const DrawerNavigator = () => {
         name="Jobs" 
         component={JobsScreen}
         options={{ title: 'Jobs' }}
+      />
+      <Drawer.Screen 
+        name="Quotes" 
+        component={QuotesScreen}
+        options={{ title: 'Quotes' }}
+      />
+      <Drawer.Screen 
+        name="Invoices" 
+        component={InvoicesScreen}
+        options={{ title: 'Invoices' }}
       />
       <Drawer.Screen 
         name="Customers" 
