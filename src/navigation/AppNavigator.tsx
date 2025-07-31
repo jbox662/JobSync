@@ -1,7 +1,10 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, Pressable } from 'react-native';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DrawerNavigationProp } from '@react-navigation/drawer';
 
 // Import screens
 import DashboardScreen from '../screens/DashboardScreen';
@@ -16,7 +19,7 @@ import CreateCustomerScreen from '../screens/CreateCustomerScreen';
 import CreatePartScreen from '../screens/CreatePartScreen';
 import CreateLaborScreen from '../screens/CreateLaborScreen';
 
-export type RootTabParamList = {
+export type RootDrawerParamList = {
   Dashboard: undefined;
   Jobs: undefined;
   Customers: undefined;
@@ -36,40 +39,89 @@ export type RootStackParamList = {
   EditCustomer: { customerId: string };
 };
 
-const Tab = createBottomTabNavigator<RootTabParamList>();
+const Drawer = createDrawerNavigator<RootDrawerParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const TabNavigator = () => {
+const CustomDrawerContent = (props: any) => {
+  const insets = useSafeAreaInsets();
+  
+  const menuItems = [
+    { name: 'Dashboard', icon: 'home-outline', label: 'Dashboard' },
+    { name: 'Jobs', icon: 'briefcase-outline', label: 'Jobs' },
+    { name: 'Customers', icon: 'people-outline', label: 'Customers' },
+    { name: 'Parts', icon: 'construct-outline', label: 'Parts' },
+    { name: 'Labor', icon: 'time-outline', label: 'Labor' },
+  ];
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
+    <View className="flex-1 bg-gray-900" style={{ paddingTop: insets.top }}>
+      {/* Header */}
+      <View className="px-6 py-8 border-b border-gray-700">
+        <View className="flex-row items-center">
+          <View className="w-12 h-12 bg-blue-600 rounded-xl items-center justify-center mr-3">
+            <Ionicons name="briefcase" size={24} color="white" />
+          </View>
+          <View>
+            <Text className="text-white text-xl font-bold">Job Manager</Text>
+            <Text className="text-gray-400 text-sm">Professional Edition</Text>
+          </View>
+        </View>
+      </View>
 
-          switch (route.name) {
-            case 'Dashboard':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Jobs':
-              iconName = focused ? 'briefcase' : 'briefcase-outline';
-              break;
-            case 'Customers':
-              iconName = focused ? 'people' : 'people-outline';
-              break;
-            case 'Parts':
-              iconName = focused ? 'construct' : 'construct-outline';
-              break;
-            case 'Labor':
-              iconName = focused ? 'time' : 'time-outline';
-              break;
-            default:
-              iconName = 'help-outline';
-          }
+      <DrawerContentScrollView 
+        {...props}
+        contentContainerStyle={{ paddingTop: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="px-4">
+          {menuItems.map((item) => {
+            const isActive = props.state.routeNames[props.state.index] === item.name;
+            
+            return (
+              <Pressable
+                key={item.name}
+                onPress={() => props.navigation.navigate(item.name)}
+                className={`flex-row items-center px-4 py-4 rounded-xl mb-2 ${
+                  isActive ? 'bg-blue-600' : 'bg-transparent'
+                }`}
+              >
+                <Ionicons 
+                  name={item.icon as keyof typeof Ionicons.glyphMap} 
+                  size={22} 
+                  color={isActive ? 'white' : '#9CA3AF'} 
+                />
+                <Text className={`ml-4 text-lg font-medium ${
+                  isActive ? 'text-white' : 'text-gray-300'
+                }`}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </DrawerContentScrollView>
 
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#6B7280',
+      {/* Footer */}
+      <View className="px-6 py-6 border-t border-gray-700">
+        <View className="flex-row items-center">
+          <View className="w-10 h-10 bg-gray-700 rounded-full items-center justify-center mr-3">
+            <Ionicons name="person" size={20} color="#9CA3AF" />
+          </View>
+          <View>
+            <Text className="text-gray-300 font-medium">User Account</Text>
+            <Text className="text-gray-500 text-sm">Professional Plan</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const DrawerNavigator = () => {
+  return (
+    <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      screenOptions={({ navigation }) => ({
         headerStyle: {
           backgroundColor: '#FFFFFF',
           shadowColor: '#000000',
@@ -80,25 +132,51 @@ const TabNavigator = () => {
         headerTitleStyle: {
           fontWeight: '600',
           fontSize: 18,
+          color: '#1F2937',
         },
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          paddingTop: 8,
+        headerTintColor: '#1F2937',
+        drawerType: 'slide',
+        drawerStyle: {
+          width: 280,
         },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
-        },
+        swipeEnabled: true,
+        swipeEdgeWidth: 50,
+        headerLeft: () => (
+          <Pressable
+            onPress={() => (navigation as DrawerNavigationProp<RootDrawerParamList>).toggleDrawer()}
+            className="ml-4 p-2"
+          >
+            <Ionicons name="menu" size={24} color="#1F2937" />
+          </Pressable>
+        ),
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Jobs" component={JobsScreen} />
-      <Tab.Screen name="Customers" component={CustomersScreen} />
-      <Tab.Screen name="Parts" component={PartsScreen} />
-      <Tab.Screen name="Labor" component={LaborScreen} />
-    </Tab.Navigator>
+      <Drawer.Screen 
+        name="Dashboard" 
+        component={DashboardScreen}
+        options={{ title: 'Dashboard' }}
+      />
+      <Drawer.Screen 
+        name="Jobs" 
+        component={JobsScreen}
+        options={{ title: 'Jobs' }}
+      />
+      <Drawer.Screen 
+        name="Customers" 
+        component={CustomersScreen}
+        options={{ title: 'Customers' }}
+      />
+      <Drawer.Screen 
+        name="Parts" 
+        component={PartsScreen}
+        options={{ title: 'Parts' }}
+      />
+      <Drawer.Screen 
+        name="Labor" 
+        component={LaborScreen}
+        options={{ title: 'Labor' }}
+      />
+    </Drawer.Navigator>
   );
 };
 
@@ -118,7 +196,7 @@ export const AppNavigator = () => {
     >
       <Stack.Screen 
         name="Main" 
-        component={TabNavigator} 
+        component={DrawerNavigator} 
         options={{ headerShown: false }} 
       />
       <Stack.Screen 
