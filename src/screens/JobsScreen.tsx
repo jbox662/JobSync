@@ -134,9 +134,9 @@ const JobsScreen = () => {
 
   return (
     <View className="flex-1 bg-gray-50">
-      {/* Header with Search and Add Button */}
+      {/* Header with Search and Action Buttons */}
       <View className="bg-white px-4 py-4 shadow-sm">
-        <View className="flex-row items-center space-x-3">
+        <View className="flex-row items-center mb-3">
           <View className="flex-1 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
             <View className="flex-row items-center">
               <Ionicons name="search" size={20} color="#6B7280" />
@@ -149,11 +149,27 @@ const JobsScreen = () => {
               />
             </View>
           </View>
+        </View>
+        
+        <View className="flex-row space-x-3">
           <Pressable
-            onPress={() => navigation.navigate('CreateJob', {})}
-            className="bg-blue-600 rounded-xl px-4 py-3 shadow-sm"
+            onPress={() => navigation.navigate('CreateQuote', {})}
+            className="flex-1 bg-blue-600 rounded-xl px-4 py-3 shadow-sm"
           >
-            <Ionicons name="add" size={24} color="white" />
+            <View className="flex-row items-center justify-center">
+              <Ionicons name="document-text-outline" size={20} color="white" />
+              <Text className="text-white font-semibold ml-2">New Quote</Text>
+            </View>
+          </Pressable>
+          
+          <Pressable
+            onPress={() => navigation.navigate('CreateInvoice', {})}
+            className="flex-1 bg-green-600 rounded-xl px-4 py-3 shadow-sm"
+          >
+            <View className="flex-row items-center justify-center">
+              <Ionicons name="receipt-outline" size={20} color="white" />
+              <Text className="text-white font-semibold ml-2">New Invoice</Text>
+            </View>
           </Pressable>
         </View>
       </View>
