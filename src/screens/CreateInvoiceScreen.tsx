@@ -8,12 +8,13 @@ import { JobItem } from '../types';
 const CreateInvoiceScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { addJob, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById } = useJobStore();
+  const { addJob, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, updateJob } = useJobStore();
   
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState((route.params as any)?.customerId || '');
+  const [selectedQuote, setSelectedQuote] = useState((route.params as any)?.quoteId || '');
   const [taxRate, setTaxRate] = useState('8.25');
   const [dueDate, setDueDate] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('Net 30');
@@ -22,6 +23,24 @@ const CreateInvoiceScreen = () => {
   const [selectedItemType, setSelectedItemType] = useState<'part' | 'labor'>('part');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [convertFromQuote, setConvertFromQuote] = useState(!!((route.params as any)?.quoteId));
+
+  // Get approved quotes for selection
+  const availableQuotes = jobs.filter(job => job.status === 'quote' || job.status === 'approved');
+  
+  // Auto-fill from selected quote
+  React.useEffect(() => {
+    if (selectedQuote) {
+      const quote = jobs.find(j => j.id === selectedQuote);
+      if (quote) {
+        setTitle(quote.title);
+        setDescription(quote.description || '');
+        setSelectedCustomer(quote.customerId);
+        setItems(quote.items);
+        setTaxRate(quote.taxRate.toString());
+      }
+    }
+  }, [selectedQuote, jobs]);
 
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0);
@@ -95,24 +114,48 @@ const CreateInvoiceScreen = () => {
   };
 
   const handleSave = () => {
-    if (!title.trim() || !selectedCustomer || items.length === 0) {
-      Alert.alert('Error', 'Please fill in title, select a customer, and add at least one item');
+    if (!title.trim() || !selectedCustomer || (!convertFromQuote && items.length === 0)) {
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    const notes = `Invoice #${invoiceNumber}\nPayment Terms: ${paymentTerms}${dueDate ? `\nDue Date: ${dueDate}` : ''}`;
+    if (convertFromQuote && !selectedQuote) {
+      Alert.alert('Error', 'Please select a quote to convert');
+      return;
+    }
 
-    addJob({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      customerId: selectedCustomer,
-      status: 'approved',
-      items,
-      taxRate: parseFloat(taxRate) || 0,
-      tax,
-      notes,
-      dueDate: dueDate || undefined,
-    });
+    const notes = `Invoice #${invoiceNumber}\nPayment Terms: ${paymentTerms}${dueDate ? `\nDue Date: ${dueDate}` : ''}${convertFromQuote ? `\nConverted from Quote` : ''}`;
+
+    if (convertFromQuote && selectedQuote) {
+      // Update the original quote status to completed
+      updateJob(selectedQuote, { status: 'completed' });
+      
+      // Create new invoice job
+      addJob({
+        title: `${title.trim()} - Invoice`,
+        description: description.trim() || undefined,
+        customerId: selectedCustomer,
+        status: 'approved',
+        items,
+        taxRate: parseFloat(taxRate) || 0,
+        tax,
+        notes,
+        dueDate: dueDate || undefined,
+      });
+    } else {
+      // Create standalone invoice
+      addJob({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        customerId: selectedCustomer,
+        status: 'approved',
+        items,
+        taxRate: parseFloat(taxRate) || 0,
+        tax,
+        notes,
+        dueDate: dueDate || undefined,
+      });
+    }
 
     navigation.goBack();
   };
@@ -130,6 +173,72 @@ const CreateInvoiceScreen = () => {
           <Text className="text-2xl font-bold text-gray-900 mb-2">Create Invoice</Text>
           <Text className="text-gray-600">Generate a professional invoice for completed work</Text>
         </View>
+
+        {/* Quote Selection Toggle */}
+        <View className="mb-4">
+          <View className="flex-row">
+            <Pressable
+              onPress={() => setConvertFromQuote(false)}
+              className={`flex-1 py-3 px-4 rounded-l-lg border ${
+                !convertFromQuote ? 'bg-green-600 border-green-600' : 'bg-white border-gray-300'
+              }`}
+            >
+              <Text className={`text-center font-medium ${
+                !convertFromQuote ? 'text-white' : 'text-gray-600'
+              }`}>New Invoice</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setConvertFromQuote(true)}
+              className={`flex-1 py-3 px-4 rounded-r-lg border-t border-r border-b ${
+                convertFromQuote ? 'bg-green-600 border-green-600' : 'bg-white border-gray-300'
+              }`}
+            >
+              <Text className={`text-center font-medium ${
+                convertFromQuote ? 'text-white' : 'text-gray-600'
+              }`}>Convert from Quote</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {convertFromQuote && (
+          <View className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <Text className="text-lg font-semibold text-gray-900 mb-4">Select Quote to Convert</Text>
+            
+            <View className="border border-gray-300 rounded-lg bg-white max-h-40">
+              {availableQuotes.length === 0 ? (
+                <View className="p-3">
+                  <Text className="text-gray-500">No quotes available</Text>
+                </View>
+              ) : (
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {availableQuotes.map((quote) => {
+                    const customer = getCustomerById(quote.customerId);
+                    return (
+                      <Pressable
+                        key={quote.id}
+                        onPress={() => setSelectedQuote(quote.id)}
+                        className={`p-3 flex-row items-center justify-between border-b border-gray-100 ${selectedQuote === quote.id ? 'bg-green-50' : ''}`}
+                      >
+                        <View className="flex-row items-center">
+                          <View className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                            selectedQuote === quote.id ? 'bg-green-600 border-green-600' : 'border-gray-400'
+                          }`} />
+                          <View>
+                            <Text className="text-gray-900 font-medium">{quote.title}</Text>
+                            <Text className="text-gray-500 text-sm">{customer?.name}</Text>
+                          </View>
+                        </View>
+                        <Text className="text-green-600 font-semibold">
+                          {formatCurrency(quote.total)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Invoice Information */}
         <View className="bg-gray-50 rounded-lg p-4 mb-6">
@@ -169,36 +278,54 @@ const CreateInvoiceScreen = () => {
             />
           </View>
 
-          <View className="mb-4">
-            <Text className="text-gray-700 font-medium mb-2">Customer *</Text>
-            <View className="border border-gray-300 rounded-lg bg-white max-h-32">
-              {customers.length === 0 ? (
-                <View className="p-3">
-                  <Text className="text-gray-500">No customers available</Text>
-                </View>
-              ) : (
-                <ScrollView showsVerticalScrollIndicator={false}>
-                  {customers.map((customer) => (
-                    <Pressable
-                      key={customer.id}
-                      onPress={() => setSelectedCustomer(customer.id)}
-                      className={`p-3 flex-row items-center border-b border-gray-100 ${selectedCustomer === customer.id ? 'bg-blue-50' : ''}`}
-                    >
-                      <View className={`w-4 h-4 rounded-full border-2 mr-3 ${
-                        selectedCustomer === customer.id ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
-                      }`} />
-                      <View>
-                        <Text className="text-gray-900 font-medium">{customer.name}</Text>
-                        {customer.company && (
-                          <Text className="text-gray-500 text-sm">{customer.company}</Text>
-                        )}
-                      </View>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              )}
+          {!convertFromQuote && (
+            <View className="mb-4">
+              <Text className="text-gray-700 font-medium mb-2">Customer *</Text>
+              <View className="border border-gray-300 rounded-lg bg-white max-h-32">
+                {customers.length === 0 ? (
+                  <View className="p-3">
+                    <Text className="text-gray-500">No customers available</Text>
+                  </View>
+                ) : (
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    {customers.map((customer) => (
+                      <Pressable
+                        key={customer.id}
+                        onPress={() => setSelectedCustomer(customer.id)}
+                        className={`p-3 flex-row items-center border-b border-gray-100 ${selectedCustomer === customer.id ? 'bg-blue-50' : ''}`}
+                      >
+                        <View className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                          selectedCustomer === customer.id ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
+                        }`} />
+                        <View>
+                          <Text className="text-gray-900 font-medium">{customer.name}</Text>
+                          {customer.company && (
+                            <Text className="text-gray-500 text-sm">{customer.company}</Text>
+                          )}
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
             </View>
-          </View>
+          )}
+
+          {convertFromQuote && selectedCustomer && (
+            <View className="mb-4">
+              <Text className="text-gray-700 font-medium mb-2">Customer</Text>
+              <View className="border border-gray-200 rounded-lg bg-gray-50 p-3">
+                <Text className="text-gray-900 font-medium">
+                  {getCustomerById(selectedCustomer)?.name}
+                </Text>
+                {getCustomerById(selectedCustomer)?.company && (
+                  <Text className="text-gray-600 text-sm">
+                    {getCustomerById(selectedCustomer)?.company}
+                  </Text>
+                )}
+              </View>
+            </View>
+          )}
 
           <View className="mb-4">
             <Text className="text-gray-700 font-medium mb-2">Work Description</Text>

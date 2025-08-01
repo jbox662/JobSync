@@ -151,24 +151,34 @@ const JobsScreen = () => {
           </View>
         </View>
         
-        <View className="flex-row space-x-3">
+        <View className="flex-row space-x-2">
           <Pressable
-            onPress={() => navigation.navigate('CreateQuote', {})}
-            className="flex-1 bg-blue-600 rounded-xl px-4 py-3 shadow-sm"
+            onPress={() => navigation.navigate('CreateJob', {})}
+            className="flex-1 bg-gray-700 rounded-xl px-3 py-3 shadow-sm"
           >
             <View className="flex-row items-center justify-center">
-              <Ionicons name="document-text-outline" size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">New Quote</Text>
+              <Ionicons name="briefcase-outline" size={18} color="white" />
+              <Text className="text-white font-medium ml-1 text-sm">New Job</Text>
+            </View>
+          </Pressable>
+          
+          <Pressable
+            onPress={() => navigation.navigate('CreateQuote', {})}
+            className="flex-1 bg-blue-600 rounded-xl px-3 py-3 shadow-sm"
+          >
+            <View className="flex-row items-center justify-center">
+              <Ionicons name="document-text-outline" size={18} color="white" />
+              <Text className="text-white font-medium ml-1 text-sm">New Quote</Text>
             </View>
           </Pressable>
           
           <Pressable
             onPress={() => navigation.navigate('CreateInvoice', {})}
-            className="flex-1 bg-green-600 rounded-xl px-4 py-3 shadow-sm"
+            className="flex-1 bg-green-600 rounded-xl px-3 py-3 shadow-sm"
           >
             <View className="flex-row items-center justify-center">
-              <Ionicons name="receipt-outline" size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">New Invoice</Text>
+              <Ionicons name="receipt-outline" size={18} color="white" />
+              <Text className="text-white font-medium ml-1 text-sm">New Invoice</Text>
             </View>
           </Pressable>
         </View>

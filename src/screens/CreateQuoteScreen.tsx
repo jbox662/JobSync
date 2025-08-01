@@ -8,11 +8,12 @@ import { JobItem } from '../types';
 const CreateQuoteScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { addJob, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById } = useJobStore();
+  const { addJob, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById } = useJobStore();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState((route.params as any)?.customerId || '');
+  const [selectedJob, setSelectedJob] = useState((route.params as any)?.jobId || '');
   const [taxRate, setTaxRate] = useState('8.25');
   const [validUntil, setValidUntil] = useState('');
   const [items, setItems] = useState<JobItem[]>([]);
@@ -20,6 +21,22 @@ const CreateQuoteScreen = () => {
   const [selectedItemType, setSelectedItemType] = useState<'part' | 'labor'>('part');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [linkToExistingJob, setLinkToExistingJob] = useState(!!((route.params as any)?.jobId));
+
+  // Get existing jobs for selection
+  const availableJobs = jobs.filter(job => job.status !== 'completed' && job.status !== 'cancelled');
+  
+  // Auto-fill from selected job
+  React.useEffect(() => {
+    if (selectedJob) {
+      const job = jobs.find(j => j.id === selectedJob);
+      if (job) {
+        setTitle(job.title);
+        setDescription(job.description || '');
+        setSelectedCustomer(job.customerId);
+      }
+    }
+  }, [selectedJob, jobs]);
 
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0);
@@ -126,9 +143,69 @@ const CreateQuoteScreen = () => {
           <Text className="text-gray-600">Prepare a professional quote for your customer</Text>
         </View>
 
+        {/* Job Selection Toggle */}
+        <View className="mb-4">
+          <View className="flex-row">
+            <Pressable
+              onPress={() => setLinkToExistingJob(false)}
+              className={`flex-1 py-3 px-4 rounded-l-lg border ${
+                !linkToExistingJob ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'
+              }`}
+            >
+              <Text className={`text-center font-medium ${
+                !linkToExistingJob ? 'text-white' : 'text-gray-600'
+              }`}>Standalone Quote</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setLinkToExistingJob(true)}
+              className={`flex-1 py-3 px-4 rounded-r-lg border-t border-r border-b ${
+                linkToExistingJob ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'
+              }`}
+            >
+              <Text className={`text-center font-medium ${
+                linkToExistingJob ? 'text-white' : 'text-gray-600'
+              }`}>Add to Existing Job</Text>
+            </Pressable>
+          </View>
+        </View>
+
         {/* Basic Information */}
         <View className="bg-gray-50 rounded-lg p-4 mb-6">
           <Text className="text-lg font-semibold text-gray-900 mb-4">Quote Information</Text>
+          
+          {linkToExistingJob && (
+            <View className="mb-4">
+              <Text className="text-gray-700 font-medium mb-2">Select Job *</Text>
+              <View className="border border-gray-300 rounded-lg bg-white max-h-32">
+                {availableJobs.length === 0 ? (
+                  <View className="p-3">
+                    <Text className="text-gray-500">No active jobs available</Text>
+                  </View>
+                ) : (
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    {availableJobs.map((job) => {
+                      const customer = getCustomerById(job.customerId);
+                      return (
+                        <Pressable
+                          key={job.id}
+                          onPress={() => setSelectedJob(job.id)}
+                          className={`p-3 flex-row items-center border-b border-gray-100 ${selectedJob === job.id ? 'bg-blue-50' : ''}`}
+                        >
+                          <View className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                            selectedJob === job.id ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
+                          }`} />
+                          <View>
+                            <Text className="text-gray-900 font-medium">{job.title}</Text>
+                            <Text className="text-gray-500 text-sm">{customer?.name}</Text>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+            </View>
+          )}
           
           <View className="mb-4">
             <Text className="text-gray-700 font-medium mb-2">Quote Title *</Text>
@@ -138,39 +215,58 @@ const CreateQuoteScreen = () => {
               placeholder="Enter quote title"
               className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white"
               placeholderTextColor="#9CA3AF"
+              editable={!linkToExistingJob || !selectedJob}
             />
           </View>
 
-          <View className="mb-4">
-            <Text className="text-gray-700 font-medium mb-2">Customer *</Text>
-            <View className="border border-gray-300 rounded-lg bg-white max-h-32">
-              {customers.length === 0 ? (
-                <View className="p-3">
-                  <Text className="text-gray-500">No customers available</Text>
-                </View>
-              ) : (
-                <ScrollView showsVerticalScrollIndicator={false}>
-                  {customers.map((customer) => (
-                    <Pressable
-                      key={customer.id}
-                      onPress={() => setSelectedCustomer(customer.id)}
-                      className={`p-3 flex-row items-center border-b border-gray-100 ${selectedCustomer === customer.id ? 'bg-blue-50' : ''}`}
-                    >
-                      <View className={`w-4 h-4 rounded-full border-2 mr-3 ${
-                        selectedCustomer === customer.id ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
-                      }`} />
-                      <View>
-                        <Text className="text-gray-900 font-medium">{customer.name}</Text>
-                        {customer.company && (
-                          <Text className="text-gray-500 text-sm">{customer.company}</Text>
-                        )}
-                      </View>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              )}
+          {!linkToExistingJob && (
+            <View className="mb-4">
+              <Text className="text-gray-700 font-medium mb-2">Customer *</Text>
+              <View className="border border-gray-300 rounded-lg bg-white max-h-32">
+                {customers.length === 0 ? (
+                  <View className="p-3">
+                    <Text className="text-gray-500">No customers available</Text>
+                  </View>
+                ) : (
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    {customers.map((customer) => (
+                      <Pressable
+                        key={customer.id}
+                        onPress={() => setSelectedCustomer(customer.id)}
+                        className={`p-3 flex-row items-center border-b border-gray-100 ${selectedCustomer === customer.id ? 'bg-blue-50' : ''}`}
+                      >
+                        <View className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                          selectedCustomer === customer.id ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
+                        }`} />
+                        <View>
+                          <Text className="text-gray-900 font-medium">{customer.name}</Text>
+                          {customer.company && (
+                            <Text className="text-gray-500 text-sm">{customer.company}</Text>
+                          )}
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
             </View>
-          </View>
+          )}
+
+          {linkToExistingJob && selectedCustomer && (
+            <View className="mb-4">
+              <Text className="text-gray-700 font-medium mb-2">Customer</Text>
+              <View className="border border-gray-200 rounded-lg bg-gray-50 p-3">
+                <Text className="text-gray-900 font-medium">
+                  {getCustomerById(selectedCustomer)?.name}
+                </Text>
+                {getCustomerById(selectedCustomer)?.company && (
+                  <Text className="text-gray-600 text-sm">
+                    {getCustomerById(selectedCustomer)?.company}
+                  </Text>
+                )}
+              </View>
+            </View>
+          )}
 
           <View className="mb-4">
             <Text className="text-gray-700 font-medium mb-2">Description</Text>

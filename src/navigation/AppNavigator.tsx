@@ -16,6 +16,7 @@ import PartsScreen from '../screens/PartsScreen';
 import LaborScreen from '../screens/LaborScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
 import CustomerDetailScreen from '../screens/CustomerDetailScreen';
+import CreateJobScreen from '../screens/CreateJobScreen';
 import CreateQuoteScreen from '../screens/CreateQuoteScreen';
 import CreateInvoiceScreen from '../screens/CreateInvoiceScreen';
 import CreateCustomerScreen from '../screens/CreateCustomerScreen';
@@ -36,8 +37,9 @@ export type RootStackParamList = {
   Main: undefined;
   JobDetail: { jobId: string };
   CustomerDetail: { customerId: string };
-  CreateQuote: { customerId?: string };
-  CreateInvoice: { customerId?: string };
+  CreateQuote: { customerId?: string; jobId?: string };
+  CreateInvoice: { customerId?: string; quoteId?: string };
+  CreateJob: { customerId?: string };
   CreateCustomer: undefined;
   CreatePart: undefined;
   CreateLabor: undefined;
@@ -226,6 +228,11 @@ export const AppNavigator = () => {
         name="CustomerDetail" 
         component={CustomerDetailScreen}
         options={{ title: 'Customer Details' }}
+      />
+      <Stack.Screen 
+        name="CreateJob" 
+        component={CreateJobScreen}
+        options={{ title: 'New Job', presentation: 'modal' }}
       />
       <Stack.Screen 
         name="CreateQuote" 
