@@ -110,7 +110,7 @@ const QuotesScreen = () => {
             </View>
           </View>
           <Pressable
-            onPress={() => navigation.navigate('CreateJob', {})}
+            onPress={() => navigation.navigate('CreateQuote', {})}
             className="bg-blue-600 rounded-lg px-4 py-2"
           >
             <Ionicons name="add" size={24} color="white" />
@@ -134,7 +134,7 @@ const QuotesScreen = () => {
             </Text>
             {!searchQuery && (
               <Pressable
-                onPress={() => navigation.navigate('CreateJob', {})}
+                onPress={() => navigation.navigate('CreateQuote', {})}
                 className="bg-blue-600 rounded-lg px-6 py-3 mt-6"
               >
                 <Text className="text-white font-semibold">Create Quote</Text>

@@ -233,22 +233,41 @@ const JobsScreen = () => {
               }
             </Text>
             {!searchQuery && !selectedStatus && (
-              <Pressable
-                onPress={() => navigation.navigate('CreateJob', {})}
-                className="bg-blue-600 rounded-xl px-8 py-4 shadow-lg"
-                style={{
-                  shadowColor: '#3B82F6',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  elevation: 4,
-                }}
-              >
-                <View className="flex-row items-center">
-                  <Ionicons name="add-circle-outline" size={20} color="white" />
-                  <Text className="text-white font-semibold text-base ml-2">Create Job</Text>
-                </View>
-              </Pressable>
+              <View className="flex-row space-x-4">
+                <Pressable
+                  onPress={() => navigation.navigate('CreateQuote', {})}
+                  className="flex-1 bg-blue-600 rounded-xl px-6 py-4 shadow-lg"
+                  style={{
+                    shadowColor: '#3B82F6',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 4,
+                  }}
+                >
+                  <View className="flex-row items-center justify-center">
+                    <Ionicons name="document-text-outline" size={20} color="white" />
+                    <Text className="text-white font-semibold text-base ml-2">Create Quote</Text>
+                  </View>
+                </Pressable>
+                
+                <Pressable
+                  onPress={() => navigation.navigate('CreateInvoice', {})}
+                  className="flex-1 bg-green-600 rounded-xl px-6 py-4 shadow-lg"
+                  style={{
+                    shadowColor: '#10B981',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 4,
+                  }}
+                >
+                  <View className="flex-row items-center justify-center">
+                    <Ionicons name="receipt-outline" size={20} color="white" />
+                    <Text className="text-white font-semibold text-base ml-2">Create Invoice</Text>
+                  </View>
+                </Pressable>
+              </View>
             )}
           </View>
         ) : (
