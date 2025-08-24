@@ -15,7 +15,7 @@ const CreateInvoiceScreen = () => {
   const [description, setDescription] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState((route.params as any)?.customerId || '');
   const [selectedQuote, setSelectedQuote] = useState((route.params as any)?.quoteId || '');
-  const [taxRate, setTaxRate] = useState('8.25');
+  const [taxRate, setTaxRate] = useState('0');
   const [dueDate, setDueDate] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('Net 30');
   const [items, setItems] = useState<JobItem[]>([]);
@@ -357,7 +357,7 @@ const CreateInvoiceScreen = () => {
               <TextInput
                 value={taxRate}
                 onChangeText={setTaxRate}
-                placeholder="8.25"
+                placeholder="0"
                 keyboardType="decimal-pad"
                 className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white"
                 placeholderTextColor="#9CA3AF"
