@@ -5,6 +5,96 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useJobStore } from '../state/store';
 
+const SyncSection = () => {
+  const users = useJobStore((s) => s.users);
+  const currentUserId = useJobStore((s) => s.currentUserId);
+  const user = users.find((u) => u.id === currentUserId);
+  const syncConfig = useJobStore((s) => s.syncConfig);
+  const setSyncConfig = useJobStore((s) => s.setSyncConfig);
+  const createRemoteWorkspace = useJobStore((s) => s.createRemoteWorkspace);
+  const joinRemoteWorkspace = useJobStore((s) => s.joinRemoteWorkspace);
+  const syncNow = useJobStore((s) => s.syncNow);
+  const isSyncing = useJobStore((s) => s.isSyncing);
+  const syncError = useJobStore((s) => s.syncError);
+  const lastSync = useJobStore((s) => s.lastSyncByUser[currentUserId || ''] || null);
+
+  const [baseUrl, setBaseUrl] = useState(syncConfig?.baseUrl || '');
+  const [apiKey, setApiKey] = useState(syncConfig?.apiKey || '');
+  const [wsName, setWsName] = useState('');
+  const [invite, setInvite] = useState('');
+
+  return (
+    <View className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+      <View className="mb-3">
+        <Text className="text-gray-700">Status</Text>
+        <Text className="text-gray-900 font-medium mt-1">
+          {user?.remoteWorkspaceId ? `Linked to ${user.remoteWorkspaceId}` : 'Not linked'}
+        </Text>
+        {user?.inviteCode && (
+          <Text className="text-gray-600 mt-1">Invite Code: {user.inviteCode}</Text>
+        )}
+        {lastSync && (
+          <Text className="text-gray-500 mt-1 text-sm">Last synced: {lastSync}</Text>
+        )}
+        {syncError && (
+          <Text className="text-red-600 mt-1">{syncError}</Text>
+        )}
+      </View>
+
+      <View className="flex-row mb-3">
+        <Pressable onPress={syncNow} disabled={!user?.remoteWorkspaceId || isSyncing} className={`flex-1 py-3 rounded-lg ${user?.remoteWorkspaceId ? 'bg-green-600' : 'bg-gray-300'}`}>
+          <Text className="text-white font-medium text-center">{isSyncing ? 'Syncing…' : 'Sync Now'}</Text>
+        </Pressable>
+      </View>
+
+      <Text className="text-gray-900 font-semibold mb-2">Backend Config</Text>
+      <TextInput
+        value={baseUrl}
+        onChangeText={setBaseUrl}
+        placeholder="Base URL (e.g. https://api.example.com)"
+        className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mb-2"
+        placeholderTextColor="#9CA3AF"
+      />
+      <TextInput
+        value={apiKey}
+        onChangeText={setApiKey}
+        placeholder="API Key"
+        className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mb-3"
+        placeholderTextColor="#9CA3AF"
+      />
+      <Pressable onPress={() => setSyncConfig({ baseUrl: baseUrl.trim(), apiKey: apiKey.trim() })} className="py-3 rounded-lg bg-blue-600 items-center mb-4">
+        <Text className="text-white font-medium">Save Config</Text>
+      </Pressable>
+
+      <Text className="text-gray-900 font-semibold mb-2">Workspace</Text>
+      <View className="flex-row mb-2">
+        <TextInput
+          value={wsName}
+          onChangeText={setWsName}
+          placeholder="Workspace name"
+          className="flex-1 border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mr-2"
+          placeholderTextColor="#9CA3AF"
+        />
+        <Pressable onPress={async () => { await createRemoteWorkspace(wsName || 'Workspace'); }} className="px-4 rounded-lg bg-gray-900 items-center justify-center">
+          <Text className="text-white font-medium">Create</Text>
+        </Pressable>
+      </View>
+      <View className="flex-row">
+        <TextInput
+          value={invite}
+          onChangeText={setInvite}
+          placeholder="Invite code"
+          className="flex-1 border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mr-2"
+          placeholderTextColor="#9CA3AF"
+        />
+        <Pressable onPress={async () => { await joinRemoteWorkspace(invite); }} className="px-4 rounded-lg bg-gray-900 items-center justify-center">
+          <Text className="text-white font-medium">Join</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+};
+
 const AccountSwitchScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -68,6 +158,12 @@ const AccountSwitchScreen = () => {
           <Ionicons name="person-add-outline" size={20} color="white" />
           <Text className="text-white font-medium ml-2">Add Account</Text>
         </Pressable>
+      </View>
+
+      {/* Sync Settings */}
+      <View className="px-4 pt-4">
+        <Text className="text-lg font-semibold text-gray-900 mb-2">Workspace Sync</Text>
+        <SyncSection />
       </View>
 
       {/* Users List */}

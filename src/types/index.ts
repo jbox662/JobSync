@@ -63,6 +63,25 @@ export interface User {
   name: string;
   createdAt: string;
   updatedAt: string;
+  remoteWorkspaceId?: string;
+  inviteCode?: string;
+  lastSyncAt?: string;
+}
+
+export type SyncEntity = 'customers' | 'parts' | 'laborItems' | 'jobs' | 'jobItems';
+
+export interface ChangeEvent {
+  id: string;
+  entity: SyncEntity;
+  operation: 'create' | 'update' | 'delete';
+  row: any;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface SyncConfig {
+  baseUrl: string;
+  apiKey: string;
 }
 
 export interface AppState {
