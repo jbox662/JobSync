@@ -58,6 +58,13 @@ export interface Job {
   completedAt?: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppState {
   customers: Customer[];
   parts: Part[];

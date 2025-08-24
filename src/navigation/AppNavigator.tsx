@@ -22,6 +22,7 @@ import CreateInvoiceScreen from '../screens/CreateInvoiceScreen';
 import CreateCustomerScreen from '../screens/CreateCustomerScreen';
 import CreatePartScreen from '../screens/CreatePartScreen';
 import CreateLaborScreen from '../screens/CreateLaborScreen';
+import AccountSwitchScreen from '../screens/AccountSwitchScreen';
 
 export type RootDrawerParamList = {
   Dashboard: undefined;
@@ -43,6 +44,7 @@ export type RootStackParamList = {
   CreateCustomer: undefined;
   CreatePart: undefined;
   CreateLabor: undefined;
+  AccountSwitch: undefined;
   EditJob: { jobId: string };
   EditCustomer: { customerId: string };
 };
@@ -113,14 +115,19 @@ const CustomDrawerContent = (props: any) => {
 
       {/* Footer */}
       <View className="px-6 py-6 border-t border-gray-700">
-        <View className="flex-row items-center">
-          <View className="w-10 h-10 bg-gray-700 rounded-full items-center justify-center mr-3">
-            <Ionicons name="person" size={20} color="#9CA3AF" />
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <View className="w-10 h-10 bg-gray-700 rounded-full items-center justify-center mr-3">
+              <Ionicons name="person" size={20} color="#9CA3AF" />
+            </View>
+            <View>
+              <Text className="text-gray-300 font-medium">User Account</Text>
+              <Text className="text-gray-500 text-sm">Professional Plan</Text>
+            </View>
           </View>
-          <View>
-            <Text className="text-gray-300 font-medium">User Account</Text>
-            <Text className="text-gray-500 text-sm">Professional Plan</Text>
-          </View>
+          <Pressable onPress={() => props.navigation.navigate('AccountSwitch')} className="px-3 py-2 rounded-lg bg-gray-800">
+            <Text className="text-gray-200 font-medium">Switch</Text>
+          </Pressable>
         </View>
       </View>
     </View>
@@ -213,7 +220,7 @@ export const AppNavigator = () => {
         },
         headerTintColor: '#1F2937',
       }}
-    >
+>
       <Stack.Screen 
         name="Main" 
         component={DrawerNavigator} 
@@ -258,6 +265,11 @@ export const AppNavigator = () => {
         name="CreateLabor" 
         component={CreateLaborScreen}
         options={{ title: 'New Labor Item', presentation: 'modal' }}
+      />
+      <Stack.Screen 
+        name="AccountSwitch" 
+        component={AccountSwitchScreen}
+        options={{ title: 'Accounts', presentation: 'formSheet', sheetAllowedDetents: 'fitToContents' as any }}
       />
     </Stack.Navigator>
   );
