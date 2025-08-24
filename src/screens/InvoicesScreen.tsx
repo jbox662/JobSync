@@ -14,9 +14,9 @@ const InvoicesScreen = () => {
   const { jobs, getCustomerById } = useJobStore();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter for completed jobs (invoices)
+  // Filter for invoice-like jobs (approved or completed)
   const invoices = jobs
-    .filter(job => job.status === 'completed')
+    .filter(job => job.status === 'approved' || job.status === 'completed')
     .filter(job => {
       const customer = getCustomerById(job.customerId);
       const matchesSearch = !searchQuery || 

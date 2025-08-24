@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { useJobStore } from '../state/store';
 
 // Import screens
 import DashboardScreen from '../screens/DashboardScreen';
@@ -51,6 +52,39 @@ export type RootStackParamList = {
 
 const Drawer = createDrawerNavigator<RootDrawerParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const FooterSection = ({ navigation }: any) => {
+  const currentUserId = useJobStore((s) => s.currentUserId);
+  const users = useJobStore((s) => s.users);
+  const isSyncing = useJobStore((s) => s.isSyncing);
+  const lastSyncByUser = useJobStore((s) => s.lastSyncByUser);
+  const syncNow = useJobStore((s) => s.syncNow);
+  const active = users.find((u) => u.id === currentUserId);
+  const last = lastSyncByUser[currentUserId || ''] || null;
+  return (
+    <View className="px-6 py-6 border-t border-gray-700">
+      <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <View className="w-10 h-10 bg-gray-700 rounded-full items-center justify-center mr-3">
+            <Ionicons name="person" size={20} color="#9CA3AF" />
+          </View>
+          <View>
+            <Text className="text-gray-300 font-medium">{active?.name || 'Account'}</Text>
+            <Text className="text-gray-500 text-sm">{last ? `Last sync ${last}` : 'Not synced'}</Text>
+          </View>
+        </View>
+        <View className="flex-row">
+          <Pressable onPress={syncNow} className="px-3 py-2 rounded-lg bg-green-600 mr-2">
+            <Text className="text-white font-medium">{isSyncing ? 'Syncing…' : 'Sync now'}</Text>
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('AccountSwitch')} className="px-3 py-2 rounded-lg bg-gray-800">
+            <Text className="text-gray-200 font-medium">Switch</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 const CustomDrawerContent = (props: any) => {
   const insets = useSafeAreaInsets();
@@ -121,13 +155,18 @@ const CustomDrawerContent = (props: any) => {
               <Ionicons name="person" size={20} color="#9CA3AF" />
             </View>
             <View>
-              <Text className="text-gray-300 font-medium">User Account</Text>
-              <Text className="text-gray-500 text-sm">Professional Plan</Text>
+              <Text className="text-gray-300 font-medium">{useJobStore.getState().users.find(u => u.id === useJobStore.getState().currentUserId)?.name || 'Account'}</Text>
+              <Text className="text-gray-500 text-sm">{useJobStore.getState().lastSyncByUser[useJobStore.getState().currentUserId || ''] || 'Not synced'}</Text>
             </View>
           </View>
-          <Pressable onPress={() => props.navigation.navigate('AccountSwitch')} className="px-3 py-2 rounded-lg bg-gray-800">
-            <Text className="text-gray-200 font-medium">Switch</Text>
-          </Pressable>
+          <View className="flex-row">
+            <Pressable onPress={() => props.navigation.navigate('AccountSwitch')} className="px-3 py-2 rounded-lg bg-gray-800 mr-2">
+              <Text className="text-gray-200 font-medium">Switch</Text>
+            </Pressable>
+            <Pressable onPress={() => useJobStore.getState().syncNow()} className="px-3 py-2 rounded-lg bg-green-600">
+              <Text className="text-white font-medium">{useJobStore.getState().isSyncing ? 'Syncing…' : 'Sync'}</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </View>

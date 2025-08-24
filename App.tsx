@@ -24,7 +24,33 @@ const openai_api_key = Constants.expoConfig.extra.apikey;
 
 */
 
+import React, { useEffect } from "react";
+import { AppState } from "react-native";
+import { useJobStore } from "./src/state/store";
+
 export default function App() {
+  const syncNow = useJobStore((s) => s.syncNow);
+  const users = useJobStore((s) => s.users);
+  const currentUserId = useJobStore((s) => s.currentUserId);
+  const syncConfig = useJobStore((s) => s.syncConfig);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (st) => {
+      if (st === "active") {
+        const u = users.find((x) => x.id === currentUserId);
+        if (u?.remoteWorkspaceId && syncConfig) syncNow();
+      }
+    });
+    const int = setInterval(() => {
+      const u = users.find((x) => x.id === currentUserId);
+      if (u?.remoteWorkspaceId && syncConfig) syncNow();
+    }, 30000);
+    return () => {
+      sub.remove();
+      clearInterval(int);
+    };
+  }, [users, currentUserId, syncConfig]);
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
