@@ -9,6 +9,9 @@ import { useJobStore } from '../state/store';
 
 // Import screens
 import DashboardScreen from '../screens/DashboardScreen';
+import CreateBusinessScreen from '../screens/CreateBusinessScreen';
+import JoinBusinessScreen from '../screens/JoinBusinessScreen';
+import ManageTeamScreen from '../screens/ManageTeamScreen';
 import JobsScreen from '../screens/JobsScreen';
 import QuotesScreen from '../screens/QuotesScreen';
 import InvoicesScreen from '../screens/InvoicesScreen';
@@ -45,6 +48,7 @@ export type RootStackParamList = {
   CreateCustomer: undefined;
   CreatePart: undefined;
   CreateLabor: undefined;
+  ManageTeam: undefined;
   AccountSwitch: undefined;
   EditJob: { jobId: string };
   EditCustomer: { customerId: string };
@@ -52,6 +56,7 @@ export type RootStackParamList = {
 
 const Drawer = createDrawerNavigator<RootDrawerParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const OnbStack = createNativeStackNavigator();
 
 const FooterSection = ({ navigation }: any) => {
   const currentUserId = useJobStore((s) => s.currentUserId);
@@ -61,6 +66,8 @@ const FooterSection = ({ navigation }: any) => {
   const syncNow = useJobStore((s) => s.syncNow);
   const active = users.find((u) => u.id === currentUserId);
   const last = lastSyncByUser[currentUserId || ''] || null;
+  const email = useJobStore((s) => s.userEmail);
+  const role = useJobStore((s) => s.role);
   return (
     <View className="px-6 py-6 border-t border-gray-700">
       <View className="flex-row items-center justify-between">
@@ -69,7 +76,7 @@ const FooterSection = ({ navigation }: any) => {
             <Ionicons name="person" size={20} color="#9CA3AF" />
           </View>
           <View>
-            <Text className="text-gray-300 font-medium">{active?.name || 'Account'}</Text>
+            <Text className="text-gray-300 font-medium">{email || 'Not signed in'}</Text>
             <Text className="text-gray-500 text-sm">{last ? `Last sync ${last}` : 'Not synced'}</Text>
           </View>
         </View>
@@ -77,9 +84,11 @@ const FooterSection = ({ navigation }: any) => {
           <Pressable onPress={syncNow} className="px-3 py-2 rounded-lg bg-green-600 mr-2">
             <Text className="text-white font-medium">{isSyncing ? 'Syncing…' : 'Sync now'}</Text>
           </Pressable>
-          <Pressable onPress={() => navigation.navigate('AccountSwitch')} className="px-3 py-2 rounded-lg bg-gray-800">
-            <Text className="text-gray-200 font-medium">Switch</Text>
-          </Pressable>
+          {role === 'owner' && (
+            <Pressable onPress={() => navigation.navigate('ManageTeam')} className="px-3 py-2 rounded-lg bg-gray-800">
+              <Text className="text-gray-200 font-medium">Manage Team</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </View>
@@ -306,9 +315,9 @@ export const AppNavigator = () => {
         options={{ title: 'New Labor Item', presentation: 'modal' }}
       />
       <Stack.Screen 
-        name="AccountSwitch" 
-        component={AccountSwitchScreen}
-        options={{ title: 'Accounts', presentation: 'formSheet', sheetAllowedDetents: 'fitToContents' as any }}
+        name="ManageTeam" 
+        component={ManageTeamScreen}
+        options={{ title: 'Manage Team', presentation: 'modal' }}
       />
     </Stack.Navigator>
   );

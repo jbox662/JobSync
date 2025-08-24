@@ -11,8 +11,7 @@ const SyncSection = () => {
   const user = users.find((u) => u.id === currentUserId);
   const syncConfig = useJobStore((s) => s.syncConfig);
   const setSyncConfig = useJobStore((s) => s.setSyncConfig);
-  const createRemoteWorkspace = useJobStore((s) => s.createRemoteWorkspace);
-  const joinRemoteWorkspace = useJobStore((s) => s.joinRemoteWorkspace);
+  // Business create/join moved to dedicated onboarding screens
   const syncNow = useJobStore((s) => s.syncNow);
   const isSyncing = useJobStore((s) => s.isSyncing);
   const syncError = useJobStore((s) => s.syncError);
@@ -75,8 +74,8 @@ const SyncSection = () => {
           className="flex-1 border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mr-2"
           placeholderTextColor="#9CA3AF"
         />
-        <Pressable onPress={async () => { await createRemoteWorkspace(wsName || 'Workspace'); }} className="px-4 rounded-lg bg-gray-900 items-center justify-center">
-          <Text className="text-white font-medium">Create</Text>
+        <Pressable disabled className="px-4 rounded-lg bg-gray-400 items-center justify-center">
+          <Text className="text-white font-medium">Create (use Onboarding)</Text>
         </Pressable>
       </View>
       <View className="flex-row">
@@ -87,8 +86,8 @@ const SyncSection = () => {
           className="flex-1 border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mr-2"
           placeholderTextColor="#9CA3AF"
         />
-        <Pressable onPress={async () => { await joinRemoteWorkspace(invite); }} className="px-4 rounded-lg bg-gray-900 items-center justify-center">
-          <Text className="text-white font-medium">Join</Text>
+        <Pressable disabled className="px-4 rounded-lg bg-gray-400 items-center justify-center">
+          <Text className="text-white font-medium">Join (use Onboarding)</Text>
         </Pressable>
       </View>
     </View>
