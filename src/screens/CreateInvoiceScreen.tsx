@@ -447,9 +447,11 @@ const CreateInvoiceScreen = () => {
                         onPress={() => setSelectedItemId(item.id)}
                         className={`p-3 border-b border-gray-100 ${selectedItemId === item.id ? 'bg-green-50' : ''}`}
                       >
-                        <Text className="text-gray-900">{selectedItemType === 'part' ? item.name : item.description}</Text>
+                        <Text className="text-gray-900">
+                          {selectedItemType === 'part' ? (item as any).name : (item as any).description}
+                        </Text>
                         <Text className="text-gray-500 text-sm">
-                          {formatCurrency(selectedItemType === 'part' ? item.unitPrice : item.hourlyRate)}
+                          {formatCurrency(selectedItemType === 'part' ? (item as any).unitPrice : (item as any).hourlyRate)}
                           {selectedItemType === 'labor' ? '/hour' : ''}
                         </Text>
                       </Pressable>

@@ -92,10 +92,10 @@ const InvoicesScreen = () => {
 
   return (
     <View className="flex-1 bg-gray-50">
-      {/* Header with Search */}
+      {/* Header with Search and Add Button */}
       <View className="bg-white px-4 py-3 border-b border-gray-200">
         <View className="flex-row items-center">
-          <View className="flex-1 bg-gray-100 rounded-lg px-3 py-2">
+          <View className="flex-1 bg-gray-100 rounded-lg px-3 py-2 mr-3">
             <View className="flex-row items-center">
               <Ionicons name="search" size={20} color="#6B7280" />
               <TextInput
@@ -107,6 +107,13 @@ const InvoicesScreen = () => {
               />
             </View>
           </View>
+          <Pressable
+            onPress={() => navigation.navigate('CreateInvoice', {})}
+            className="bg-green-600 rounded-lg px-4 py-2 flex-row items-center"
+          >
+            <Ionicons name="add" size={20} color="white" />
+            <Text className="text-white font-medium ml-1">New</Text>
+          </Pressable>
         </View>
       </View>
 
