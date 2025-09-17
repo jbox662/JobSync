@@ -25,22 +25,26 @@ const JobDetailScreen = () => {
   
   const { 
     getJobById, 
-    getCustomerById, 
-    getPartById, 
-    getLaborItemById, 
+    getCustomerById,
+    getJobQuotes,
+    getJobInvoices,
     updateJob,
-    jobs
+    jobs,
+    quotes,
+    invoices
   } = useJobStore();
 
   const [job, setJob] = useState(() => getJobById(jobId));
   const customer = job ? getCustomerById(job.customerId) : null;
+  const jobQuotes = job ? getJobQuotes(job.id) : [];
+  const jobInvoices = job ? getJobInvoices(job.id) : [];
 
   // Refresh job data when screen is focused
   useFocusEffect(
     useCallback(() => {
       const updatedJob = getJobById(jobId);
       setJob(updatedJob);
-    }, [jobId, jobs])
+    }, [jobId, jobs, quotes, invoices])
   );
 
   const onRefresh = useCallback(async () => {
@@ -59,9 +63,8 @@ const JobDetailScreen = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'quote': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'approved': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'in-progress': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'active': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'on-hold': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -70,9 +73,8 @@ const JobDetailScreen = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'quote': return 'document-text';
-      case 'approved': return 'checkmark-circle';
-      case 'in-progress': return 'play-circle';
+      case 'active': return 'play-circle';
+      case 'on-hold': return 'pause-circle';
       case 'completed': return 'checkmark-circle';
       case 'cancelled': return 'close-circle';
       default: return 'help-circle';
@@ -81,55 +83,28 @@ const JobDetailScreen = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'quote': return 'Quote';
-      case 'approved': return 'Approved';
-      case 'in-progress': return 'In Progress';
+      case 'active': return 'Active';
+      case 'on-hold': return 'On Hold';
       case 'completed': return 'Completed';
       case 'cancelled': return 'Cancelled';
       default: return status;
     }
   };
 
-  const getNextStatus = (currentStatus: string) => {
-    switch (currentStatus) {
-      case 'quote': return 'approved';
-      case 'approved': return 'in-progress';
-      case 'in-progress': return 'completed';
-      default: return null;
-    }
-  };
-
-  const getNextStatusLabel = (currentStatus: string) => {
-    const nextStatus = getNextStatus(currentStatus);
-    if (!nextStatus) return null;
-    
-    switch (nextStatus) {
-      case 'approved': return 'Approve Quote';
-      case 'in-progress': return 'Start Work';
-      case 'completed': return 'Mark Complete';
-      default: return null;
-    }
-  };
-
-  const handleStatusUpdate = () => {
+  const handleStatusUpdate = (newStatus: string) => {
     if (!job) return;
     
-    const nextStatus = getNextStatus(job.status);
-    if (!nextStatus) return;
-
-    const statusLabel = getNextStatusLabel(job.status);
-    
     Alert.alert(
-      'Update Status',
-      `Are you sure you want to ${statusLabel?.toLowerCase()}?`,
+      'Update Job Status',
+      `Are you sure you want to mark this job as ${newStatus.replace('-', ' ')}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: statusLabel || 'Update',
+          text: 'Update',
           onPress: () => {
-            const updates: any = { status: nextStatus };
+            const updates: any = { status: newStatus };
             
-            if (nextStatus === 'completed') {
+            if (newStatus === 'completed') {
               updates.completedAt = new Date().toISOString();
             }
             
@@ -147,71 +122,84 @@ const JobDetailScreen = () => {
       <Ionicons 
         name={getStatusIcon(status) as keyof typeof Ionicons.glyphMap} 
         size={16} 
-        color={status === 'quote' ? '#92400E' : status === 'approved' ? '#1E40AF' : status === 'in-progress' ? '#C2410C' : status === 'completed' ? '#166534' : '#7F1D1D'} 
+        color={status === 'active' ? '#1E40AF' : status === 'on-hold' ? '#C2410C' : status === 'completed' ? '#166534' : '#7F1D1D'} 
       />
-      <Text className={`ml-2 font-semibold text-sm ${status === 'quote' ? 'text-yellow-800' : status === 'approved' ? 'text-blue-800' : status === 'in-progress' ? 'text-orange-800' : status === 'completed' ? 'text-green-800' : 'text-red-800'}`}>
+      <Text className={`ml-2 font-semibold text-sm ${
+        status === 'active' ? 'text-blue-800' : 
+        status === 'on-hold' ? 'text-yellow-800' : 
+        status === 'completed' ? 'text-green-800' : 'text-red-800'
+      }`}>
         {getStatusLabel(status)}
       </Text>
     </View>
   );
 
-  const JobItemCard = ({ item }: { item: any }) => {
-    const itemData = item.type === 'part' ? getPartById(item.itemId) : getLaborItemById(item.itemId);
-    
-    return (
-      <View className="bg-white rounded-xl p-4 mb-3 border border-gray-100">
-        <View className="flex-row items-start justify-between">
-          <View className="flex-1 mr-3">
-            <View className="flex-row items-center mb-2">
-              <View className={`w-6 h-6 rounded-full items-center justify-center mr-2 ${
-                item.type === 'part' ? 'bg-blue-100' : 'bg-green-100'
-              }`}>
-                <Ionicons 
-                  name={item.type === 'part' ? 'construct' : 'time'} 
-                  size={14} 
-                  color={item.type === 'part' ? '#3B82F6' : '#10B981'} 
-                />
-              </View>
-              <Text className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {item.type === 'part' ? 'Part' : 'Labor'}
-              </Text>
+  const QuoteCard = ({ quote }: { quote: any }) => (
+    <View className="bg-white rounded-xl p-4 mb-3 border border-gray-100">
+      <View className="flex-row items-start justify-between">
+        <View className="flex-1">
+          <Text className="font-semibold text-gray-900 text-base">
+            {quote.quoteNumber}
+          </Text>
+          <Text className="text-gray-600 text-sm mt-1">
+            {quote.title}
+          </Text>
+          <View className="flex-row items-center mt-2">
+            <View className={`px-2 py-1 rounded-full ${
+              quote.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+              quote.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+              quote.status === 'approved' ? 'bg-green-100 text-green-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+              <Text className="text-xs font-medium">{quote.status}</Text>
             </View>
-            
-            <Text className="font-semibold text-gray-900 text-base mb-1">
-              {item.description}
-            </Text>
-            
-            <View className="flex-row items-center">
-              <Text className="text-gray-600 text-sm">
-                {item.quantity} × {formatCurrency(item.unitPrice)}
-                {item.type === 'labor' ? '/hour' : ''}
-              </Text>
-            </View>
-            
-            {itemData && (
-              <View className="mt-2">
-                {item.type === 'part' && (itemData as any).sku && (
-                  <Text className="text-xs text-gray-500">SKU: {(itemData as any).sku}</Text>
-                )}
-                {item.type === 'part' && (itemData as any).category && (
-                  <Text className="text-xs text-gray-500">Category: {(itemData as any).category}</Text>
-                )}
-                {item.type === 'labor' && (itemData as any).category && (
-                  <Text className="text-xs text-gray-500">Category: {(itemData as any).category}</Text>
-                )}
-              </View>
-            )}
-          </View>
-          
-          <View className="items-end">
-            <Text className="font-bold text-gray-900 text-lg">
-              {formatCurrency(item.total)}
-            </Text>
           </View>
         </View>
+        <View className="items-end">
+          <Text className="font-bold text-gray-900 text-lg">
+            {formatCurrency(quote.total)}
+          </Text>
+          <Text className="text-gray-500 text-xs mt-1">
+            {format(new Date(quote.createdAt), 'MMM d, yyyy')}
+          </Text>
+        </View>
       </View>
-    );
-  };
+    </View>
+  );
+
+  const InvoiceCard = ({ invoice }: { invoice: any }) => (
+    <View className="bg-white rounded-xl p-4 mb-3 border border-gray-100">
+      <View className="flex-row items-start justify-between">
+        <View className="flex-1">
+          <Text className="font-semibold text-gray-900 text-base">
+            {invoice.invoiceNumber}
+          </Text>
+          <Text className="text-gray-600 text-sm mt-1">
+            {invoice.title}
+          </Text>
+          <View className="flex-row items-center mt-2">
+            <View className={`px-2 py-1 rounded-full ${
+              invoice.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+              invoice.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+              invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+              invoice.status === 'overdue' ? 'bg-red-100 text-red-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+              <Text className="text-xs font-medium">{invoice.status}</Text>
+            </View>
+          </View>
+        </View>
+        <View className="items-end">
+          <Text className="font-bold text-gray-900 text-lg">
+            {formatCurrency(invoice.total)}
+          </Text>
+          <Text className="text-gray-500 text-xs mt-1">
+            Due {format(new Date(invoice.dueDate), 'MMM d, yyyy')}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
 
   if (!job) {
     return (
@@ -230,6 +218,10 @@ const JobDetailScreen = () => {
       </View>
     );
   }
+
+  const totalQuoteValue = jobQuotes.reduce((sum, quote) => sum + quote.total, 0);
+  const totalInvoiceValue = jobInvoices.reduce((sum, invoice) => sum + invoice.total, 0);
+  const paidInvoiceValue = jobInvoices.filter(i => i.status === 'paid').reduce((sum, invoice) => sum + invoice.total, 0);
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -297,6 +289,14 @@ const JobDetailScreen = () => {
                 Updated: {format(new Date(job.updatedAt), 'MMM d, yyyy')}
               </Text>
             </View>
+            {job.startDate && (
+              <View className="flex-row items-center mb-2">
+                <Ionicons name="play-outline" size={16} color="#10B981" />
+                <Text className="text-gray-600 text-sm ml-2">
+                  Started: {format(new Date(job.startDate), 'MMM d, yyyy')}
+                </Text>
+              </View>
+            )}
             {job.dueDate && (
               <View className="flex-row items-center mb-2">
                 <Ionicons name="flag-outline" size={16} color="#F59E0B" />
@@ -316,51 +316,84 @@ const JobDetailScreen = () => {
           </View>
         </View>
 
-        {/* Job Items */}
-        <View className="px-4 py-6">
+        {/* Financial Overview */}
+        {(jobQuotes.length > 0 || jobInvoices.length > 0) && (
+          <View className="px-4 py-6">
+            <Text className="text-lg font-semibold text-gray-900 mb-4">Financial Overview</Text>
+            <View className="bg-white rounded-xl p-4 border border-gray-100">
+              <View className="flex-row justify-between items-center mb-3">
+                <Text className="text-gray-600">Total Quoted:</Text>
+                <Text className="text-gray-900 font-semibold">{formatCurrency(totalQuoteValue)}</Text>
+              </View>
+              <View className="flex-row justify-between items-center mb-3">
+                <Text className="text-gray-600">Total Invoiced:</Text>
+                <Text className="text-gray-900 font-semibold">{formatCurrency(totalInvoiceValue)}</Text>
+              </View>
+              <View className="h-px bg-gray-200 mb-3" />
+              <View className="flex-row justify-between items-center">
+                <Text className="text-lg font-semibold text-gray-900">Total Paid:</Text>
+                <Text className="text-lg font-bold text-green-600">{formatCurrency(paidInvoiceValue)}</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Quotes Section */}
+        <View className="px-4 pb-6">
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-lg font-semibold text-gray-900">Job Items</Text>
-            <Text className="text-sm text-gray-500">{job.items.length} items</Text>
+            <Text className="text-lg font-semibold text-gray-900">Quotes</Text>
+            <Pressable
+              onPress={() => navigation.navigate('CreateQuote', { jobId: job.id })}
+              className="bg-blue-600 rounded-lg px-4 py-2"
+            >
+              <Text className="text-white font-medium text-sm">New Quote</Text>
+            </Pressable>
           </View>
 
-          {job.items.length === 0 ? (
-            <View className="bg-white rounded-xl p-8 items-center border border-gray-100">
-              <Ionicons name="list-outline" size={48} color="#D1D5DB" />
-              <Text className="text-gray-500 text-lg font-medium mt-3">No items added</Text>
+          {jobQuotes.length === 0 ? (
+            <View className="bg-white rounded-xl p-6 items-center border border-gray-100">
+              <Ionicons name="document-text-outline" size={40} color="#D1D5DB" />
+              <Text className="text-gray-500 text-base font-medium mt-2">No quotes yet</Text>
               <Text className="text-gray-400 text-sm mt-1 text-center">
-                This job doesn't have any parts or labor items yet.
+                Create a quote to provide cost estimates for this job
               </Text>
             </View>
           ) : (
             <>
-              {job.items.map((item) => (
-                <JobItemCard key={item.id} item={item} />
+              {jobQuotes.map((quote) => (
+                <QuoteCard key={quote.id} quote={quote} />
               ))}
             </>
           )}
         </View>
 
-        {/* Price Breakdown */}
+        {/* Invoices Section */}
         <View className="px-4 pb-6">
-          <View className="bg-white rounded-xl p-4 border border-gray-100">
-            <Text className="text-lg font-semibold text-gray-900 mb-4">Price Breakdown</Text>
-            
-            <View>
-              <View className="flex-row justify-between mb-3">
-                <Text className="text-gray-600">Subtotal:</Text>
-                <Text className="text-gray-900 font-medium">{formatCurrency(job.subtotal)}</Text>
-              </View>
-              <View className="flex-row justify-between mb-3">
-                <Text className="text-gray-600">Tax ({job.taxRate}%):</Text>
-                <Text className="text-gray-900 font-medium">{formatCurrency(job.tax)}</Text>
-              </View>
-              <View className="h-px bg-gray-200 mb-3" />
-              <View className="flex-row justify-between">
-                <Text className="text-lg font-semibold text-gray-900">Total:</Text>
-                <Text className="text-lg font-bold text-blue-600">{formatCurrency(job.total)}</Text>
-              </View>
-            </View>
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-lg font-semibold text-gray-900">Invoices</Text>
+            <Pressable
+              onPress={() => navigation.navigate('CreateInvoice', { jobId: job.id })}
+              className="bg-green-600 rounded-lg px-4 py-2"
+            >
+              <Text className="text-white font-medium text-sm">New Invoice</Text>
+            </Pressable>
           </View>
+
+          {jobInvoices.length === 0 ? (
+            <View className="bg-white rounded-xl p-6 items-center border border-gray-100">
+              <Ionicons name="receipt-outline" size={40} color="#D1D5DB" />
+              <Text className="text-gray-500 text-base font-medium mt-2">No invoices yet</Text>
+              <Text className="text-gray-400 text-sm mt-1 text-center">
+                Create an invoice to bill your customer for work completed
+              </Text>
+            </View>
+          ) : (
+            <>
+              {jobInvoices.map((invoice) => (
+                <InvoiceCard key={invoice.id} invoice={invoice} />
+              ))}
+            </>
+          )}
         </View>
 
         {/* Notes */}
@@ -374,31 +407,48 @@ const JobDetailScreen = () => {
         )}
       </ScrollView>
 
-      {/* Floating Action Buttons */}
+      {/* Status Change Actions */}
       <View 
         className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 flex-row"
         style={{ paddingBottom: insets.bottom + 16 }}
       >
-        {getNextStatus(job.status) && (
+        {job.status === 'active' && (
+          <>
+            <Pressable
+              onPress={() => handleStatusUpdate('on-hold')}
+              className="flex-1 bg-yellow-600 rounded-xl py-4 mr-3"
+            >
+              <Text className="text-white font-semibold text-center text-base">
+                Put On Hold
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => handleStatusUpdate('completed')}
+              className="flex-1 bg-green-600 rounded-xl py-4"
+            >
+              <Text className="text-white font-semibold text-center text-base">
+                Mark Complete
+              </Text>
+            </Pressable>
+          </>
+        )}
+
+        {job.status === 'on-hold' && (
           <Pressable
-            onPress={handleStatusUpdate}
-            className="flex-1 bg-blue-600 rounded-xl py-4 mr-3"
+            onPress={() => handleStatusUpdate('active')}
+            className="flex-1 bg-blue-600 rounded-xl py-4"
           >
             <Text className="text-white font-semibold text-center text-base">
-              {getNextStatusLabel(job.status)}
+              Resume Job
             </Text>
           </Pressable>
         )}
-        
-        <Pressable
-          onPress={() => {
-            // TODO: Navigate to edit job screen
-            Alert.alert('Coming Soon', 'Edit job functionality will be added soon.');
-          }}
-          className="px-6 py-4 bg-gray-100 rounded-xl"
-        >
-          <Ionicons name="create-outline" size={24} color="#6B7280" />
-        </Pressable>
+
+        {job.status === 'completed' && (
+          <Text className="flex-1 text-center text-gray-500 py-4">
+            Job completed on {format(new Date(job.completedAt || job.updatedAt), 'MMM d, yyyy')}
+          </Text>
+        )}
       </View>
     </View>
   );

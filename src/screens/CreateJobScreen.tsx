@@ -11,6 +11,9 @@ const CreateJobScreen = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState((route.params as any)?.customerId || '');
+  const [estimatedHours, setEstimatedHours] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [notes, setNotes] = useState('');
 
   const handleSave = () => {
     if (!title.trim() || !selectedCustomer) {
@@ -18,16 +21,26 @@ const CreateJobScreen = () => {
       return;
     }
 
-    addJob({
+    const jobData: any = {
       title: title.trim(),
       description: description.trim() || undefined,
       customerId: selectedCustomer,
-      status: 'quote',
-      items: [],
-      taxRate: 8.25,
-      tax: 0,
-    });
+      status: 'active',
+      notes: notes.trim() || undefined,
+    };
 
+    if (estimatedHours.trim()) {
+      const hours = parseFloat(estimatedHours);
+      if (!isNaN(hours) && hours > 0) {
+        jobData.estimatedHours = hours;
+      }
+    }
+
+    if (dueDate.trim()) {
+      jobData.dueDate = dueDate.trim();
+    }
+
+    addJob(jobData);
     navigation.goBack();
   };
 
@@ -36,7 +49,7 @@ const CreateJobScreen = () => {
       <ScrollView className="flex-1 p-4">
         <View className="mb-6">
           <Text className="text-2xl font-bold text-gray-900 mb-2">Create New Job</Text>
-          <Text className="text-gray-600">Set up a new job project for your customer</Text>
+          <Text className="text-gray-600">Set up a new project for your customer</Text>
         </View>
 
         <View className="mb-4">
@@ -81,14 +94,51 @@ const CreateJobScreen = () => {
           </View>
         </View>
 
-        <View className="mb-6">
+        <View className="mb-4">
           <Text className="text-gray-700 font-medium mb-2">Job Description</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
-            placeholder="Describe the job project details"
+            placeholder="Describe the project work to be performed"
             multiline
             numberOfLines={4}
+            className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
+            placeholderTextColor="#9CA3AF"
+            textAlignVertical="top"
+          />
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-gray-700 font-medium mb-2">Estimated Hours</Text>
+          <TextInput
+            value={estimatedHours}
+            onChangeText={setEstimatedHours}
+            placeholder="Enter estimated hours (optional)"
+            keyboardType="decimal-pad"
+            className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-gray-700 font-medium mb-2">Due Date (Optional)</Text>
+          <TextInput
+            value={dueDate}
+            onChangeText={setDueDate}
+            placeholder="MM/DD/YYYY"
+            className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+
+        <View className="mb-6">
+          <Text className="text-gray-700 font-medium mb-2">Notes</Text>
+          <TextInput
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Additional notes about the job"
+            multiline
+            numberOfLines={3}
             className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
             placeholderTextColor="#9CA3AF"
             textAlignVertical="top"
@@ -98,7 +148,7 @@ const CreateJobScreen = () => {
         <View className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <Text className="text-blue-800 font-medium mb-2">Next Steps</Text>
           <Text className="text-blue-700 text-sm">
-            After creating this job, you can add quotes for estimates and later convert approved quotes to invoices.
+            After creating this job, you can add quotes for estimates and invoices for billing from the job detail screen.
           </Text>
         </View>
       </ScrollView>

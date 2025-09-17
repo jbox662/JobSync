@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState, Customer, Part, LaborItem, Job, JobItem, User, ChangeEvent, SyncConfig } from '../types';
+import { AppState, Customer, Part, LaborItem, Job, JobItem, Quote, Invoice, User, ChangeEvent, SyncConfig } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { createBusiness, createInvites, acceptInvite, listMembers, pushChanges, pullChanges } from '../api/sync-service';
 
@@ -46,19 +46,33 @@ interface JobStore extends AppState {
   addLaborItem: (item: Omit<LaborItem, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateLaborItem: (id: string, updates: Partial<LaborItem>) => void;
   deleteLaborItem: (id: string) => void;
-  addJob: (job: Omit<Job, 'id' | 'createdAt' | 'updatedAt' | 'subtotal' | 'total'>) => void;
+  addJob: (job: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateJob: (id: string, updates: Partial<Job>) => void;
   deleteJob: (id: string) => void;
-  addJobItem: (jobId: string, item: Omit<JobItem, 'id' | 'total'>) => void;
-  updateJobItem: (jobId: string, itemId: string, updates: Partial<JobItem>) => void;
-  removeJobItem: (jobId: string, itemId: string) => void;
 
-  // Utility
+  // Quote CRUD actions
+  addQuote: (quote: Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'quoteNumber' | 'subtotal' | 'tax' | 'total'>) => void;
+  updateQuote: (id: string, updates: Partial<Quote>) => void;
+  deleteQuote: (id: string) => void;
+  
+  // Invoice CRUD actions
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt' | 'invoiceNumber' | 'subtotal' | 'tax' | 'total'>) => void;
+  updateInvoice: (id: string, updates: Partial<Invoice>) => void;
+  deleteInvoice: (id: string) => void;
+
+  // Utility functions
   getCustomerById: (id: string) => Customer | undefined;
   getPartById: (id: string) => Part | undefined;
   getLaborItemById: (id: string) => LaborItem | undefined;
   getJobById: (id: string) => Job | undefined;
-  calculateJobTotal: (job: Job) => { subtotal: number; total: number };
+  getQuoteById: (id: string) => Quote | undefined;
+  getInvoiceById: (id: string) => Invoice | undefined;
+  getJobQuotes: (jobId: string) => Quote[];
+  getJobInvoices: (jobId: string) => Invoice[];
+  generateQuoteNumber: () => string;
+  generateInvoiceNumber: () => string;
+  calculateQuoteTotal: (items: JobItem[], taxRate: number) => { subtotal: number; tax: number; total: number };
+  calculateInvoiceTotal: (items: JobItem[], taxRate: number) => { subtotal: number; tax: number; total: number };
 }
 
 const calculateJobTotals = (items: JobItem[], taxRate: number) => {
@@ -90,7 +104,7 @@ export const useJobStore = create<JobStore>()(
         const uid = state.currentUserId;
         if (!uid || !state.dataByUser[uid]) return;
         const slice = state.dataByUser[uid];
-        set({ customers: slice.customers, parts: slice.parts, laborItems: slice.laborItems, jobs: slice.jobs } as Partial<JobStore>);
+        set({ customers: slice.customers, parts: slice.parts, laborItems: slice.laborItems, jobs: slice.jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } as Partial<JobStore>);
       };
 
       const now = new Date().toISOString();
@@ -102,6 +116,8 @@ export const useJobStore = create<JobStore>()(
         parts: [],
         laborItems: [],
         jobs: [],
+        quotes: [],
+        invoices: [],
 
         // Business link
         userEmail: null,
@@ -112,7 +128,7 @@ export const useJobStore = create<JobStore>()(
         // Profiles
         users: [{ id: defaultId, name: 'Default', createdAt: now, updatedAt: now }],
         currentUserId: defaultId,
-        dataByUser: { [defaultId]: { customers: [], parts: [], laborItems: [], jobs: [] } },
+        dataByUser: { [defaultId]: { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] } },
 
         // Sync
         deviceId: uuidv4(),
@@ -183,7 +199,7 @@ export const useJobStore = create<JobStore>()(
             parts = Array.from(byId.parts.values());
             laborItems = Array.from(byId.laborItems.values());
             jobs = Array.from(byId.jobs.values());
-            set({ dataByUser: { ...get().dataByUser, [uid]: { customers, parts, laborItems, jobs } }, lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
+            set({ dataByUser: { ...get().dataByUser, [uid]: { customers, parts, laborItems, jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } }, lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
             syncTopLevel();
           } else if (pull) {
             set({ lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
@@ -197,7 +213,7 @@ export const useJobStore = create<JobStore>()(
           const ts = new Date().toISOString();
           set((state) => ({
             users: [...state.users, { id, name: name.trim() || 'User', createdAt: ts, updatedAt: ts }],
-            dataByUser: { ...state.dataByUser, [id]: { customers: [], parts: [], laborItems: [], jobs: [] } },
+            dataByUser: { ...state.dataByUser, [id]: { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] } },
             outboxByUser: { ...state.outboxByUser, [id]: [] },
             lastSyncByUser: { ...state.lastSyncByUser, [id]: null },
           }));
@@ -229,25 +245,172 @@ export const useJobStore = create<JobStore>()(
         updateLaborItem: (id, updates) => { const state = get(); const uid = state.currentUserId!; const slice = state.dataByUser[uid]; const updatedList = slice.laborItems.map((it) => (it.id === id ? { ...it, ...updates, updatedAt: new Date().toISOString() } : it)); const updated = { ...slice, laborItems: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((it) => it.id === id)!; appendChange('laborItems', 'update', row); syncTopLevel(); },
         deleteLaborItem: (id) => { const state = get(); const uid = state.currentUserId!; const slice = state.dataByUser[uid]; const row = slice.laborItems.find((it) => it.id === id); const updated = { ...slice, laborItems: slice.laborItems.filter((it) => it.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('laborItems', 'delete', row); syncTopLevel(); },
 
-        addJob: (jobData) => { const state = get(); const uid = state.currentUserId!; const { subtotal, tax, total } = calculateJobTotals(jobData.items, jobData.taxRate); const job: Job = { ...jobData, id: uuidv4(), subtotal, tax, total, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; const slice = state.dataByUser[uid]; const updated = { ...slice, jobs: [...slice.jobs, job] }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('jobs', 'create', job); syncTopLevel(); },
-        updateJob: (id, updates) => { const state = get(); const uid = state.currentUserId!; const slice = state.dataByUser[uid]; const updatedJobs = slice.jobs.map((job) => { if (job.id === id) { const updatedJob = { ...job, ...updates, updatedAt: new Date().toISOString() }; if (updates.items || updates.taxRate !== undefined) { const totals = calculateJobTotals(updatedJob.items, updatedJob.taxRate); return { ...updatedJob, ...totals }; } return updatedJob; } return job; }); const updated = { ...slice, jobs: updatedJobs }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedJobs.find((j) => j.id === id)!; appendChange('jobs', 'update', row); syncTopLevel(); },
-        deleteJob: (id) => { const state = get(); const uid = state.currentUserId!; const slice = state.dataByUser[uid]; const row = slice.jobs.find((j) => j.id === id); const updated = { ...slice, jobs: slice.jobs.filter((j) => j.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('jobs', 'delete', row); syncTopLevel(); },
-        addJobItem: (jobId, itemData) => { const state = get(); const uid = state.currentUserId!; const slice = state.dataByUser[uid]; const item: JobItem = { ...itemData, id: uuidv4(), total: itemData.quantity * itemData.unitPrice }; const updatedJobs = slice.jobs.map((job) => { if (job.id === jobId) { const items = [...job.items, item]; const totals = calculateJobTotals(items, job.taxRate); return { ...job, items, ...totals, updatedAt: new Date().toISOString() }; } return job; }); const updated = { ...slice, jobs: updatedJobs }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('jobItems', 'create', item); syncTopLevel(); },
-        updateJobItem: (jobId, itemId, updates) => { const state = get(); const uid = state.currentUserId!; const slice = state.dataByUser[uid]; const updatedJobs = slice.jobs.map((job) => { if (job.id === jobId) { const items = job.items.map((it) => { if (it.id === itemId) { const updatedItem = { ...it, ...updates } as JobItem; updatedItem.total = updatedItem.quantity * updatedItem.unitPrice; return updatedItem; } return it; }); const totals = calculateJobTotals(items, job.taxRate); return { ...job, items, ...totals, updatedAt: new Date().toISOString() }; } return job; }); const updated = { ...slice, jobs: updatedJobs }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const changedItem = updatedJobs.find((j) => j.id === jobId)?.items.find((it) => it.id === itemId); if (changedItem) appendChange('jobItems', 'update', changedItem); syncTopLevel(); },
-        removeJobItem: (jobId, itemId) => { const state = get(); const uid = state.currentUserId!; const slice = state.dataByUser[uid]; let removed: JobItem | undefined; const updatedJobs = slice.jobs.map((job) => { if (job.id === jobId) { const items = job.items.filter((it) => { const keep = it.id !== itemId; if (!keep) removed = it; return keep; }); const totals = calculateJobTotals(items, job.taxRate); return { ...job, items, ...totals, updatedAt: new Date().toISOString() }; } return job; }); const updated = { ...slice, jobs: updatedJobs }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (removed) appendChange('jobItems', 'delete', removed); syncTopLevel(); },
+        // Job CRUD (simplified - no pricing)
+        addJob: (jobData) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const job: Job = { ...jobData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; 
+          const slice = state.dataByUser[uid]; 
+          const updated = { ...slice, jobs: [...slice.jobs, job] }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          appendChange('jobs', 'create', job); 
+          syncTopLevel(); 
+        },
+        updateJob: (id, updates) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const slice = state.dataByUser[uid]; 
+          const updatedJobs = slice.jobs.map((job) => (job.id === id ? { ...job, ...updates, updatedAt: new Date().toISOString() } : job)); 
+          const updated = { ...slice, jobs: updatedJobs }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          const row = updatedJobs.find((j) => j.id === id)!; 
+          appendChange('jobs', 'update', row); 
+          syncTopLevel(); 
+        },
+        deleteJob: (id) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const slice = state.dataByUser[uid]; 
+          const row = slice.jobs.find((j) => j.id === id); 
+          const updated = { ...slice, jobs: slice.jobs.filter((j) => j.id !== id) }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          if (row) appendChange('jobs', 'delete', row); 
+          syncTopLevel(); 
+        },
 
-        // Utility
+        // Quote CRUD
+        addQuote: (quoteData) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const quoteNumber = get().generateQuoteNumber();
+          const totals = get().calculateQuoteTotal(quoteData.items, quoteData.taxRate);
+          const quote: Quote = { 
+            ...quoteData, 
+            id: uuidv4(), 
+            quoteNumber,
+            ...totals,
+            createdAt: new Date().toISOString(), 
+            updatedAt: new Date().toISOString() 
+          }; 
+          const slice = state.dataByUser[uid]; 
+          const updated = { ...slice, quotes: [...(slice.quotes || []), quote] }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          appendChange('quotes', 'create', quote); 
+          syncTopLevel(); 
+        },
+        updateQuote: (id, updates) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const slice = state.dataByUser[uid]; 
+          const updatedQuotes = (slice.quotes || []).map((quote) => {
+            if (quote.id === id) {
+              const updatedQuote = { ...quote, ...updates, updatedAt: new Date().toISOString() };
+              if (updates.items || updates.taxRate !== undefined) {
+                const totals = get().calculateQuoteTotal(updatedQuote.items, updatedQuote.taxRate);
+                return { ...updatedQuote, ...totals };
+              }
+              return updatedQuote;
+            }
+            return quote;
+          }); 
+          const updated = { ...slice, quotes: updatedQuotes }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          const row = updatedQuotes.find((q) => q.id === id)!; 
+          appendChange('quotes', 'update', row); 
+          syncTopLevel(); 
+        },
+        deleteQuote: (id) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const slice = state.dataByUser[uid]; 
+          const row = (slice.quotes || []).find((q) => q.id === id); 
+          const updated = { ...slice, quotes: (slice.quotes || []).filter((q) => q.id !== id) }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          if (row) appendChange('quotes', 'delete', row); 
+          syncTopLevel(); 
+        },
+
+        // Invoice CRUD
+        addInvoice: (invoiceData) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const invoiceNumber = get().generateInvoiceNumber();
+          const totals = get().calculateInvoiceTotal(invoiceData.items, invoiceData.taxRate);
+          const invoice: Invoice = { 
+            ...invoiceData, 
+            id: uuidv4(), 
+            invoiceNumber,
+            ...totals,
+            createdAt: new Date().toISOString(), 
+            updatedAt: new Date().toISOString() 
+          }; 
+          const slice = state.dataByUser[uid]; 
+          const updated = { ...slice, invoices: [...(slice.invoices || []), invoice] }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          appendChange('invoices', 'create', invoice); 
+          syncTopLevel(); 
+        },
+        updateInvoice: (id, updates) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const slice = state.dataByUser[uid]; 
+          const updatedInvoices = (slice.invoices || []).map((invoice) => {
+            if (invoice.id === id) {
+              const updatedInvoice = { ...invoice, ...updates, updatedAt: new Date().toISOString() };
+              if (updates.items || updates.taxRate !== undefined) {
+                const totals = get().calculateInvoiceTotal(updatedInvoice.items, updatedInvoice.taxRate);
+                return { ...updatedInvoice, ...totals };
+              }
+              return updatedInvoice;
+            }
+            return invoice;
+          }); 
+          const updated = { ...slice, invoices: updatedInvoices }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          const row = updatedInvoices.find((i) => i.id === id)!; 
+          appendChange('invoices', 'update', row); 
+          syncTopLevel(); 
+        },
+        deleteInvoice: (id) => { 
+          const state = get(); 
+          const uid = state.currentUserId!; 
+          const slice = state.dataByUser[uid]; 
+          const row = (slice.invoices || []).find((i) => i.id === id); 
+          const updated = { ...slice, invoices: (slice.invoices || []).filter((i) => i.id !== id) }; 
+          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          if (row) appendChange('invoices', 'delete', row); 
+          syncTopLevel(); 
+        },
+
+        // Utility functions
         getCustomerById: (id) => get().customers.find((c) => c.id === id),
         getPartById: (id) => get().parts.find((p) => p.id === id),
         getLaborItemById: (id) => get().laborItems.find((it) => it.id === id),
         getJobById: (id) => get().jobs.find((j) => j.id === id),
-        calculateJobTotal: (job) => calculateJobTotals(job.items, job.taxRate),
+        getQuoteById: (id) => get().quotes.find((q) => q.id === id),
+        getInvoiceById: (id) => get().invoices.find((i) => i.id === id),
+        getJobQuotes: (jobId) => get().quotes.filter((q) => q.jobId === jobId),
+        getJobInvoices: (jobId) => get().invoices.filter((i) => i.jobId === jobId),
+        generateQuoteNumber: () => {
+          const state = get();
+          const existingQuotes = state.quotes || [];
+          const nextNumber = existingQuotes.length + 1;
+          return `Q-${nextNumber.toString().padStart(4, '0')}`;
+        },
+        generateInvoiceNumber: () => {
+          const state = get();
+          const existingInvoices = state.invoices || [];
+          const nextNumber = existingInvoices.length + 1;
+          return `INV-${nextNumber.toString().padStart(4, '0')}`;
+        },
+        calculateQuoteTotal: (items, taxRate) => calculateJobTotals(items, taxRate),
+        calculateInvoiceTotal: (items, taxRate) => calculateJobTotals(items, taxRate),
       };
     },
     {
       name: 'job-management-store',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 4,
+      version: 5,
       migrate: (state: any, version) => {
         if (version < 2) {
           const now = new Date().toISOString();
@@ -256,7 +419,7 @@ export const useJobStore = create<JobStore>()(
           const parts = state?.parts || [];
           const laborItems = state?.laborItems || [];
           const jobs = state?.jobs || [];
-          return { ...state, users: [{ id, name: 'Default', createdAt: now, updatedAt: now }], currentUserId: id, dataByUser: { [id]: { customers, parts, laborItems, jobs } }, customers, parts, laborItems, jobs, outboxByUser: { [id]: [] }, lastSyncByUser: { [id]: null } };
+          return { ...state, users: [{ id, name: 'Default', createdAt: now, updatedAt: now }], currentUserId: id, dataByUser: { [id]: { customers, parts, laborItems, jobs, quotes: [], invoices: [] } }, customers, parts, laborItems, jobs, quotes: [], invoices: [], outboxByUser: { [id]: [] }, lastSyncByUser: { [id]: null } };
         }
         if (version < 3) {
           const uid = state.currentUserId || (state.users && state.users[0]?.id) || uuidv4();
@@ -264,6 +427,58 @@ export const useJobStore = create<JobStore>()(
         }
         if (version < 4) {
           return { ...state, userEmail: state.userEmail || null, workspaceId: state.workspaceId || null, role: state.role || null };
+        }
+        if (version < 5) {
+          // Migration to separate jobs from quotes/invoices
+          const migratedJobs = (state.jobs || []).map((job: any) => {
+            // Remove pricing fields from jobs, keeping only project management fields
+            const { items, subtotal, tax, taxRate, total, ...projectFields } = job;
+            return {
+              ...projectFields,
+              status: job.status === 'quote' ? 'active' : job.status === 'approved' ? 'active' : job.status === 'in-progress' ? 'active' : job.status
+            };
+          });
+
+          // Convert old jobs with pricing to quotes where appropriate  
+          const migratedQuotes = (state.jobs || [])
+            .filter((job: any) => job.status === 'quote' && job.items && job.items.length > 0)
+            .map((job: any, index: number) => ({
+              id: uuidv4(),
+              jobId: job.id,
+              customerId: job.customerId,
+              quoteNumber: `Q-${(index + 1).toString().padStart(4, '0')}`,
+              title: job.title,
+              description: job.description,
+              status: 'draft',
+              items: job.items || [],
+              subtotal: job.subtotal || 0,
+              tax: job.tax || 0,
+              taxRate: job.taxRate || 0,
+              total: job.total || 0,
+              notes: job.notes,
+              createdAt: job.createdAt,
+              updatedAt: job.updatedAt
+            }));
+
+          // Update dataByUser for all users
+          const updatedDataByUser = { ...state.dataByUser };
+          Object.keys(updatedDataByUser).forEach(userId => {
+            const userData = updatedDataByUser[userId];
+            updatedDataByUser[userId] = {
+              ...userData,
+              jobs: migratedJobs,
+              quotes: migratedQuotes.filter((q: any) => migratedJobs.find((j: any) => j.id === q.jobId)),
+              invoices: []
+            };
+          });
+
+          return { 
+            ...state, 
+            jobs: migratedJobs,
+            quotes: migratedQuotes,
+            invoices: [],
+            dataByUser: updatedDataByUser
+          };
         }
         return state as any;
       },

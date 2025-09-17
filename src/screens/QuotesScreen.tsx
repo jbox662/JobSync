@@ -11,17 +11,19 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const QuotesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { jobs, getCustomerById } = useJobStore();
+  const { quotes, getCustomerById, getJobById } = useJobStore();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter for quotes only
-  const quotes = jobs
-    .filter(job => job.status === 'quote')
-    .filter(job => {
-      const customer = getCustomerById(job.customerId);
+  // Filter quotes
+  const filteredQuotes = quotes
+    .filter(quote => {
+      const customer = getCustomerById(quote.customerId);
+      const job = getJobById(quote.jobId);
       const matchesSearch = !searchQuery || 
-        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer?.name.toLowerCase().includes(searchQuery.toLowerCase());
+        quote.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quote.quoteNumber.toLowerCase().includes(searchQuery.toLowerCase());
       
       return matchesSearch;
     })
@@ -34,41 +36,86 @@ const QuotesScreen = () => {
     }).format(amount);
   };
 
-  const QuoteCard = ({ job }: { job: any }) => {
-    const customer = getCustomerById(job.customerId);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+      case 'expired': return 'bg-orange-100 text-orange-800 border-orange-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'draft': return 'Draft';
+      case 'sent': return 'Sent';
+      case 'approved': return 'Approved';
+      case 'rejected': return 'Rejected';
+      case 'expired': return 'Expired';
+      default: return status;
+    }
+  };
+
+  const QuoteCard = ({ quote }: { quote: any }) => {
+    const customer = getCustomerById(quote.customerId);
+    const job = getJobById(quote.jobId);
     
     return (
       <Pressable
-        onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
+        onPress={() => {
+          // TODO: Navigate to quote detail screen
+          // For now, navigate to job detail to see the quote context
+          navigation.navigate('JobDetail', { jobId: quote.jobId });
+        }}
         className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100"
       >
         <View className="flex-row items-start justify-between">
           <View className="flex-1">
-            <Text className="font-semibold text-gray-900 text-lg" numberOfLines={1}>
-              {job.title}
+            <View className="flex-row items-center mb-2">
+              <Text className="font-bold text-blue-600 text-base mr-2">
+                {quote.quoteNumber}
+              </Text>
+              <View className={`px-2 py-1 rounded-full border ${getStatusColor(quote.status)}`}>
+                <Text className="text-xs font-medium">
+                  {getStatusLabel(quote.status)}
+                </Text>
+              </View>
+            </View>
+            
+            <Text className="font-semibold text-gray-900 text-lg mb-1" numberOfLines={1}>
+              {quote.title}
             </Text>
-            <Text className="text-gray-600 text-sm mt-1">
-              {customer?.name || 'Unknown Customer'}
-            </Text>
-            <Text className="text-gray-500 text-xs mt-1">
-              Created {format(new Date(job.createdAt), 'MMM d, yyyy')}
-            </Text>
-          </View>
-          <View className="items-end ml-3">
-            <Text className="font-bold text-gray-900 text-lg">
-              {formatCurrency(job.total)}
-            </Text>
-            <View className="bg-yellow-100 px-3 py-1 rounded-full mt-2">
-              <Text className="text-yellow-800 text-xs font-medium">
-                Quote
+            
+            <View className="flex-row items-center mb-1">
+              <Ionicons name="person-outline" size={14} color="#6B7280" />
+              <Text className="text-gray-600 text-sm ml-1" numberOfLines={1}>
+                {customer?.name || 'Unknown Customer'}
+              </Text>
+            </View>
+            
+            <View className="flex-row items-center">
+              <Ionicons name="briefcase-outline" size={14} color="#6B7280" />
+              <Text className="text-gray-600 text-sm ml-1" numberOfLines={1}>
+                {job?.title || 'Unknown Job'}
               </Text>
             </View>
           </View>
+          
+          <View className="items-end ml-3">
+            <Text className="font-bold text-gray-900 text-lg">
+              {formatCurrency(quote.total)}
+            </Text>
+            <Text className="text-gray-500 text-xs mt-1">
+              {format(new Date(quote.createdAt), 'MMM d, yyyy')}
+            </Text>
+          </View>
         </View>
         
-        {job.description && (
+        {quote.description && (
           <Text className="text-gray-600 text-sm mt-3" numberOfLines={2}>
-            {job.description}
+            {quote.description}
           </Text>
         )}
 
@@ -76,17 +123,20 @@ const QuotesScreen = () => {
           <View className="flex-row items-center">
             <Ionicons name="list-outline" size={16} color="#6B7280" />
             <Text className="text-gray-600 text-sm ml-1">
-              {job.items.length} items
+              {quote.items.length} items
             </Text>
           </View>
-          {job.dueDate && (
-            <View className="flex-row items-center">
-              <Ionicons name="calendar-outline" size={16} color="#6B7280" />
-              <Text className="text-gray-600 text-sm ml-1">
-                Due {format(new Date(job.dueDate), 'MMM d')}
-              </Text>
-            </View>
-          )}
+          
+          <View className="flex-row items-center">
+            {quote.validUntil && (
+              <>
+                <Ionicons name="time-outline" size={16} color="#6B7280" />
+                <Text className="text-gray-500 text-xs ml-1">
+                  Valid until {format(new Date(quote.validUntil), 'MMM d')}
+                </Text>
+              </>
+            )}
+          </View>
         </View>
       </Pressable>
     );
@@ -120,7 +170,7 @@ const QuotesScreen = () => {
 
       {/* Quotes List */}
       <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
-        {quotes.length === 0 ? (
+        {filteredQuotes.length === 0 ? (
           <View className="flex-1 items-center justify-center py-16">
             <Ionicons name="document-text-outline" size={64} color="#D1D5DB" />
             <Text className="text-gray-500 text-lg font-medium mt-4">
@@ -129,7 +179,7 @@ const QuotesScreen = () => {
             <Text className="text-gray-400 text-sm mt-1 text-center">
               {searchQuery 
                 ? 'Try adjusting your search query'
-                : 'Create your first quote to get started'
+                : 'Create your first quote to provide cost estimates'
               }
             </Text>
             {!searchQuery && (
@@ -143,8 +193,8 @@ const QuotesScreen = () => {
           </View>
         ) : (
           <>
-            {quotes.map((job) => (
-              <QuoteCard key={job.id} job={job} />
+            {filteredQuotes.map((quote) => (
+              <QuoteCard key={quote.id} quote={quote} />
             ))}
             <View className="h-4" />
           </>

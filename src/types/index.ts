@@ -40,22 +40,68 @@ export interface JobItem {
   description?: string;
 }
 
+// Updated Job interface - focused on project management
 export interface Job {
   id: string;
   customerId: string;
   title: string;
   description?: string;
-  status: 'quote' | 'approved' | 'in-progress' | 'completed' | 'cancelled';
+  status: 'active' | 'on-hold' | 'completed' | 'cancelled';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  startDate?: string;
+  dueDate?: string;
+  completedAt?: string;
+  estimatedHours?: number;
+  actualHours?: number;
+}
+
+// New Quote interface
+export interface Quote {
+  id: string;
+  jobId: string;
+  customerId: string;
+  quoteNumber: string;
+  title: string;
+  description?: string;
+  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
   items: JobItem[];
   subtotal: number;
   tax: number;
   taxRate: number;
   total: number;
   notes?: string;
+  validUntil?: string;
   createdAt: string;
   updatedAt: string;
-  dueDate?: string;
-  completedAt?: string;
+  sentAt?: string;
+  approvedAt?: string;
+}
+
+// New Invoice interface
+export interface Invoice {
+  id: string;
+  jobId: string;
+  customerId: string;
+  quoteId?: string; // Optional - can be created from quote or standalone
+  invoiceNumber: string;
+  title: string;
+  description?: string;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  items: JobItem[];
+  subtotal: number;
+  tax: number;
+  taxRate: number;
+  total: number;
+  notes?: string;
+  dueDate: string;
+  paymentTerms?: string;
+  createdAt: string;
+  updatedAt: string;
+  sentAt?: string;
+  paidAt?: string;
+  paidAmount?: number;
 }
 
 export interface User {
@@ -68,7 +114,7 @@ export interface User {
   lastSyncAt?: string;
 }
 
-export type SyncEntity = 'customers' | 'parts' | 'laborItems' | 'jobs' | 'jobItems';
+export type SyncEntity = 'customers' | 'parts' | 'laborItems' | 'jobs' | 'quotes' | 'invoices' | 'jobItems';
 
 export interface ChangeEvent {
   id: string;
@@ -89,4 +135,6 @@ export interface AppState {
   parts: Part[];
   laborItems: LaborItem[];
   jobs: Job[];
+  quotes: Quote[];
+  invoices: Invoice[];
 }

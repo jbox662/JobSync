@@ -1,7 +1,7 @@
 import { useJobStore } from '../state/store';
 
 export const generateMockData = () => {
-  const { addCustomer, addPart, addLaborItem, addJob } = useJobStore.getState();
+  const { addCustomer, addPart, addLaborItem, addJob, addQuote, addInvoice } = useJobStore.getState();
   
   // Add sample customers
   const customers = [
@@ -133,16 +133,62 @@ export const generateMockData = () => {
   const addedParts = store.parts.slice(-parts.length);
   const addedLabor = store.laborItems.slice(-laborItems.length);
 
-  // Create sample jobs with different statuses
+  // Create sample jobs (project containers without pricing)
   const jobs = [
     {
       customerId: addedCustomers[0].id,
       title: "Kitchen Renovation Project",
       description: "Complete kitchen renovation including cabinets, countertops, and lighting",
-      status: "in-progress" as const,
+      status: "active" as const,
+      estimatedHours: 120,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      notes: "Customer wants high-end finishes and modern appliances"
+    },
+    {
+      customerId: addedCustomers[1].id,
+      title: "Office Space Painting",
+      description: "Paint entire office space with modern color scheme",
+      status: "completed" as const,
+      estimatedHours: 40,
+      completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      notes: "Used eco-friendly paint as requested"
+    },
+    {
+      customerId: addedCustomers[2].id,
+      title: "Bathroom Floor Tiling",
+      description: "Install ceramic tiles in master bathroom",
+      status: "active" as const,
+      estimatedHours: 24,
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      customerId: addedCustomers[3].id,
+      title: "Security Upgrade",
+      description: "Install new window locks throughout office building",
+      status: "on-hold" as const,
+      estimatedHours: 16,
+      notes: "Waiting for final security specifications from client"
+    }
+  ];
+
+  jobs.forEach(jobData => {
+    addJob(jobData);
+  });
+
+  // Get the created jobs to create quotes and invoices for them
+  const createdJobs = store.jobs.slice(-jobs.length);
+
+  // Create sample quotes
+  const quotes = [
+    {
+      jobId: createdJobs[0].id,
+      customerId: createdJobs[0].customerId,
+      title: "Kitchen Renovation Quote",
+      description: "Materials and labor for complete kitchen renovation",
+      status: "approved" as const,
       items: [
         {
-          id: Date.now().toString() + "_1",
+          id: Date.now().toString() + "_q1",
           type: "part" as const,
           itemId: addedParts.find(p => p.name === "Kitchen Cabinet Hinge")?.id || "",
           quantity: 20,
@@ -151,7 +197,7 @@ export const generateMockData = () => {
           description: "Kitchen Cabinet Hinge"
         },
         {
-          id: Date.now().toString() + "_2",
+          id: Date.now().toString() + "_q2",
           type: "part" as const,
           itemId: addedParts.find(p => p.name === "LED Light Fixture")?.id || "",
           quantity: 3,
@@ -160,25 +206,28 @@ export const generateMockData = () => {
           description: "LED Light Fixture"
         },
         {
-          id: Date.now().toString() + "_3",
+          id: Date.now().toString() + "_q3",
           type: "labor" as const,
           itemId: addedLabor.find(l => l.description === "General Construction Labor")?.id || "",
-          quantity: 24,
+          quantity: 40,
           unitPrice: 45.00,
-          total: 1080,
+          total: 1800,
           description: "General Construction Labor"
         }
       ],
-      taxRate: 8.25
+      taxRate: 8.25,
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      approvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
-      customerId: addedCustomers[1].id,
-      title: "Office Space Painting",
-      description: "Paint entire office space with modern color scheme",
-      status: "quote" as const,
+      jobId: createdJobs[1].id,
+      customerId: createdJobs[1].customerId,
+      title: "Office Painting Quote",
+      description: "Materials and labor for office painting project",
+      status: "sent" as const,
       items: [
         {
-          id: Date.now().toString() + "_4",
+          id: Date.now().toString() + "_q4",
           type: "part" as const,
           itemId: addedParts.find(p => p.name === "Paint - Interior White")?.id || "",
           quantity: 8,
@@ -187,7 +236,7 @@ export const generateMockData = () => {
           description: "Paint - Interior White"
         },
         {
-          id: Date.now().toString() + "_5",
+          id: Date.now().toString() + "_q5",
           type: "labor" as const,
           itemId: addedLabor.find(l => l.description === "Painting and Finishing")?.id || "",
           quantity: 16,
@@ -196,70 +245,86 @@ export const generateMockData = () => {
           description: "Painting and Finishing"
         }
       ],
-      taxRate: 8.25
-    },
-    {
-      customerId: addedCustomers[2].id,
-      title: "Bathroom Floor Tiling",
-      description: "Install ceramic tiles in master bathroom",
-      status: "completed" as const,
-      items: [
-        {
-          id: Date.now().toString() + "_6",
-          type: "part" as const,
-          itemId: addedParts.find(p => p.name === "Ceramic Floor Tile")?.id || "",
-          quantity: 85,
-          unitPrice: 3.25,
-          total: 276.25,
-          description: "Ceramic Floor Tile"
-        },
-        {
-          id: Date.now().toString() + "_7",
-          type: "labor" as const,
-          itemId: addedLabor.find(l => l.description === "Tile Installation")?.id || "",
-          quantity: 12,
-          unitPrice: 55.00,
-          total: 660,
-          description: "Tile Installation"
-        }
-      ],
-      taxRate: 8.25
-    },
-    {
-      customerId: addedCustomers[3].id,
-      title: "Security Upgrade",
-      description: "Install new window locks throughout office building",
-      status: "approved" as const,
-      items: [
-        {
-          id: Date.now().toString() + "_8",
-          type: "part" as const,
-          itemId: addedParts.find(p => p.name === "Window Lock")?.id || "",
-          quantity: 15,
-          unitPrice: 18.75,
-          total: 281.25,
-          description: "Window Lock"
-        },
-        {
-          id: Date.now().toString() + "_9",
-          type: "labor" as const,
-          itemId: addedLabor.find(l => l.description === "General Construction Labor")?.id || "",
-          quantity: 8,
-          unitPrice: 45.00,
-          total: 360,
-          description: "General Construction Labor"
-        }
-      ],
-      taxRate: 8.25
+      taxRate: 8.25,
+      validUntil: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+      sentAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
     }
   ];
 
-  jobs.forEach(jobData => {
-    addJob({
-      ...jobData,
-      tax: 0 // Will be calculated by the store
-    });
+  quotes.forEach(quoteData => {
+    addQuote(quoteData);
   });
 
-  console.log("Mock data generated successfully!");
+  // Create sample invoices
+  const invoices = [
+    {
+      jobId: createdJobs[1].id,
+      customerId: createdJobs[1].customerId,
+      title: "Office Painting Invoice",
+      description: "Final invoice for completed office painting work",
+      status: "paid" as const,
+      items: [
+        {
+          id: Date.now().toString() + "_i1",
+          type: "part" as const,
+          itemId: addedParts.find(p => p.name === "Paint - Interior White")?.id || "",
+          quantity: 8,
+          unitPrice: 32.95,
+          total: 263.60,
+          description: "Paint - Interior White"
+        },
+        {
+          id: Date.now().toString() + "_i2",
+          type: "labor" as const,
+          itemId: addedLabor.find(l => l.description === "Painting and Finishing")?.id || "",
+          quantity: 18,
+          unitPrice: 35.00,
+          total: 630,
+          description: "Painting and Finishing (actual hours)"
+        }
+      ],
+      taxRate: 8.25,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      paymentTerms: "Net 30 days",
+      paidAt: new Date().toISOString(),
+      paidAmount: 823.12
+    },
+    {
+      jobId: createdJobs[0].id,
+      customerId: createdJobs[0].customerId,
+      title: "Kitchen Renovation - Progress Invoice #1",
+      description: "First progress invoice for kitchen renovation project",
+      status: "sent" as const,
+      items: [
+        {
+          id: Date.now().toString() + "_i3",
+          type: "part" as const,
+          itemId: addedParts.find(p => p.name === "Kitchen Cabinet Hinge")?.id || "",
+          quantity: 20,
+          unitPrice: 12.50,
+          total: 250,
+          description: "Kitchen Cabinet Hinge"
+        },
+        {
+          id: Date.now().toString() + "_i4",
+          type: "labor" as const,
+          itemId: addedLabor.find(l => l.description === "General Construction Labor")?.id || "",
+          quantity: 20,
+          unitPrice: 45.00,
+          total: 900,
+          description: "General Construction Labor - Phase 1"
+        }
+      ],
+      taxRate: 8.25,
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+      paymentTerms: "Net 15 days",
+      sentAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+    }
+  ];
+
+  invoices.forEach(invoiceData => {
+    addInvoice(invoiceData);
+  });
+
+  console.log("Mock data generated successfully with separated jobs, quotes, and invoices!");
 };
