@@ -28,6 +28,7 @@ import CreatePartScreen from '../screens/CreatePartScreen';
 import CreateLaborScreen from '../screens/CreateLaborScreen';
 import AccountSwitchScreen from '../screens/AccountSwitchScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import SupabaseSetupScreen from '../screens/SupabaseSetupScreen';
 
 export type RootDrawerParamList = {
   Dashboard: undefined;
@@ -52,6 +53,7 @@ export type RootStackParamList = {
   CreateLabor: undefined;
   ManageTeam: undefined;
   AccountSwitch: undefined;
+  SupabaseSetup: undefined;
   EditJob: { jobId: string };
   EditCustomer: { customerId: string };
 };
@@ -326,6 +328,16 @@ export const AppNavigator = () => {
         name="ManageTeam" 
         component={ManageTeamScreen}
         options={{ title: 'Manage Team', presentation: 'modal' }}
+      />
+      <Stack.Screen 
+        name="AccountSwitch" 
+        component={AccountSwitchScreen}
+        options={{ title: 'Account Switch', presentation: 'modal' }}
+      />
+      <Stack.Screen 
+        name="SupabaseSetup" 
+        component={SupabaseSetupScreen}
+        options={{ title: 'Supabase Setup', presentation: 'modal' }}
       />
     </Stack.Navigator>
   );

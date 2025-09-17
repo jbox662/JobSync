@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Customer, Part, LaborItem, Job, JobItem, Quote, Invoice, User, ChangeEvent, SyncConfig, BusinessSettings, DEFAULT_BUSINESS_SETTINGS } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { createBusiness, createInvites, acceptInvite, listMembers, pushChanges, pullChanges } from '../api/sync-service';
+import { createBusiness, createInvites, acceptInvite, listMembers, pushChanges, pullChanges } from '../api/supabase-sync';
 
 interface JobStore extends AppState {
   // Business settings
@@ -147,7 +147,10 @@ export const useJobStore = create<JobStore>()(
 
         // Sync
         deviceId: uuidv4(),
-        syncConfig: undefined,
+        syncConfig: {
+          baseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+          apiKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+        },
         setSyncConfig: (cfg) => set({ syncConfig: cfg }),
         outboxByUser: { [defaultId]: [] },
         lastSyncByUser: { [defaultId]: null },
@@ -156,7 +159,7 @@ export const useJobStore = create<JobStore>()(
 
         // Business actions
         linkBusinessOwner: async (name: string, ownerEmail: string) => {
-          const res = await createBusiness(name, ownerEmail, get().syncConfig);
+          const res = await createBusiness(name, ownerEmail);
           if (!res) return null;
           set({ workspaceId: res.workspaceId, role: 'owner', userEmail: ownerEmail, workspaceName: name });
           return { inviteCode: res.inviteCode };
@@ -164,10 +167,10 @@ export const useJobStore = create<JobStore>()(
         inviteMembers: async (emails: string[]) => {
           const ws = get().workspaceId;
           if (!ws) return [];
-          return await createInvites(ws, emails, get().syncConfig);
+          return await createInvites(ws, emails);
         },
         acceptBusinessInvite: async (email: string, inviteCode: string) => {
-          const res = await acceptInvite(email, inviteCode, get().deviceId, get().syncConfig);
+          const res = await acceptInvite(email, inviteCode, get().deviceId);
           if (!res) return false;
           set({ workspaceId: res.workspaceId, role: res.role, userEmail: email });
           return true;
@@ -175,7 +178,7 @@ export const useJobStore = create<JobStore>()(
         listWorkspaceMembers: async () => {
           const ws = get().workspaceId;
           if (!ws) return [];
-          return await listMembers(ws, get().syncConfig);
+          return await listMembers(ws);
         },
         logout: () => {
           set({ userEmail: null, role: null, workspaceId: null });
@@ -190,12 +193,11 @@ export const useJobStore = create<JobStore>()(
           }
           const uid = get().currentUserId!;
           set({ isSyncing: true, syncError: null });
-          const cfg = get().syncConfig;
           const outbox = get().outboxByUser[uid] || [];
-          const okPush = await pushChanges({ workspaceId: ws, deviceId: get().deviceId, changes: outbox }, cfg);
+          const okPush = await pushChanges({ workspaceId: ws, deviceId: get().deviceId, changes: outbox });
           if (okPush) set({ outboxByUser: { ...get().outboxByUser, [uid]: [] } });
           const since = get().lastSyncByUser[uid] || null;
-          const pull = await pullChanges(ws, since, cfg);
+          const pull = await pullChanges(ws, since);
           if (pull && pull.changes.length > 0) {
             const slice = get().dataByUser[uid];
             let { customers, parts, laborItems, jobs } = slice;

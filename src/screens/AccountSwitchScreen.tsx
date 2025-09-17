@@ -46,23 +46,13 @@ const SyncSection = () => {
         </Pressable>
       </View>
 
-      <Text className="text-gray-900 font-semibold mb-2">Backend Config</Text>
-      <TextInput
-        value={baseUrl}
-        onChangeText={setBaseUrl}
-        placeholder="Base URL (e.g. https://api.example.com)"
-        className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mb-2"
-        placeholderTextColor="#9CA3AF"
-      />
-      <TextInput
-        value={apiKey}
-        onChangeText={setApiKey}
-        placeholder="API Key"
-        className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mb-3"
-        placeholderTextColor="#9CA3AF"
-      />
-      <Pressable onPress={() => setSyncConfig({ baseUrl: baseUrl.trim(), apiKey: apiKey.trim() })} className="py-3 rounded-lg bg-blue-600 items-center mb-4">
-        <Text className="text-white font-medium">Save Config</Text>
+      <Text className="text-gray-900 font-semibold mb-2">Supabase Configuration</Text>
+      <Pressable 
+        onPress={() => (navigation as any).navigate('SupabaseSetup')}
+        className="py-3 rounded-lg bg-purple-600 items-center mb-4 flex-row justify-center"
+      >
+        <Ionicons name="settings-outline" size={20} color="white" />
+        <Text className="text-white font-medium ml-2">Configure Supabase</Text>
       </Pressable>
 
       <Text className="text-gray-900 font-semibold mb-2">Workspace</Text>

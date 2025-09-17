@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 import CreateBusinessScreen from "./src/screens/CreateBusinessScreen";
 import JoinBusinessScreen from "./src/screens/JoinBusinessScreen";
+import AccountSwitchScreen from "./src/screens/AccountSwitchScreen";
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
