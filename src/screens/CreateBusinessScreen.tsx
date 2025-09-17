@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useJobStore } from "../state/store";
+import { generateMockData } from "../utils/mockData";
 
 const CreateBusinessScreen = () => {
   const insets = useSafeAreaInsets();
@@ -19,6 +20,12 @@ const CreateBusinessScreen = () => {
     const res = await linkBusinessOwner(name.trim(), email.trim());
     if (!res) { setError("Failed to create business. Check backend config."); return; }
     setInviteCode(res.inviteCode || null);
+    
+    // Generate mock data for demo purposes
+    setTimeout(() => {
+      generateMockData();
+    }, 1000);
+    
     // Navigate into app stack
     // @ts-ignore
     navigation.navigate("Main" as never);
@@ -54,6 +61,20 @@ const CreateBusinessScreen = () => {
           <Text className="text-gray-500">Already have an invite?</Text>
           <Pressable onPress={() => navigation.navigate("JoinBusiness" as never)} className="mt-2 px-4 py-2 rounded-lg bg-gray-900">
             <Text className="text-white font-medium">Join a Business</Text>
+          </Pressable>
+        </View>
+
+        <View className="mt-6 items-center">
+          <Text className="text-gray-400 text-sm">Want to try the demo?</Text>
+          <Pressable 
+            onPress={() => {
+              generateMockData();
+              // @ts-ignore
+              navigation.navigate("Main" as never);
+            }} 
+            className="mt-2 px-4 py-2 rounded-lg bg-green-600"
+          >
+            <Text className="text-white font-medium">Try Demo with Sample Data</Text>
           </Pressable>
         </View>
       </ScrollView>
