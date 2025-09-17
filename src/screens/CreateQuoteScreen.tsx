@@ -8,13 +8,13 @@ import { JobItem } from '../types';
 const CreateQuoteScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { addJob, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById } = useJobStore();
+  const { addQuote, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, settings } = useJobStore();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState((route.params as any)?.customerId || '');
   const [selectedJob, setSelectedJob] = useState((route.params as any)?.jobId || '');
-  const [taxRate, setTaxRate] = useState('8.25');
+  const [taxRate, setTaxRate] = useState(settings.defaultTaxRate.toString());
   const [validUntil, setValidUntil] = useState('');
   const [items, setItems] = useState<JobItem[]>([]);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -40,7 +40,8 @@ const CreateQuoteScreen = () => {
 
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const tax = subtotal * (parseFloat(taxRate) / 100);
+    const rate = settings.enableTax ? parseFloat(taxRate) || 0 : 0;
+    const tax = subtotal * (rate / 100);
     const total = subtotal + tax;
     return { subtotal, tax, total };
   };
@@ -115,15 +116,16 @@ const CreateQuoteScreen = () => {
       return;
     }
 
-    addJob({
+    addQuote({
+      jobId: selectedJob,
+      customerId: selectedCustomer,
       title: title.trim(),
       description: description.trim() || undefined,
-      customerId: selectedCustomer,
-      status: 'quote',
+      status: 'draft',
       items,
-      taxRate: parseFloat(taxRate) || 0,
-      tax,
+      taxRate: settings.enableTax ? parseFloat(taxRate) || 0 : 0,
       notes: validUntil ? `Valid until: ${validUntil}` : undefined,
+      validUntil: validUntil ? new Date(validUntil).toISOString() : undefined,
     });
 
     navigation.goBack();
@@ -283,18 +285,20 @@ const CreateQuoteScreen = () => {
           </View>
 
           <View className="flex-row">
-            <View className="flex-1 mr-2">
-              <Text className="text-gray-700 font-medium mb-2">Tax Rate (%)</Text>
-              <TextInput
-                value={taxRate}
-                onChangeText={setTaxRate}
-                placeholder="8.25"
-                keyboardType="decimal-pad"
-                className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-            <View className="flex-1 ml-2">
+            {settings.enableTax && (
+              <View className="flex-1 mr-2">
+                <Text className="text-gray-700 font-medium mb-2">Tax Rate (%)</Text>
+                <TextInput
+                  value={taxRate}
+                  onChangeText={setTaxRate}
+                  placeholder={settings.defaultTaxRate.toString()}
+                  keyboardType="decimal-pad"
+                  className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+            )}
+            <View className={`flex-1 ${settings.enableTax ? 'ml-2' : ''}`}>
               <Text className="text-gray-700 font-medium mb-2">Valid Until</Text>
               <TextInput
                 value={validUntil}

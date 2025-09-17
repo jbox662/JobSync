@@ -27,6 +27,7 @@ import CreateCustomerScreen from '../screens/CreateCustomerScreen';
 import CreatePartScreen from '../screens/CreatePartScreen';
 import CreateLaborScreen from '../screens/CreateLaborScreen';
 import AccountSwitchScreen from '../screens/AccountSwitchScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 export type RootDrawerParamList = {
   Dashboard: undefined;
@@ -36,6 +37,7 @@ export type RootDrawerParamList = {
   Customers: undefined;
   Parts: undefined;
   Labor: undefined;
+  Settings: undefined;
 };
 
 export type RootStackParamList = {
@@ -106,6 +108,7 @@ const CustomDrawerContent = (props: any) => {
     { name: 'Customers', icon: 'people-outline', label: 'Customers' },
     { name: 'Parts', icon: 'construct-outline', label: 'Parts' },
     { name: 'Labor', icon: 'time-outline', label: 'Labor' },
+    { name: 'Settings', icon: 'settings-outline', label: 'Settings' },
   ];
 
   return (
@@ -250,6 +253,11 @@ const DrawerNavigator = () => {
         name="Labor" 
         component={LaborScreen}
         options={{ title: 'Labor' }}
+      />
+      <Drawer.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
       />
     </Drawer.Navigator>
   );

@@ -138,3 +138,6 @@ export interface AppState {
   quotes: Quote[];
   invoices: Invoice[];
 }
+
+// Re-export settings types
+export * from './settings';

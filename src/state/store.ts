@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState, Customer, Part, LaborItem, Job, JobItem, Quote, Invoice, User, ChangeEvent, SyncConfig } from '../types';
+import { AppState, Customer, Part, LaborItem, Job, JobItem, Quote, Invoice, User, ChangeEvent, SyncConfig, BusinessSettings, DEFAULT_BUSINESS_SETTINGS } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { createBusiness, createInvites, acceptInvite, listMembers, pushChanges, pullChanges } from '../api/sync-service';
 
 interface JobStore extends AppState {
+  // Business settings
+  settings: BusinessSettings;
+  
   // Business auth/link
   userEmail: string | null;
   workspaceId: string | null;
@@ -71,13 +74,18 @@ interface JobStore extends AppState {
   getJobInvoices: (jobId: string) => Invoice[];
   generateQuoteNumber: () => string;
   generateInvoiceNumber: () => string;
-  calculateQuoteTotal: (items: JobItem[], taxRate: number) => { subtotal: number; tax: number; total: number };
-  calculateInvoiceTotal: (items: JobItem[], taxRate: number) => { subtotal: number; tax: number; total: number };
+  calculateQuoteTotal: (items: JobItem[], taxRate?: number) => { subtotal: number; tax: number; total: number };
+  calculateInvoiceTotal: (items: JobItem[], taxRate?: number) => { subtotal: number; tax: number; total: number };
+  
+  // Settings management
+  getSettings: () => BusinessSettings;
+  updateSettings: (updates: Partial<BusinessSettings>) => void;
+  resetSettings: () => void;
 }
 
-const calculateJobTotals = (items: JobItem[], taxRate: number) => {
+const calculateJobTotals = (items: JobItem[], taxRate: number, enableTax: boolean = true) => {
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const tax = subtotal * (taxRate / 100);
+  const tax = enableTax ? subtotal * (taxRate / 100) : 0;
   const total = subtotal + tax;
   return { subtotal, tax, total };
 };
@@ -111,6 +119,13 @@ export const useJobStore = create<JobStore>()(
       const defaultId = uuidv4();
 
       return {
+        // Business settings
+        settings: {
+          ...DEFAULT_BUSINESS_SETTINGS,
+          createdAt: now,
+          updatedAt: now
+        },
+
         // Active view
         customers: [],
         parts: [],
@@ -403,14 +418,44 @@ export const useJobStore = create<JobStore>()(
           const nextNumber = existingInvoices.length + 1;
           return `INV-${nextNumber.toString().padStart(4, '0')}`;
         },
-        calculateQuoteTotal: (items, taxRate) => calculateJobTotals(items, taxRate),
-        calculateInvoiceTotal: (items, taxRate) => calculateJobTotals(items, taxRate),
+        calculateQuoteTotal: (items, taxRate) => {
+          const settings = get().settings;
+          const rate = taxRate !== undefined ? taxRate : settings.defaultTaxRate;
+          return calculateJobTotals(items, rate, settings.enableTax);
+        },
+        calculateInvoiceTotal: (items, taxRate) => {
+          const settings = get().settings;
+          const rate = taxRate !== undefined ? taxRate : settings.defaultTaxRate;
+          return calculateJobTotals(items, rate, settings.enableTax);
+        },
+
+        // Settings management
+        getSettings: () => get().settings,
+        updateSettings: (updates) => {
+          const currentSettings = get().settings;
+          const updatedSettings = {
+            ...currentSettings,
+            ...updates,
+            updatedAt: new Date().toISOString()
+          };
+          set({ settings: updatedSettings });
+        },
+        resetSettings: () => {
+          const now = new Date().toISOString();
+          set({
+            settings: {
+              ...DEFAULT_BUSINESS_SETTINGS,
+              createdAt: now,
+              updatedAt: now
+            }
+          });
+        },
       };
     },
     {
       name: 'job-management-store',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 5,
+      version: 6,
       migrate: (state: any, version) => {
         if (version < 2) {
           const now = new Date().toISOString();
@@ -478,6 +523,18 @@ export const useJobStore = create<JobStore>()(
             quotes: migratedQuotes,
             invoices: [],
             dataByUser: updatedDataByUser
+          };
+        }
+        if (version < 6) {
+          // Add business settings with tax disabled by default
+          const now = new Date().toISOString();
+          return {
+            ...state,
+            settings: {
+              ...DEFAULT_BUSINESS_SETTINGS,
+              createdAt: now,
+              updatedAt: now
+            }
           };
         }
         return state as any;
