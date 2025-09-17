@@ -1,5 +1,5 @@
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
+-- Supabase Database Schema for Job Manager App
+-- Execute this entire script in your Supabase SQL Editor
 
 -- Create workspaces table
 CREATE TABLE workspaces (
