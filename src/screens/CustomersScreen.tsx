@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -10,6 +11,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CustomersScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const { customers, jobs } = useJobStore();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -51,13 +53,13 @@ const CustomersScreen = () => {
         className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100"
       >
         <View className="flex-row items-start">
-          <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-3">
+          <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-3 flex-shrink-0">
             <Text className="text-blue-600 font-semibold text-lg">
               {customer.name.charAt(0).toUpperCase()}
             </Text>
           </View>
           
-          <View className="flex-1">
+          <View className="flex-1 min-w-0">
             <Text className="font-semibold text-gray-900 text-lg" numberOfLines={1}>
               {customer.name}
             </Text>
@@ -68,11 +70,12 @@ const CustomersScreen = () => {
               </Text>
             )}
             
-            <View className="flex-row items-center mt-2">
+            {/* Contact Information - Vertical Stack */}
+            <View className="mt-2">
               {customer.email && (
-                <View className="flex-row items-center mr-4">
+                <View className="flex-row items-center mb-1">
                   <Ionicons name="mail-outline" size={14} color="#6B7280" />
-                  <Text className="text-gray-600 text-xs ml-1" numberOfLines={1}>
+                  <Text className="text-gray-600 text-xs ml-1 flex-1" numberOfLines={1}>
                     {customer.email}
                   </Text>
                 </View>
@@ -81,7 +84,7 @@ const CustomersScreen = () => {
               {customer.phone && (
                 <View className="flex-row items-center">
                   <Ionicons name="call-outline" size={14} color="#6B7280" />
-                  <Text className="text-gray-600 text-xs ml-1">
+                  <Text className="text-gray-600 text-xs ml-1 flex-1" numberOfLines={1}>
                     {customer.phone}
                   </Text>
                 </View>
@@ -91,7 +94,7 @@ const CustomersScreen = () => {
         </View>
 
         <View className="flex-row items-center justify-between mt-4 pt-3 border-t border-gray-100">
-          <View className="flex-row items-center">
+          <View className="flex-row items-center flex-1 mr-4">
             <Ionicons name="briefcase-outline" size={16} color="#6B7280" />
             <Text className="text-gray-600 text-sm ml-1">
               {jobCount} jobs
@@ -99,7 +102,7 @@ const CustomersScreen = () => {
           </View>
           
           {revenue > 0 && (
-            <View className="flex-row items-center">
+            <View className="flex-row items-center flex-shrink-0">
               <Ionicons name="trending-up-outline" size={16} color="#10B981" />
               <Text className="text-green-600 text-sm ml-1 font-medium">
                 {formatCurrency(revenue)}
@@ -138,7 +141,11 @@ const CustomersScreen = () => {
       </View>
 
       {/* Customers List */}
-      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1 px-4 pt-4" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+      >
         {filteredCustomers.length === 0 ? (
           <View className="flex-1 items-center justify-center py-16">
             <Ionicons name="people-outline" size={64} color="#D1D5DB" />
