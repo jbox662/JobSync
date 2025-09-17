@@ -62,58 +62,7 @@ const Drawer = createDrawerNavigator<RootDrawerParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const OnbStack = createNativeStackNavigator();
 
-const FooterSection = ({ navigation }: any) => {
-  const currentUserId = useJobStore((s) => s.currentUserId);
-  const users = useJobStore((s) => s.users);
-  const isSyncing = useJobStore((s) => s.isSyncing);
-  const lastSyncByUser = useJobStore((s) => s.lastSyncByUser);
-  const syncNow = useJobStore((s) => s.syncNow);
-  const isSupabaseConfigured = useJobStore((s) => s.isSupabaseConfigured);
-  const workspaceId = useJobStore((s) => s.workspaceId);
-  const active = users.find((u) => u.id === currentUserId);
-  const last = lastSyncByUser[currentUserId || ''] || null;
-  const email = useJobStore((s) => s.userEmail);
-  const role = useJobStore((s) => s.role);
-  return (
-    <View className="px-6 py-6 border-t border-gray-700">
-      <View className="flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <View className="w-10 h-10 bg-gray-700 rounded-full items-center justify-center mr-3">
-            <Ionicons name="person" size={20} color="#9CA3AF" />
-          </View>
-          <View>
-            <Text className="text-gray-300 font-medium">{email || 'Not signed in'}</Text>
-            <Text className="text-gray-500 text-sm">
-              {!isSupabaseConfigured ? 'Supabase not configured' :
-               !workspaceId ? 'Workspace not linked' :
-               last ? `Last sync ${last}` : 'Not synced'}
-            </Text>
-          </View>
-        </View>
-        <View className="flex-row">
-          <Pressable 
-            onPress={syncNow} 
-            disabled={!isSupabaseConfigured || !workspaceId || isSyncing}
-            className={`px-3 py-2 rounded-lg mr-2 ${
-              !isSupabaseConfigured || !workspaceId ? 'bg-gray-500' : 'bg-green-600'
-            }`}
-          >
-            <Text className="text-white font-medium">
-              {!isSupabaseConfigured ? 'Configure' :
-               !workspaceId ? 'Link workspace' :
-               isSyncing ? 'Syncing…' : 'Sync now'}
-            </Text>
-          </Pressable>
-          {role === 'owner' && (
-            <Pressable onPress={() => navigation.navigate('ManageTeam')} className="px-3 py-2 rounded-lg bg-gray-800">
-              <Text className="text-gray-200 font-medium">Manage Team</Text>
-            </Pressable>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-};
+
 
 const CustomDrawerContent = (props: any) => {
   const insets = useSafeAreaInsets();
@@ -130,7 +79,14 @@ const CustomDrawerContent = (props: any) => {
   ];
 
   return (
-    <View className="flex-1 bg-gray-900" style={{ paddingTop: insets.top }}>
+    <View 
+      className="flex-1 bg-gray-900" 
+      style={{ 
+        paddingTop: insets.top,
+        width: 280,
+        height: '100%'
+      }}
+    >
       {/* Header */}
       <View className="px-6 py-8 border-b border-gray-700">
         <View className="flex-row items-center">
@@ -178,39 +134,45 @@ const CustomDrawerContent = (props: any) => {
       </DrawerContentScrollView>
 
       {/* Footer */}
-      <View className="px-6 py-6 border-t border-gray-700">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center">
-            <View className="w-10 h-10 bg-gray-700 rounded-full items-center justify-center mr-3">
-              <Ionicons name="person" size={20} color="#9CA3AF" />
-            </View>
-            <View>
-              <Text className="text-gray-300 font-medium">{useJobStore.getState().users.find(u => u.id === useJobStore.getState().currentUserId)?.name || 'Account'}</Text>
-              <Text className="text-gray-500 text-sm">
-                {!useJobStore.getState().isSupabaseConfigured ? 'Supabase not configured' :
-                 !useJobStore.getState().workspaceId ? 'Workspace not linked' :
-                 useJobStore.getState().lastSyncByUser[useJobStore.getState().currentUserId || ''] || 'Not synced'}
-              </Text>
-            </View>
+      <View className="px-4 py-4 border-t border-gray-700 bg-gray-900" style={{ width: 280 }}>
+        {/* User Info */}
+        <View className="flex-row items-center mb-3">
+          <View className="w-10 h-10 bg-gray-700 rounded-full items-center justify-center mr-3">
+            <Ionicons name="person" size={20} color="#9CA3AF" />
           </View>
-          <View className="flex-row">
-            <Pressable onPress={() => props.navigation.navigate('AccountSwitch')} className="px-3 py-2 rounded-lg bg-gray-800 mr-2">
-              <Text className="text-gray-200 font-medium">Switch</Text>
-            </Pressable>
-            <Pressable 
-              onPress={() => useJobStore.getState().syncNow()} 
-              className={`px-3 py-2 rounded-lg ${
-                !useJobStore.getState().isSupabaseConfigured || !useJobStore.getState().workspaceId 
-                  ? 'bg-gray-500' : 'bg-green-600'
-              }`}
-            >
-              <Text className="text-white font-medium">
-                {!useJobStore.getState().isSupabaseConfigured ? 'Configure' :
-                 !useJobStore.getState().workspaceId ? 'Link' :
-                 useJobStore.getState().isSyncing ? 'Syncing…' : 'Sync'}
-              </Text>
-            </Pressable>
+          <View className="flex-1">
+            <Text className="text-gray-300 font-medium text-sm" numberOfLines={1}>
+              {useJobStore.getState().users.find(u => u.id === useJobStore.getState().currentUserId)?.name || 'Account'}
+            </Text>
+            <Text className="text-gray-500 text-xs" numberOfLines={1}>
+              {!useJobStore.getState().isSupabaseConfigured ? 'Supabase not configured' :
+               !useJobStore.getState().workspaceId ? 'Workspace not linked' :
+               useJobStore.getState().lastSyncByUser[useJobStore.getState().currentUserId || ''] || 'Not synced'}
+            </Text>
           </View>
+        </View>
+        
+        {/* Action Buttons */}
+        <View className="flex-row space-x-2">
+          <Pressable 
+            onPress={() => props.navigation.navigate('AccountSwitch')} 
+            className="flex-1 py-2 px-3 rounded-lg bg-gray-800"
+          >
+            <Text className="text-gray-200 font-medium text-center text-sm">Switch</Text>
+          </Pressable>
+          <Pressable 
+            onPress={() => useJobStore.getState().syncNow()} 
+            className={`flex-1 py-2 px-3 rounded-lg ${
+              !useJobStore.getState().isSupabaseConfigured || !useJobStore.getState().workspaceId 
+                ? 'bg-gray-500' : 'bg-green-600'
+            }`}
+          >
+            <Text className="text-white font-medium text-center text-sm">
+              {!useJobStore.getState().isSupabaseConfigured ? 'Setup' :
+               !useJobStore.getState().workspaceId ? 'Link' :
+               useJobStore.getState().isSyncing ? 'Sync...' : 'Sync'}
+            </Text>
+          </Pressable>
         </View>
       </View>
     </View>
@@ -235,10 +197,19 @@ const DrawerNavigator = () => {
           color: '#1F2937',
         },
         headerTintColor: '#1F2937',
-        drawerType: 'slide',
+        drawerType: 'front',
+        drawerPosition: 'left',
+        drawerHideStatusBarOnOpen: false,
+        drawerStatusBarAnimation: 'slide',
         drawerStyle: {
           width: 280,
+          backgroundColor: '#111827',
         },
+        overlayColor: 'rgba(0, 0, 0, 0.5)',
+        sceneContainerStyle: {
+          backgroundColor: '#FFFFFF',
+        },
+        drawerLockMode: undefined,
         swipeEnabled: true,
         swipeEdgeWidth: 50,
         headerLeft: () => (
