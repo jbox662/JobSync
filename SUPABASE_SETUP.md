@@ -116,22 +116,29 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 ## Troubleshooting
 
-### Common Issues:
+### Understanding Sync Status Messages:
 
-**"Missing Supabase environment variables"**
-- Check your Project URL and anon key are correct
-- Ensure `.env` file is properly formatted
-- Restart the app after configuration changes
+**"Supabase not configured"**
+- The app detected placeholder or invalid credentials
+- Use the "Configure Supabase" button or in-app setup screen
+- Ensure your Project URL matches format: `https://your-project.supabase.co`
+- Ensure your API key is a valid JWT starting with `eyJ`
 
 **"Workspace not linked"**
-- Create or join a business workspace first
-- Check that sync configuration is saved
-- Verify network connectivity
+- Supabase is configured but no business workspace is connected
+- Create a new business or join an existing one using invite codes
+- Use the onboarding screens when first opening the app
+
+**"Supabase connection failed"**
+- Configuration exists but connection test failed
+- Check internet connectivity
+- Verify Supabase project is active (not paused)
+- Test credentials using the "Test Connection" button in setup
 
 **"Sync failed"**
-- Check internet connection
-- Verify Supabase project is active
-- Check project database isn't paused (free tier)
+- Temporary network or server issue
+- Use "Retry Sync" or manual sync button
+- Check Supabase project logs for errors
 
 **Tables don't exist**
 - Run the `supabase-schema.sql` script
@@ -156,6 +163,8 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 - Uses anonymous access with Row Level Security
 - All data is accessible to anyone with credentials
 - Suitable for trusted team environments
+- Graceful fallback when not configured (offline-only mode)
+- Smart error detection with user-friendly status messages
 
 ### Production Recommendations:
 1. Implement proper authentication

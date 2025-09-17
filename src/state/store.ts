@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Customer, Part, LaborItem, Job, JobItem, Quote, Invoice, User, ChangeEvent, SyncConfig, BusinessSettings, DEFAULT_BUSINESS_SETTINGS } from '../types';
+import { getSupabaseConfigFromEnv } from '../utils/supabase-config';
 import { v4 as uuidv4 } from 'uuid';
 import { createBusiness, createInvites, acceptInvite, listMembers, pushChanges, pullChanges } from '../api/supabase-sync';
 
@@ -32,6 +33,8 @@ interface JobStore extends AppState {
   // Sync
   deviceId: string;
   syncConfig?: SyncConfig;
+  isSupabaseConfigured: boolean;
+  supabaseConfigError?: string;
   setSyncConfig: (cfg: SyncConfig) => void;
   outboxByUser: Record<string, ChangeEvent[]>;
   lastSyncByUser: Record<string, string | null>;
@@ -147,11 +150,15 @@ export const useJobStore = create<JobStore>()(
 
         // Sync
         deviceId: uuidv4(),
-        syncConfig: {
-          baseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-          apiKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
-        },
-        setSyncConfig: (cfg) => set({ syncConfig: cfg }),
+        ...(() => {
+          const envConfig = getSupabaseConfigFromEnv();
+          return {
+            syncConfig: envConfig.isValid ? { baseUrl: envConfig.url, apiKey: envConfig.anonKey } : undefined,
+            isSupabaseConfigured: envConfig.isValid,
+            supabaseConfigError: envConfig.error,
+          };
+        })(),
+        setSyncConfig: (cfg) => set({ syncConfig: cfg, isSupabaseConfigured: true, supabaseConfigError: undefined }),
         outboxByUser: { [defaultId]: [] },
         lastSyncByUser: { [defaultId]: null },
         isSyncing: false,
@@ -186,9 +193,18 @@ export const useJobStore = create<JobStore>()(
 
         // Sync Now
         syncNow: async () => {
-          const ws = get().workspaceId;
+          const state = get();
+          
+          // Check if Supabase is configured
+          if (!state.isSupabaseConfigured) {
+            set({ syncError: 'Supabase not configured. Use Settings to configure.' });
+            return;
+          }
+          
+          // Check if workspace is linked
+          const ws = state.workspaceId;
           if (!ws) {
-            set({ syncError: 'Workspace not linked' });
+            set({ syncError: 'Workspace not linked. Create or join a business first.' });
             return;
           }
           const uid = get().currentUserId!;

@@ -4,81 +4,35 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useJobStore } from '../state/store';
+import { SyncStatusIndicator } from '../components/SyncStatusIndicator';
 
 const SyncSection = () => {
-  const users = useJobStore((s) => s.users);
-  const currentUserId = useJobStore((s) => s.currentUserId);
-  const user = users.find((u) => u.id === currentUserId);
-  const syncConfig = useJobStore((s) => s.syncConfig);
-  const setSyncConfig = useJobStore((s) => s.setSyncConfig);
-  // Business create/join moved to dedicated onboarding screens
-  const syncNow = useJobStore((s) => s.syncNow);
-  const isSyncing = useJobStore((s) => s.isSyncing);
-  const syncError = useJobStore((s) => s.syncError);
-  const lastSync = useJobStore((s) => s.lastSyncByUser[currentUserId || ''] || null);
-
-  const [baseUrl, setBaseUrl] = useState(syncConfig?.baseUrl || '');
-  const [apiKey, setApiKey] = useState(syncConfig?.apiKey || '');
-  const [wsName, setWsName] = useState('');
-  const [invite, setInvite] = useState('');
+  const navigation = useNavigation();
 
   return (
-    <View className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-      <View className="mb-3">
-        <Text className="text-gray-700">Status</Text>
-        <Text className="text-gray-900 font-medium mt-1">
-          {user?.remoteWorkspaceId ? `Linked to ${user.remoteWorkspaceId}` : 'Not linked'}
+    <View className="space-y-4">
+      <SyncStatusIndicator 
+        onConfigurePress={() => (navigation as any).navigate('SupabaseSetup')}
+        onLinkWorkspacePress={() => {
+          // For now, just show an alert - in a real app you'd navigate to workspace linking
+          alert('Use the business creation or join screens from the main onboarding flow');
+        }}
+      />
+
+      <View className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+        <Text className="text-gray-900 font-semibold mb-3">Quick Actions</Text>
+        
+        <Pressable 
+          onPress={() => (navigation as any).navigate('SupabaseSetup')}
+          className="py-3 rounded-lg bg-purple-600 items-center mb-3 flex-row justify-center"
+        >
+          <Ionicons name="settings-outline" size={20} color="white" />
+          <Text className="text-white font-medium ml-2">Configure Supabase</Text>
+        </Pressable>
+
+        <Text className="text-gray-700 text-sm leading-5">
+          Use the business creation or join screens from the main app onboarding to link workspaces.
         </Text>
-        {user?.inviteCode && (
-          <Text className="text-gray-600 mt-1">Invite Code: {user.inviteCode}</Text>
-        )}
-        {lastSync && (
-          <Text className="text-gray-500 mt-1 text-sm">Last synced: {lastSync}</Text>
-        )}
-        {syncError && (
-          <Text className="text-red-600 mt-1">{syncError}</Text>
-        )}
-      </View>
-
-      <View className="flex-row mb-3">
-        <Pressable onPress={syncNow} disabled={!user?.remoteWorkspaceId || isSyncing} className={`flex-1 py-3 rounded-lg ${user?.remoteWorkspaceId ? 'bg-green-600' : 'bg-gray-300'}`}>
-          <Text className="text-white font-medium text-center">{isSyncing ? 'Syncing…' : 'Sync Now'}</Text>
-        </Pressable>
-      </View>
-
-      <Text className="text-gray-900 font-semibold mb-2">Supabase Configuration</Text>
-      <Pressable 
-        onPress={() => (navigation as any).navigate('SupabaseSetup')}
-        className="py-3 rounded-lg bg-purple-600 items-center mb-4 flex-row justify-center"
-      >
-        <Ionicons name="settings-outline" size={20} color="white" />
-        <Text className="text-white font-medium ml-2">Configure Supabase</Text>
-      </Pressable>
-
-      <Text className="text-gray-900 font-semibold mb-2">Workspace</Text>
-      <View className="flex-row mb-2">
-        <TextInput
-          value={wsName}
-          onChangeText={setWsName}
-          placeholder="Workspace name"
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mr-2"
-          placeholderTextColor="#9CA3AF"
-        />
-        <Pressable disabled className="px-4 rounded-lg bg-gray-400 items-center justify-center">
-          <Text className="text-white font-medium">Create (use Onboarding)</Text>
-        </Pressable>
-      </View>
-      <View className="flex-row">
-        <TextInput
-          value={invite}
-          onChangeText={setInvite}
-          placeholder="Invite code"
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-3 text-gray-900 bg-white mr-2"
-          placeholderTextColor="#9CA3AF"
-        />
-        <Pressable disabled className="px-4 rounded-lg bg-gray-400 items-center justify-center">
-          <Text className="text-white font-medium">Join (use Onboarding)</Text>
-        </Pressable>
       </View>
     </View>
   );

@@ -34,23 +34,29 @@ import { useJobStore } from "./src/state/store";
 
 export default function App() {
   const syncNow = useJobStore((s) => s.syncNow);
-  const syncConfig = useJobStore((s) => s.syncConfig);
+  const isSupabaseConfigured = useJobStore((s) => s.isSupabaseConfigured);
   const workspaceId = useJobStore((s) => s.workspaceId);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (st) => {
       if (st === "active") {
-        if (workspaceId && syncConfig) syncNow();
+        // Only sync if Supabase is properly configured and workspace is linked
+        if (isSupabaseConfigured && workspaceId) {
+          syncNow();
+        }
       }
     });
     const int = setInterval(() => {
-      if (workspaceId && syncConfig) syncNow();
+      // Only sync if Supabase is properly configured and workspace is linked
+      if (isSupabaseConfigured && workspaceId) {
+        syncNow();
+      }
     }, 30000);
     return () => {
       sub.remove();
       clearInterval(int);
     };
-  }, [workspaceId, syncConfig]);
+  }, [isSupabaseConfigured, workspaceId]);
 
   const OnbStack = createNativeStackNavigator();
   const needsOnboarding = !workspaceId;

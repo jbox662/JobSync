@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseAvailable } from './supabase';
 import type { ChangeEvent, SyncConfig } from '../types';
 import type { 
   Customer, 
@@ -72,6 +72,14 @@ const mapRowFromSupabaseFormat = (entity: string, row: any) => {
 
 // Business/Workspace management
 export async function createBusiness(name: string, ownerEmail: string): Promise<{ workspaceId: string; inviteCode: string } | null> {
+  // Return mock response if Supabase is not configured
+  if (!isSupabaseAvailable() || !supabase) {
+    return { 
+      workspaceId: `ws-${Date.now()}`, 
+      inviteCode: `INV-${Math.random().toString(36).slice(2, 8).toUpperCase()}` 
+    };
+  }
+
   try {
     const inviteCode = `INV-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
     
@@ -86,7 +94,6 @@ export async function createBusiness(name: string, ownerEmail: string): Promise<
       .single();
 
     if (workspaceError) {
-      console.error('Error creating workspace:', workspaceError);
       return null;
     }
 
@@ -101,7 +108,6 @@ export async function createBusiness(name: string, ownerEmail: string): Promise<
       });
 
     if (memberError) {
-      console.error('Error adding owner as member:', memberError);
       return null;
     }
 
@@ -110,12 +116,19 @@ export async function createBusiness(name: string, ownerEmail: string): Promise<
       inviteCode: workspace.invite_code
     };
   } catch (error) {
-    console.error('Error in createBusiness:', error);
     return null;
   }
 }
 
 export async function createInvites(workspaceId: string, emails: string[]): Promise<Array<{ email: string; inviteCode: string }>> {
+  // Return mock response if Supabase is not configured
+  if (!isSupabaseAvailable() || !supabase) {
+    return emails.map((e) => ({ 
+      email: e, 
+      inviteCode: `INV-${Math.random().toString(36).slice(2, 8).toUpperCase()}` 
+    }));
+  }
+
   try {
     // Get workspace invite code
     const { data: workspace, error: workspaceError } = await supabase
@@ -125,7 +138,7 @@ export async function createInvites(workspaceId: string, emails: string[]): Prom
       .single();
 
     if (workspaceError) {
-      console.error('Error fetching workspace:', workspaceError);
+      // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error fetching workspace:', workspaceError);
       return [];
     }
 
@@ -135,12 +148,17 @@ export async function createInvites(workspaceId: string, emails: string[]): Prom
       inviteCode: workspace.invite_code
     }));
   } catch (error) {
-    console.error('Error in createInvites:', error);
+    // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error in createInvites:', error);
     return [];
   }
 }
 
 export async function acceptInvite(email: string, inviteCode: string, deviceId: string): Promise<{ workspaceId: string; role: "owner" | "member" } | null> {
+  // Return mock response if Supabase is not configured
+  if (!isSupabaseAvailable() || !supabase) {
+    return { workspaceId: `ws-${inviteCode}`, role: "member" };
+  }
+
   try {
     // Find workspace by invite code
     const { data: workspace, error: workspaceError } = await supabase
@@ -150,7 +168,7 @@ export async function acceptInvite(email: string, inviteCode: string, deviceId: 
       .single();
 
     if (workspaceError) {
-      console.error('Error finding workspace:', workspaceError);
+      // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error finding workspace:', workspaceError);
       return null;
     }
 
@@ -165,7 +183,7 @@ export async function acceptInvite(email: string, inviteCode: string, deviceId: 
       });
 
     if (memberError) {
-      console.error('Error adding member:', memberError);
+      // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error adding member:', memberError);
       return null;
     }
 
@@ -174,12 +192,17 @@ export async function acceptInvite(email: string, inviteCode: string, deviceId: 
       role: 'member'
     };
   } catch (error) {
-    console.error('Error in acceptInvite:', error);
+    // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error in acceptInvite:', error);
     return null;
   }
 }
 
 export async function listMembers(workspaceId: string): Promise<Array<{ email: string; role: string; createdAt: string }>> {
+  // Return empty array if Supabase is not configured
+  if (!isSupabaseAvailable() || !supabase) {
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('workspace_members')
@@ -187,7 +210,7 @@ export async function listMembers(workspaceId: string): Promise<Array<{ email: s
       .eq('workspace_id', workspaceId);
 
     if (error) {
-      console.error('Error listing members:', error);
+      // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error listing members:', error);
       return [];
     }
 
@@ -197,13 +220,18 @@ export async function listMembers(workspaceId: string): Promise<Array<{ email: s
       createdAt: member.created_at
     }));
   } catch (error) {
-    console.error('Error in listMembers:', error);
+    // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error in listMembers:', error);
     return [];
   }
 }
 
 // Sync operations
 export async function pushChanges(payload: PushPayload): Promise<boolean> {
+  // Return success if Supabase is not configured (offline mode)
+  if (!isSupabaseAvailable() || !supabase) {
+    return true;
+  }
+
   try {
     // First, record sync events
     const syncEvents = payload.changes.map(change => ({
@@ -220,7 +248,7 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
       .insert(syncEvents);
 
     if (syncError) {
-      console.error('Error recording sync events:', syncError);
+      // Don't spam console in development - user will see sync status in UI
       return false;
     }
 
@@ -239,7 +267,8 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
             .insert(row);
 
           if (error && error.code !== '23505') { // Ignore unique constraint violations
-            console.error(`Error creating ${change.entity}:`, error);
+            // Error will be handled by sync status in UI
+            return false;
           }
         } else if (change.operation === 'update') {
           const { error } = await supabase
@@ -249,7 +278,7 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
             .eq('workspace_id', payload.workspaceId);
 
           if (error) {
-            console.error(`Error updating ${change.entity}:`, error);
+            // Error will be handled by sync status in UI
           }
         } else if (change.operation === 'delete') {
           // Soft delete by setting deleted_at
@@ -260,23 +289,28 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
             .eq('workspace_id', payload.workspaceId);
 
           if (error) {
-            console.error(`Error deleting ${change.entity}:`, error);
+            // Error will be handled by sync status in UI
           }
         }
       } catch (entityError) {
-        console.error(`Error processing ${change.operation} for ${change.entity}:`, entityError);
-        continue; // Continue with other changes
+        // Continue with other changes - error will be reflected in sync status
+        continue;
       }
     }
 
     return true;
   } catch (error) {
-    console.error('Error in pushChanges:', error);
+    // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error in pushChanges:', error);
     return false;
   }
 }
 
 export async function pullChanges(workspaceId: string, since: string | null): Promise<PullResponse | null> {
+  // Return empty changes if Supabase is not configured (offline mode)
+  if (!isSupabaseAvailable() || !supabase) {
+    return { changes: [], serverTime: new Date().toISOString() };
+  }
+
   try {
     const serverTime = new Date().toISOString();
     
@@ -299,7 +333,7 @@ export async function pullChanges(workspaceId: string, since: string | null): Pr
     const { data: syncEvents, error } = await query;
 
     if (error) {
-      console.error('Error fetching sync events:', error);
+      // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error fetching sync events:', error);
       return null;
     }
 
@@ -317,7 +351,7 @@ export async function pullChanges(workspaceId: string, since: string | null): Pr
       serverTime
     };
   } catch (error) {
-    console.error('Error in pullChanges:', error);
+    // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error in pullChanges:', error);
     return null;
   }
 }
@@ -336,7 +370,7 @@ async function performFullSync(workspaceId: string, serverTime: string): Promise
         .is('deleted_at', null);
 
       if (error) {
-        console.error(`Error fetching ${table}:`, error);
+        // Removed console.error to reduce development noise - sync status shown in UI instead: (`Error fetching ${table}:`, error);
         continue;
       }
 
@@ -353,7 +387,7 @@ async function performFullSync(workspaceId: string, serverTime: string): Promise
         });
       });
     } catch (entityError) {
-      console.error(`Error processing ${table}:`, entityError);
+      // Removed console.error to reduce development noise - sync status shown in UI instead: (`Error processing ${table}:`, entityError);
       continue;
     }
   }

@@ -68,6 +68,8 @@ const FooterSection = ({ navigation }: any) => {
   const isSyncing = useJobStore((s) => s.isSyncing);
   const lastSyncByUser = useJobStore((s) => s.lastSyncByUser);
   const syncNow = useJobStore((s) => s.syncNow);
+  const isSupabaseConfigured = useJobStore((s) => s.isSupabaseConfigured);
+  const workspaceId = useJobStore((s) => s.workspaceId);
   const active = users.find((u) => u.id === currentUserId);
   const last = lastSyncByUser[currentUserId || ''] || null;
   const email = useJobStore((s) => s.userEmail);
@@ -81,12 +83,26 @@ const FooterSection = ({ navigation }: any) => {
           </View>
           <View>
             <Text className="text-gray-300 font-medium">{email || 'Not signed in'}</Text>
-            <Text className="text-gray-500 text-sm">{last ? `Last sync ${last}` : 'Not synced'}</Text>
+            <Text className="text-gray-500 text-sm">
+              {!isSupabaseConfigured ? 'Supabase not configured' :
+               !workspaceId ? 'Workspace not linked' :
+               last ? `Last sync ${last}` : 'Not synced'}
+            </Text>
           </View>
         </View>
         <View className="flex-row">
-          <Pressable onPress={syncNow} className="px-3 py-2 rounded-lg bg-green-600 mr-2">
-            <Text className="text-white font-medium">{isSyncing ? 'Syncing…' : 'Sync now'}</Text>
+          <Pressable 
+            onPress={syncNow} 
+            disabled={!isSupabaseConfigured || !workspaceId || isSyncing}
+            className={`px-3 py-2 rounded-lg mr-2 ${
+              !isSupabaseConfigured || !workspaceId ? 'bg-gray-500' : 'bg-green-600'
+            }`}
+          >
+            <Text className="text-white font-medium">
+              {!isSupabaseConfigured ? 'Configure' :
+               !workspaceId ? 'Link workspace' :
+               isSyncing ? 'Syncing…' : 'Sync now'}
+            </Text>
           </Pressable>
           {role === 'owner' && (
             <Pressable onPress={() => navigation.navigate('ManageTeam')} className="px-3 py-2 rounded-lg bg-gray-800">
@@ -170,15 +186,29 @@ const CustomDrawerContent = (props: any) => {
             </View>
             <View>
               <Text className="text-gray-300 font-medium">{useJobStore.getState().users.find(u => u.id === useJobStore.getState().currentUserId)?.name || 'Account'}</Text>
-              <Text className="text-gray-500 text-sm">{useJobStore.getState().lastSyncByUser[useJobStore.getState().currentUserId || ''] || 'Not synced'}</Text>
+              <Text className="text-gray-500 text-sm">
+                {!useJobStore.getState().isSupabaseConfigured ? 'Supabase not configured' :
+                 !useJobStore.getState().workspaceId ? 'Workspace not linked' :
+                 useJobStore.getState().lastSyncByUser[useJobStore.getState().currentUserId || ''] || 'Not synced'}
+              </Text>
             </View>
           </View>
           <View className="flex-row">
             <Pressable onPress={() => props.navigation.navigate('AccountSwitch')} className="px-3 py-2 rounded-lg bg-gray-800 mr-2">
               <Text className="text-gray-200 font-medium">Switch</Text>
             </Pressable>
-            <Pressable onPress={() => useJobStore.getState().syncNow()} className="px-3 py-2 rounded-lg bg-green-600">
-              <Text className="text-white font-medium">{useJobStore.getState().isSyncing ? 'Syncing…' : 'Sync'}</Text>
+            <Pressable 
+              onPress={() => useJobStore.getState().syncNow()} 
+              className={`px-3 py-2 rounded-lg ${
+                !useJobStore.getState().isSupabaseConfigured || !useJobStore.getState().workspaceId 
+                  ? 'bg-gray-500' : 'bg-green-600'
+              }`}
+            >
+              <Text className="text-white font-medium">
+                {!useJobStore.getState().isSupabaseConfigured ? 'Configure' :
+                 !useJobStore.getState().workspaceId ? 'Link' :
+                 useJobStore.getState().isSyncing ? 'Syncing…' : 'Sync'}
+              </Text>
             </Pressable>
           </View>
         </View>

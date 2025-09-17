@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, Alert, ScrollView } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { getSupabaseConfigFromEnv, testSupabaseConnection } from '../utils/supabase-config';
 
 const SUPABASE_CONFIG_KEY = 'supabase_config';
 
@@ -15,9 +16,20 @@ export default function SupabaseSetupScreen({ navigation }: any) {
   const [url, setUrl] = useState('');
   const [anonKey, setAnonKey] = useState('');
   const [loading, setLoading] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [envConfig, setEnvConfig] = useState(getSupabaseConfigFromEnv());
 
   const loadExistingConfig = async () => {
     try {
+      // Check environment first
+      const envConfig = getSupabaseConfigFromEnv();
+      if (envConfig.isValid) {
+        setUrl(envConfig.url);
+        setAnonKey(envConfig.anonKey);
+        return;
+      }
+      
+      // Then check AsyncStorage
       const stored = await AsyncStorage.getItem(SUPABASE_CONFIG_KEY);
       if (stored) {
         const config: SupabaseConfig = JSON.parse(stored);
@@ -26,6 +38,27 @@ export default function SupabaseSetupScreen({ navigation }: any) {
       }
     } catch (error) {
       console.error('Error loading config:', error);
+    }
+  };
+
+  const testConnection = async () => {
+    if (!url || !anonKey) {
+      Alert.alert('Error', 'Please enter both URL and API key first');
+      return;
+    }
+
+    setTesting(true);
+    try {
+      const result = await testSupabaseConnection(url, anonKey);
+      if (result.success) {
+        Alert.alert('Success', 'Successfully connected to Supabase!');
+      } else {
+        Alert.alert('Connection Failed', result.error || 'Unknown error');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to test connection');
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -98,6 +131,26 @@ export default function SupabaseSetupScreen({ navigation }: any) {
       </View>
 
       <ScrollView className="flex-1 p-4">
+        {/* Current Status */}
+        <View className={`p-4 rounded-lg mb-4 ${envConfig.isValid ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
+          <View className="flex-row items-center mb-2">
+            <Ionicons 
+              name={envConfig.isValid ? "checkmark-circle" : "warning"} 
+              size={20} 
+              color={envConfig.isValid ? "#059669" : "#d97706"} 
+            />
+            <Text className={`ml-2 font-semibold ${envConfig.isValid ? 'text-green-900' : 'text-amber-900'}`}>
+              Current Status
+            </Text>
+          </View>
+          <Text className={`text-sm leading-5 ${envConfig.isValid ? 'text-green-800' : 'text-amber-800'}`}>
+            {envConfig.isValid ? 
+              'Supabase is properly configured in your environment' : 
+              `Configuration needed: ${envConfig.error}`
+            }
+          </Text>
+        </View>
+
         <View className="bg-blue-50 p-4 rounded-lg mb-6">
           <View className="flex-row items-center mb-2">
             <Ionicons name="information-circle" size={20} color="#2563eb" />
@@ -144,6 +197,18 @@ export default function SupabaseSetupScreen({ navigation }: any) {
           </View>
 
           <View className="pt-4 space-y-3">
+            <Pressable
+              onPress={testConnection}
+              disabled={testing || !url || !anonKey}
+              className={`py-3 rounded-lg ${
+                testing || !url || !anonKey ? 'bg-gray-400' : 'bg-purple-600'
+              }`}
+            >
+              <Text className="text-white text-center font-semibold">
+                {testing ? 'Testing...' : 'Test Connection'}
+              </Text>
+            </Pressable>
+
             <Pressable
               onPress={saveConfig}
               disabled={loading}

@@ -1,18 +1,37 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
+import { getSupabaseConfigFromEnv } from '../utils/supabase-config';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// Get configuration from environment
+const config = getSupabaseConfigFromEnv();
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+// Only create client if configuration is valid
+let supabaseClient: SupabaseClient<Database> | null = null;
+
+if (config.isValid) {
+  try {
+    supabaseClient = createClient<Database>(config.url, config.anonKey, {
+      auth: {
+        storage: require('@react-native-async-storage/async-storage').default,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
+  } catch (error) {
+    console.warn('Failed to create Supabase client:', error);
+    supabaseClient = null;
+  }
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: require('@react-native-async-storage/async-storage').default,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+// Export the client (can be null if not configured)
+export const supabase = supabaseClient;
+
+// Export configuration status
+export const isSupabaseConfigured = config.isValid;
+export const supabaseConfigError = config.error;
+
+// Helper to check if Supabase is available
+export const isSupabaseAvailable = (): boolean => {
+  return supabaseClient !== null;
+};
