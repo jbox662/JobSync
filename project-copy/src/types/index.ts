@@ -1,0 +1,143 @@
+export interface Customer {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  company?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Part {
+  id: string;
+  name: string;
+  description?: string;
+  unitPrice: number;
+  stock: number;
+  sku?: string;
+  category?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LaborItem {
+  id: string;
+  description: string;
+  hourlyRate: number;
+  category?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobItem {
+  id: string;
+  type: 'part' | 'labor';
+  itemId: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  description?: string;
+}
+
+// Updated Job interface - focused on project management
+export interface Job {
+  id: string;
+  customerId: string;
+  title: string;
+  description?: string;
+  status: 'active' | 'on-hold' | 'completed' | 'cancelled';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  startDate?: string;
+  dueDate?: string;
+  completedAt?: string;
+  estimatedHours?: number;
+  actualHours?: number;
+}
+
+// New Quote interface
+export interface Quote {
+  id: string;
+  jobId: string;
+  customerId: string;
+  quoteNumber: string;
+  title: string;
+  description?: string;
+  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
+  items: JobItem[];
+  subtotal: number;
+  tax: number;
+  taxRate: number;
+  total: number;
+  notes?: string;
+  validUntil?: string;
+  createdAt: string;
+  updatedAt: string;
+  sentAt?: string;
+  approvedAt?: string;
+}
+
+// New Invoice interface
+export interface Invoice {
+  id: string;
+  jobId: string;
+  customerId: string;
+  quoteId?: string; // Optional - can be created from quote or standalone
+  invoiceNumber: string;
+  title: string;
+  description?: string;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  items: JobItem[];
+  subtotal: number;
+  tax: number;
+  taxRate: number;
+  total: number;
+  notes?: string;
+  dueDate: string;
+  paymentTerms?: string;
+  createdAt: string;
+  updatedAt: string;
+  sentAt?: string;
+  paidAt?: string;
+  paidAmount?: number;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  remoteWorkspaceId?: string;
+  inviteCode?: string;
+  lastSyncAt?: string;
+}
+
+export type SyncEntity = 'customers' | 'parts' | 'laborItems' | 'jobs' | 'quotes' | 'invoices' | 'jobItems';
+
+export interface ChangeEvent {
+  id: string;
+  entity: SyncEntity;
+  operation: 'create' | 'update' | 'delete';
+  row: any;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface SyncConfig {
+  baseUrl: string;
+  apiKey: string;
+}
+
+export interface AppState {
+  customers: Customer[];
+  parts: Part[];
+  laborItems: LaborItem[];
+  jobs: Job[];
+  quotes: Quote[];
+  invoices: Invoice[];
+}
+
+// Re-export settings types
+export * from './settings';
