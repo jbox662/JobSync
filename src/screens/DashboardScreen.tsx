@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
+import { generateMockData } from '../utils/mockData';
 import { format } from 'date-fns';
 
 const DashboardScreen = () => {
@@ -11,14 +12,16 @@ const DashboardScreen = () => {
 
   // Calculate stats
   const totalJobs = jobs.length;
-  const activeJobs = jobs.filter(job => job.status === 'in-progress').length;
+  const activeJobs = jobs.filter(job => job.status === 'active').length;
   const completedJobs = jobs.filter(job => job.status === 'completed').length;
-  const pendingQuotes = jobs.filter(job => job.status === 'quote').length;
-  const approvedInvoices = jobs.filter(job => job.status === 'approved').length;
+  const pendingQuotes = useJobStore((s) => s.quotes.filter(q => ['draft', 'sent'].includes(q.status)).length);
+  const approvedInvoices = useJobStore((s) => s.invoices.filter(i => i.status === 'paid').length);
   
-  const totalRevenue = jobs
-    .filter(job => job.status === 'completed')
-    .reduce((sum, job) => sum + job.total, 0);
+  // Calculate total revenue from paid invoices instead of jobs
+  const { invoices } = useJobStore();
+  const totalRevenue = invoices
+    .filter(invoice => invoice.status === 'paid')
+    .reduce((sum, invoice) => sum + invoice.total, 0);
 
   const recentJobs = jobs
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
@@ -151,6 +154,30 @@ const DashboardScreen = () => {
           </View>
         </View>
 
+        {/* Sample Data Generation */}
+        {totalJobs === 0 && (
+          <View className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+            <View className="items-center">
+              <View className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center mb-4">
+                <Ionicons name="document-outline" size={32} color="#3B82F6" />
+              </View>
+              <Text className="text-lg font-semibold text-gray-900 mb-2">Get Started</Text>
+              <Text className="text-gray-600 text-center mb-4">
+                Generate sample data to explore all features of the Job Manager app
+              </Text>
+              <Pressable
+                onPress={() => {
+                  generateMockData();
+                  console.log('Sample data generated successfully!');
+                }}
+                className="bg-blue-600 rounded-xl px-6 py-3 shadow-sm"
+              >
+                <Text className="text-white font-semibold text-base">Generate Sample Data</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         {/* Recent Jobs */}
         {recentJobs.length > 0 && (
           <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -175,12 +202,12 @@ const DashboardScreen = () => {
                       </Text>
                     </View>
                     <View className="items-end ml-3">
-                      <Text className="font-semibold text-gray-900">
-                        {formatCurrency(job.total)}
+                      <Text className="font-medium text-gray-600 text-sm">
+                        {job.estimatedHours ? `${job.estimatedHours}h est.` : 'No estimate'}
                       </Text>
                       <View className={`px-2 py-1 rounded-full mt-1 ${getStatusColor(job.status)}`}>
                         <Text className="text-xs font-medium">
-                          {job.status === 'quote' ? 'Quote' : job.status === 'approved' ? 'Invoice' : job.status.replace('-', ' ')}
+                          {job.status.replace('-', ' ')}
                         </Text>
                       </View>
                     </View>

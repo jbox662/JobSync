@@ -72,12 +72,9 @@ const mapRowFromSupabaseFormat = (entity: string, row: any) => {
 
 // Business/Workspace management
 export async function createBusiness(name: string, ownerEmail: string): Promise<{ workspaceId: string; inviteCode: string } | null> {
-  // Return mock response if Supabase is not configured
+  // Require Supabase configuration for production
   if (!isSupabaseAvailable() || !supabase) {
-    return { 
-      workspaceId: `ws-${Date.now()}`, 
-      inviteCode: `INV-${Math.random().toString(36).slice(2, 8).toUpperCase()}` 
-    };
+    return null;
   }
 
   try {

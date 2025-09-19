@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { format } from 'date-fns';
+import EmailButton from '../components/EmailButton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -154,11 +155,23 @@ const InvoicesScreen = () => {
             {invoice.paymentTerms && (
               <>
                 <Ionicons name="card-outline" size={16} color="#6B7280" />
-                <Text className="text-gray-500 text-xs ml-1">
+                <Text className="text-gray-500 text-xs ml-1 mr-3">
                   {invoice.paymentTerms}
                 </Text>
               </>
             )}
+            
+            {/* Email Button */}
+            <EmailButton
+              type="invoice"
+              document={invoice}
+              variant="icon"
+              size="small"
+              onEmailSent={() => {
+                // Refresh the invoice list or show success feedback
+                console.log('Invoice emailed successfully');
+              }}
+            />
           </View>
         </View>
       </Pressable>

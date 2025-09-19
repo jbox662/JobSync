@@ -24,6 +24,7 @@ import CreateJobScreen from '../screens/CreateJobScreen';
 import CreateQuoteScreen from '../screens/CreateQuoteScreen';
 import CreateInvoiceScreen from '../screens/CreateInvoiceScreen';
 import CreateCustomerScreen from '../screens/CreateCustomerScreen';
+import EditCustomerScreen from '../screens/EditCustomerScreen';
 import CreatePartScreen from '../screens/CreatePartScreen';
 import CreateLaborScreen from '../screens/CreateLaborScreen';
 import AccountSwitchScreen from '../screens/AccountSwitchScreen';
@@ -314,6 +315,11 @@ export const AppNavigator = () => {
         name="CreateCustomer" 
         component={CreateCustomerScreen}
         options={{ title: 'New Customer', presentation: 'modal' }}
+      />
+      <Stack.Screen 
+        name="EditCustomer" 
+        component={EditCustomerScreen}
+        options={{ title: 'Edit Customer', presentation: 'modal' }}
       />
       <Stack.Screen 
         name="CreatePart" 

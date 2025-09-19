@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Switch, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
@@ -22,12 +22,12 @@ const SettingsScreen = () => {
     const validityDays = parseInt(defaultValidityDays);
     
     if (enableTax && (isNaN(taxRate) || taxRate < 0 || taxRate > 100)) {
-      Alert.alert('Error', 'Please enter a valid tax rate between 0 and 100');
+      console.log('Error: Please enter a valid tax rate between 0 and 100');
       return;
     }
     
     if (isNaN(validityDays) || validityDays < 1) {
-      Alert.alert('Error', 'Please enter a valid number of days for quote validity');
+      console.log('Error: Please enter a valid number of days for quote validity');
       return;
     }
 
@@ -42,34 +42,22 @@ const SettingsScreen = () => {
       defaultValidityDays: validityDays
     });
 
-    Alert.alert('Success', 'Settings saved successfully!');
+    console.log('Settings saved successfully!');
   };
 
   const handleReset = () => {
-    Alert.alert(
-      'Reset Settings',
-      'Are you sure you want to reset all settings to defaults? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            resetSettings();
-            const newSettings = useJobStore.getState().settings;
-            setEnableTax(newSettings.enableTax);
-            setDefaultTaxRate(newSettings.defaultTaxRate.toString());
-            setBusinessName(newSettings.businessName || '');
-            setBusinessEmail(newSettings.businessEmail || '');
-            setBusinessPhone(newSettings.businessPhone || '');
-            setBusinessAddress(newSettings.businessAddress || '');
-            setDefaultPaymentTerms(newSettings.defaultPaymentTerms || 'Net 30 days');
-            setDefaultValidityDays(newSettings.defaultValidityDays?.toString() || '30');
-            Alert.alert('Settings Reset', 'All settings have been reset to defaults.');
-          }
-        }
-      ]
-    );
+    // Reset settings without confirmation for simplicity
+    resetSettings();
+    const newSettings = useJobStore.getState().settings;
+    setEnableTax(newSettings.enableTax);
+    setDefaultTaxRate(newSettings.defaultTaxRate.toString());
+    setBusinessName(newSettings.businessName || '');
+    setBusinessEmail(newSettings.businessEmail || '');
+    setBusinessPhone(newSettings.businessPhone || '');
+    setBusinessAddress(newSettings.businessAddress || '');
+    setDefaultPaymentTerms(newSettings.defaultPaymentTerms || 'Net 30 days');
+    setDefaultValidityDays(newSettings.defaultValidityDays?.toString() || '30');
+    console.log('Settings Reset: All settings have been reset to defaults.');
   };
 
   const SettingCard = ({ title, children }: { title: string; children: React.ReactNode }) => (

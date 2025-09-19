@@ -220,29 +220,29 @@ export const generateMockData = () => {
       approvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
-      jobId: createdJobs[1].id,
-      customerId: createdJobs[1].customerId,
-      title: "Office Painting Quote",
-      description: "Materials and labor for office painting project",
+      jobId: createdJobs[2].id,
+      customerId: createdJobs[2].customerId,
+      title: "Bathroom Tiling Quote",
+      description: "Materials and labor for bathroom floor tiling",
       status: "sent" as const,
       items: [
         {
           id: Date.now().toString() + "_q4",
           type: "part" as const,
-          itemId: addedParts.find(p => p.name === "Paint - Interior White")?.id || "",
-          quantity: 8,
-          unitPrice: 32.95,
-          total: 263.60,
-          description: "Paint - Interior White"
+          itemId: addedParts.find(p => p.name === "Ceramic Floor Tile")?.id || "",
+          quantity: 50,
+          unitPrice: 3.25,
+          total: 162.50,
+          description: "Ceramic Floor Tile"
         },
         {
           id: Date.now().toString() + "_q5",
           type: "labor" as const,
-          itemId: addedLabor.find(l => l.description === "Painting and Finishing")?.id || "",
+          itemId: addedLabor.find(l => l.description === "Tile Installation")?.id || "",
           quantity: 16,
-          unitPrice: 35.00,
-          total: 560,
-          description: "Painting and Finishing"
+          unitPrice: 55.00,
+          total: 880,
+          description: "Tile Installation"
         }
       ],
       taxRate: 8.25,
@@ -280,14 +280,14 @@ export const generateMockData = () => {
           quantity: 18,
           unitPrice: 35.00,
           total: 630,
-          description: "Painting and Finishing (actual hours)"
+          description: "Painting and Finishing"
         }
       ],
       taxRate: 8.25,
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       paymentTerms: "Net 30 days",
       paidAt: new Date().toISOString(),
-      paidAmount: 823.12
+      paidAmount: 967.12
     },
     {
       jobId: createdJobs[0].id,

@@ -16,8 +16,8 @@ const JoinBusinessScreen = () => {
     setError(null);
     const ok = await acceptBusinessInvite(email.trim(), code.trim());
     if (!ok) { setError("Invalid invite or backend not configured"); return; }
-    // @ts-ignore
-    navigation.navigate("Main" as never);
+    
+    // App will automatically navigate via conditional rendering when workspaceId is set
   };
 
   return (

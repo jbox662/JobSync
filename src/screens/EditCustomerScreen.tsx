@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useJobStore } from '../state/store';
 
-const CreateCustomerScreen = () => {
+type RouteProps = {
+  key: string;
+  name: 'EditCustomer';
+  params: { customerId: string };
+};
+
+const EditCustomerScreen = () => {
   const navigation = useNavigation();
-  const { addCustomer } = useJobStore();
+  const route = useRoute<RouteProps>();
+  const { customerId } = route.params;
+  const { updateCustomer, getCustomerById } = useJobStore();
+  
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -15,6 +24,26 @@ const CreateCustomerScreen = () => {
   const [state, setState] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [country, setCountry] = useState('United States');
+
+  useEffect(() => {
+    const customer = getCustomerById(customerId);
+    if (customer) {
+      setName(customer.name || '');
+      setEmail(customer.email || '');
+      setPhone(customer.phone || '');
+      setCompany(customer.company || '');
+      
+      // Parse existing address into components
+      if (customer.address) {
+        const addressParts = customer.address.split(', ');
+        if (addressParts.length >= 1) setStreetAddress(addressParts[0] || '');
+        if (addressParts.length >= 2) setCity(addressParts[1] || '');
+        if (addressParts.length >= 3) setState(addressParts[2] || '');
+        if (addressParts.length >= 4) setZipCode(addressParts[3] || '');
+        if (addressParts.length >= 5) setCountry(addressParts[4] || 'United States');
+      }
+    }
+  }, [customerId, getCustomerById]);
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -32,7 +61,7 @@ const CreateCustomerScreen = () => {
     
     const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : undefined;
 
-    addCustomer({
+    updateCustomer(customerId, {
       name: name.trim(),
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
@@ -161,11 +190,11 @@ const CreateCustomerScreen = () => {
           onPress={handleSave}
           className="bg-blue-600 rounded-lg py-4 items-center"
         >
-          <Text className="text-white font-semibold text-lg">Add Customer</Text>
+          <Text className="text-white font-semibold text-lg">Save Changes</Text>
         </Pressable>
       </View>
     </View>
   );
 };
 
-export default CreateCustomerScreen;
+export default EditCustomerScreen;

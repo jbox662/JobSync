@@ -26,6 +26,8 @@ const CustomerDetailScreen = () => {
   
   const { 
     getCustomerById, 
+    updateCustomer,
+    deleteCustomer,
     jobs, 
     customers
   } = useJobStore();
@@ -103,6 +105,31 @@ const CustomerDetailScreen = () => {
     if (customer?.email) {
       Linking.openURL(`mailto:${customer.email}`);
     }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Customer',
+      `Are you sure you want to delete ${customer.name}? This action cannot be undone.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteCustomer(customerId);
+            navigation.goBack();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEdit = () => {
+    navigation.navigate('EditCustomer', { customerId });
   };
 
   const filterOptions = [
@@ -438,13 +465,17 @@ const CustomerDetailScreen = () => {
         </Pressable>
         
         <Pressable
-          onPress={() => {
-            // TODO: Navigate to edit customer screen
-            Alert.alert('Coming Soon', 'Edit customer functionality will be added soon.');
-          }}
-          className="px-6 py-4 bg-gray-100 rounded-xl"
+          onPress={handleEdit}
+          className="px-4 py-4 bg-gray-100 rounded-xl mr-3"
         >
           <Ionicons name="create-outline" size={24} color="#6B7280" />
+        </Pressable>
+        
+        <Pressable
+          onPress={handleDelete}
+          className="px-4 py-4 bg-red-100 rounded-xl"
+        >
+          <Ionicons name="trash-outline" size={24} color="#EF4444" />
         </Pressable>
       </View>
     </View>

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { format } from 'date-fns';
+import EmailButton from '../components/EmailButton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -131,11 +132,23 @@ const QuotesScreen = () => {
             {quote.validUntil && (
               <>
                 <Ionicons name="time-outline" size={16} color="#6B7280" />
-                <Text className="text-gray-500 text-xs ml-1">
+                <Text className="text-gray-500 text-xs ml-1 mr-3">
                   Valid until {format(new Date(quote.validUntil), 'MMM d')}
                 </Text>
               </>
             )}
+            
+            {/* Email Button */}
+            <EmailButton
+              type="quote"
+              document={quote}
+              variant="icon"
+              size="small"
+              onEmailSent={() => {
+                // Refresh the quote list or show success feedback
+                console.log('Quote emailed successfully');
+              }}
+            />
           </View>
         </View>
       </Pressable>

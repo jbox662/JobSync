@@ -5,12 +5,19 @@ import { AppState, Customer, Part, LaborItem, Job, JobItem, Quote, Invoice, User
 import { getSupabaseConfigFromEnv } from '../utils/supabase-config';
 import { v4 as uuidv4 } from 'uuid';
 import { createBusiness, createInvites, acceptInvite, listMembers, pushChanges, pullChanges } from '../api/supabase-sync';
+import type { AuthUser } from '../services/auth';
 
 interface JobStore extends AppState {
   // Business settings
   settings: BusinessSettings;
   
-  // Business auth/link
+  // Authentication
+  authenticatedUser: AuthUser | null;
+  isAuthenticated: boolean;
+  setAuthenticatedUser: (user: AuthUser) => void;
+  clearAuthentication: () => void;
+  
+  // Legacy business auth/link (deprecated but kept for compatibility)
   userEmail: string | null;
   workspaceId: string | null;
   workspaceName?: string | null;
@@ -137,16 +144,20 @@ export const useJobStore = create<JobStore>()(
         quotes: [],
         invoices: [],
 
-        // Business link
+        // Authentication
+        authenticatedUser: null,
+        isAuthenticated: false,
+
+        // Legacy business link (deprecated)
         userEmail: null,
         workspaceId: null,
         workspaceName: null,
         role: null,
 
-        // Profiles
-        users: [{ id: defaultId, name: 'Default', createdAt: now, updatedAt: now }],
-        currentUserId: defaultId,
-        dataByUser: { [defaultId]: { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] } },
+        // Profiles (deprecated in favor of authentication)
+        users: [],
+        currentUserId: null,
+        dataByUser: {},
 
         // Sync
         deviceId: uuidv4(),
@@ -159,10 +170,46 @@ export const useJobStore = create<JobStore>()(
           };
         })(),
         setSyncConfig: (cfg) => set({ syncConfig: cfg, isSupabaseConfigured: true, supabaseConfigError: undefined }),
-        outboxByUser: { [defaultId]: [] },
-        lastSyncByUser: { [defaultId]: null },
+        outboxByUser: {},
+        lastSyncByUser: {},
         isSyncing: false,
         syncError: null,
+
+        // Authentication methods
+        setAuthenticatedUser: (user: AuthUser) => {
+          set({ 
+            authenticatedUser: user, 
+            isAuthenticated: true,
+            userEmail: user.email,
+            workspaceId: user.workspaceId || null,
+            workspaceName: user.workspaceName || null,
+            role: user.role || null,
+            // Initialize user-specific data
+            outboxByUser: { [user.id]: [] },
+            lastSyncByUser: { [user.id]: null },
+            currentUserId: user.id,
+            dataByUser: { [user.id]: { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] } }
+          });
+          syncTopLevel();
+        },
+        
+        clearAuthentication: () => {
+          set({ 
+            authenticatedUser: null, 
+            isAuthenticated: false,
+            userEmail: null,
+            workspaceId: null,
+            workspaceName: null,
+            role: null,
+            currentUserId: null,
+            customers: [],
+            parts: [],
+            laborItems: [],
+            jobs: [],
+            quotes: [],
+            invoices: []
+          });
+        },
 
         // Business actions
         linkBusinessOwner: async (name: string, ownerEmail: string) => {
