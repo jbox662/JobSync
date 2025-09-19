@@ -168,12 +168,21 @@ const DashboardScreen = () => {
               <Pressable
                 onPress={() => {
                   generateMockData();
-                  console.log('Sample data generated successfully!');
+                  console.log('✅ Sample data generated successfully!');
                 }}
-                className="bg-blue-600 rounded-xl px-6 py-3 shadow-sm"
+                className="bg-blue-600 rounded-xl px-6 py-3 shadow-sm mb-3"
               >
                 <Text className="text-white font-semibold text-base">Generate Sample Data</Text>
               </Pressable>
+              
+              <View className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
+                <Text className="text-yellow-800 text-xs font-medium text-center">
+                  💡 To reset all data: Go to Settings → Clear All Data
+                </Text>
+                <Text className="text-yellow-700 text-xs text-center mt-1">
+                  Or tap the "Welcome Back" title 7 times on sign-in screen
+                </Text>
+              </View>
             </View>
           </View>
         )}

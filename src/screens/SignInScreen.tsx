@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/auth';
+import { useJobStore } from '../state/store';
 
 const SignInScreen = () => {
   const navigation = useNavigation();
@@ -13,6 +14,9 @@ const SignInScreen = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  
+  const { resetAllData } = useJobStore();
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {
@@ -62,7 +66,26 @@ const SignInScreen = () => {
           <View className="w-20 h-20 bg-blue-600 rounded-2xl items-center justify-center mb-4">
             <Ionicons name="briefcase" size={40} color="white" />
           </View>
-          <Text className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</Text>
+          <Pressable
+            onPress={() => {
+              const newTapCount = tapCount + 1;
+              setTapCount(newTapCount);
+              
+              if (newTapCount === 7) {
+                // Developer reset - tap title 7 times
+                resetAllData();
+                console.log('Developer reset activated - all data cleared');
+                setTapCount(0);
+              } else if (newTapCount >= 3) {
+                console.log(`Tap ${4 - newTapCount} more times to reset all data`);
+              }
+              
+              // Reset counter after 3 seconds
+              setTimeout(() => setTapCount(0), 3000);
+            }}
+          >
+            <Text className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</Text>
+          </Pressable>
           <Text className="text-gray-600 text-center">
             Sign in to your business account
           </Text>

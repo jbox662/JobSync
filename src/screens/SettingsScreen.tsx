@@ -6,7 +6,7 @@ import { useJobStore } from '../state/store';
 
 const SettingsScreen = () => {
   const insets = useSafeAreaInsets();
-  const { settings, updateSettings, resetSettings } = useJobStore();
+  const { settings, updateSettings, resetSettings, resetAllData } = useJobStore();
   
   const [enableTax, setEnableTax] = useState(settings.enableTax);
   const [defaultTaxRate, setDefaultTaxRate] = useState(settings.defaultTaxRate.toString());
@@ -220,7 +220,7 @@ const SettingsScreen = () => {
         <SettingCard title="Data Management">
           <Pressable
             onPress={handleReset}
-            className="flex-row items-center p-3 rounded-lg bg-red-50 border border-red-200"
+            className="flex-row items-center p-3 rounded-lg bg-red-50 border border-red-200 mb-3"
           >
             <Ionicons name="refresh-outline" size={20} color="#DC2626" />
             <View className="ml-3 flex-1">
@@ -230,6 +230,31 @@ const SettingsScreen = () => {
               </Text>
             </View>
           </Pressable>
+          
+          <Pressable
+            onPress={async () => {
+              await resetAllData();
+              console.log('✅ All app data cleared - app will restart to sign-in');
+            }}
+            className="flex-row items-center p-3 rounded-lg bg-red-100 border border-red-300"
+          >
+            <Ionicons name="trash-outline" size={20} color="#DC2626" />
+            <View className="ml-3 flex-1">
+              <Text className="text-red-900 font-medium">Clear All Data</Text>
+              <Text className="text-red-700 text-sm mt-1">
+                Delete all app data and return to sign-up screen
+              </Text>
+            </View>
+          </Pressable>
+          
+          <View className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+            <Text className="text-blue-800 text-xs font-medium">
+              ℹ️ This will clear all local app data including authentication, business data, and settings
+            </Text>
+            <Text className="text-blue-700 text-xs mt-1">
+              Useful if you're getting "user already registered" errors after deleting Supabase data
+            </Text>
+          </View>
         </SettingCard>
 
         {/* App Information */}

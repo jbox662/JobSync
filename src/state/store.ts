@@ -91,6 +91,9 @@ interface JobStore extends AppState {
   getSettings: () => BusinessSettings;
   updateSettings: (updates: Partial<BusinessSettings>) => void;
   resetSettings: () => void;
+  
+  // Data management
+  resetAllData: () => Promise<void>;
 }
 
 const calculateJobTotals = (items: JobItem[], taxRate: number, enableTax: boolean = true) => {
@@ -514,6 +517,66 @@ export const useJobStore = create<JobStore>()(
               updatedAt: now
             }
           });
+        },
+        
+        // Reset all app data - useful for development and testing
+        resetAllData: async () => {
+          try {
+            // Clear AsyncStorage completely (this removes all stored data)
+            await AsyncStorage.clear();
+            
+            // Reset store to initial state
+            const now = new Date().toISOString();
+            const defaultId = uuidv4();
+            
+            // Reset Supabase configuration (clear environment check)
+            const envConfig = require('../utils/supabase-config').getSupabaseConfigFromEnv();
+            
+            set({
+              // Reset authentication
+              isAuthenticated: false,
+              authenticatedUser: null,
+              userEmail: null,
+              workspaceId: null,
+              workspaceName: null,
+              role: null,
+              
+              // Reset data
+              customers: [],
+              parts: [],
+              laborItems: [],
+              jobs: [],
+              quotes: [],
+              invoices: [],
+              
+              // Reset users
+              users: [{ id: defaultId, name: 'Default', createdAt: now, updatedAt: now }],
+              currentUserId: defaultId,
+              dataByUser: { [defaultId]: { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] } },
+              
+              // Reset sync configuration
+              deviceId: uuidv4(),
+              syncConfig: envConfig.isValid ? { baseUrl: envConfig.url, apiKey: envConfig.anonKey } : undefined,
+              isSupabaseConfigured: envConfig.isValid,
+              supabaseConfigError: envConfig.error,
+              outboxByUser: { [defaultId]: [] },
+              lastSyncByUser: { [defaultId]: null },
+              isSyncing: false,
+              syncError: null,
+              
+              // Reset settings
+              settings: {
+                ...DEFAULT_BUSINESS_SETTINGS,
+                createdAt: now,
+                updatedAt: now
+              }
+            });
+            
+            console.log('✅ All app data has been reset successfully');
+            console.log('📱 App will now show sign-up/sign-in screens');
+          } catch (error) {
+            console.error('❌ Error resetting app data:', error);
+          }
         },
       };
     },
