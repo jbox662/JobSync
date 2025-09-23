@@ -52,7 +52,7 @@ const LaborDetailScreen = () => {
 
   // Find usage of this labor item in jobs, quotes, and invoices
   const laborUsage = {
-    jobs: jobs.filter(job => job.items.some(item => item.type === 'labor' && item.id === laborId)),
+    jobs: jobs.filter(job => job.items?.some(item => item.type === 'labor' && item.itemId === laborId) || false),
     quotes: quotes.filter(quote => quote.items.some(item => item.type === 'labor' && item.id === laborId)),
     invoices: invoices.filter(invoice => invoice.items.some(item => item.type === 'labor' && item.id === laborId))
   };
@@ -164,7 +164,7 @@ const LaborDetailScreen = () => {
                 <View className="items-end">
                   <View className="flex-row items-center">
                     <Text className="text-gray-500 text-sm mr-2">
-                      Hours: {item.items.find(i => i.type === 'labor' && i.id === laborId)?.quantity || 0}
+                      Hours: {item.items.find((i: any) => i.type === 'labor' && i.itemId === laborId)?.quantity || 0}
                     </Text>
                     <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
                   </View>

@@ -88,6 +88,9 @@ interface JobStore extends AppState {
   updateSettings: (updates: Partial<BusinessSettings>) => void;
   resetSettings: () => void;
   
+  // Sample data generation
+  generateSampleData: () => void;
+  
 }
 
 const calculateJobTotals = (items: JobItem[], taxRate: number, enableTax: boolean = true) => {
@@ -594,6 +597,155 @@ export const useJobStore = create<JobStore>()(
               updatedAt: now
             }
           });
+        },
+
+        // Sample data generation
+        generateSampleData: () => {
+          const { addCustomer, addPart, addLaborItem, addJob, customers, parts, laborItems } = get();
+          const now = new Date().toISOString();
+
+          // Add sample customers
+          addCustomer({
+            name: "ACME Construction",
+            email: "contact@acmeconstruction.com",
+            phone: "(555) 123-4567",
+            address: "123 Main St, Anytown, NY 12345",
+            company: "ACME Construction LLC"
+          });
+
+          addCustomer({
+            name: "Smith Residence",
+            email: "john@smithfamily.com",
+            phone: "(555) 987-6543",
+            address: "456 Oak Ave, Somewhere, CA 90210"
+          });
+
+          // Add sample parts
+          addPart({
+            name: "Premium Wood Flooring",
+            description: "High-quality hardwood flooring planks",
+            unitPrice: 8.50,
+            price: 8.50,
+            stock: 500,
+            sku: "WF-001",
+            category: "Flooring"
+          });
+
+          addPart({
+            name: "Paint - Interior White",
+            description: "Premium interior paint, 1 gallon",
+            unitPrice: 45.00,
+            price: 45.00,
+            stock: 25,
+            sku: "PT-002",
+            category: "Paint"
+          });
+
+          // Add sample labor items
+          addLaborItem({
+            name: "Flooring Installation",
+            description: "Professional flooring installation service",
+            hourlyRate: 75.00,
+            price: 75.00,
+            category: "Installation"
+          });
+
+          addLaborItem({
+            name: "Interior Painting",
+            description: "Professional interior painting service",
+            hourlyRate: 55.00,
+            price: 55.00,
+            category: "Painting"
+          });
+
+          // Wait a moment for items to be added, then create jobs
+          setTimeout(() => {
+            const currentCustomers = get().customers;
+            const currentParts = get().parts;
+            const currentLabor = get().laborItems;
+
+            if (currentCustomers.length >= 2 && currentParts.length >= 2 && currentLabor.length >= 2) {
+              const customer1Id = currentCustomers[0].id;
+              const customer2Id = currentCustomers[1].id;
+              const part1Id = currentParts[0].id;
+              const part2Id = currentParts[1].id;
+              const labor1Id = currentLabor[0].id;
+              const labor2Id = currentLabor[1].id;
+
+              // Add sample jobs with items
+              const job1Items: JobItem[] = [
+                {
+                  id: Math.random().toString(36).substring(2),
+                  type: 'part',
+                  itemId: part1Id,
+                  quantity: 100,
+                  unitPrice: 8.50,
+                  rate: 8.50,
+                  total: 850.00,
+                  description: "Premium wood flooring for living room"
+                },
+                {
+                  id: Math.random().toString(36).substring(2),
+                  type: 'labor',
+                  itemId: labor1Id,
+                  quantity: 12,
+                  unitPrice: 75.00,
+                  rate: 75.00,
+                  total: 900.00,
+                  description: "12 hours flooring installation"
+                }
+              ];
+
+              addJob({
+                customerId: customer1Id,
+                title: "Office Renovation",
+                description: "Complete office space renovation including new flooring",
+                status: 'active',
+                notes: "Client wants premium materials throughout",
+                startDate: now,
+                dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+                estimatedHours: 40,
+                items: job1Items
+              });
+
+              const job2Items: JobItem[] = [
+                {
+                  id: Math.random().toString(36).substring(2),
+                  type: 'part',
+                  itemId: part2Id,
+                  quantity: 8,
+                  unitPrice: 45.00,
+                  rate: 45.00,
+                  total: 360.00,
+                  description: "Interior paint for bedrooms and hallway"
+                },
+                {
+                  id: Math.random().toString(36).substring(2),
+                  type: 'labor',
+                  itemId: labor2Id,
+                  quantity: 16,
+                  unitPrice: 55.00,
+                  rate: 55.00,
+                  total: 880.00,
+                  description: "16 hours interior painting"
+                }
+              ];
+
+              addJob({
+                customerId: customer2Id,
+                title: "Home Interior Painting",
+                description: "Paint bedrooms, hallway, and living areas",
+                status: 'active',
+                notes: "Customer prefers neutral colors",
+                startDate: now,
+                dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+                estimatedHours: 20,
+                items: job2Items
+              });
+
+              console.log('[Store] Sample data generated successfully');
+            }
+          }, 100);
         },
       };
     },

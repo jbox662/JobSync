@@ -52,7 +52,7 @@ const PartDetailScreen = () => {
 
   // Find usage of this part in jobs, quotes, and invoices
   const partUsage = {
-    jobs: jobs.filter(job => job.items.some(item => item.type === 'part' && item.id === partId)),
+    jobs: jobs.filter(job => job.items?.some(item => item.type === 'part' && item.itemId === partId) || false),
     quotes: quotes.filter(quote => quote.items.some(item => item.type === 'part' && item.id === partId)),
     invoices: invoices.filter(invoice => invoice.items.some(item => item.type === 'part' && item.id === partId))
   };
@@ -164,7 +164,7 @@ const PartDetailScreen = () => {
                 <View className="items-end">
                   <View className="flex-row items-center">
                     <Text className="text-gray-500 text-sm mr-2">
-                      Qty: {item.items.find(i => i.type === 'part' && i.id === partId)?.quantity || 0}
+                      Qty: {item.items.find((i: any) => i.type === 'part' && i.itemId === partId)?.quantity || 0}
                     </Text>
                     <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
                   </View>

@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 
 const DashboardScreen = () => {
   const insets = useSafeAreaInsets();
-  const { jobs, customers, parts, laborItems } = useJobStore();
+  const { jobs, customers, parts, laborItems, generateSampleData } = useJobStore();
 
   // Calculate stats
   const totalJobs = jobs.length;
@@ -75,6 +75,20 @@ const DashboardScreen = () => {
           <Text className="text-2xl font-bold text-gray-900">Dashboard</Text>
           <Text className="text-gray-600 mt-1">Welcome back to Job Manager</Text>
         </View>
+
+        {/* Sample Data Generation */}
+        {totalJobs === 0 && (
+          <View className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-200">
+            <Text className="text-blue-900 font-semibold mb-2">Get Started</Text>
+            <Text className="text-blue-800 mb-3">No data yet? Generate some sample data to explore the app!</Text>
+            <Pressable
+              onPress={generateSampleData}
+              className="bg-blue-600 rounded-lg px-4 py-2"
+            >
+              <Text className="text-white font-semibold text-center">Generate Sample Data</Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Stats Cards */}
         <View className="flex-row mb-6">

@@ -61,9 +61,9 @@ const CustomerDetailScreen = () => {
   const stats = {
     totalJobs: customerJobs.length,
     completedJobs: customerJobs.filter(job => job.status === 'completed').length,
-    activeJobs: customerJobs.filter(job => ['quote', 'approved', 'in-progress'].includes(job.status)).length,
-    totalRevenue: customerJobs.filter(job => job.status === 'completed').reduce((sum, job) => sum + job.total, 0),
-    pendingValue: customerJobs.filter(job => ['quote', 'approved', 'in-progress'].includes(job.status)).reduce((sum, job) => sum + job.total, 0)
+    activeJobs: customerJobs.filter(job => job.status === 'active').length,
+    totalRevenue: 0, // Calculate from related quotes/invoices
+    pendingValue: 0 // Calculate from related quotes/invoices
   };
 
   const formatCurrency = (amount: number) => {
@@ -110,7 +110,7 @@ const CustomerDetailScreen = () => {
   const handleDelete = () => {
     Alert.alert(
       'Delete Customer',
-      `Are you sure you want to delete ${customer.name}? This action cannot be undone.`,
+      `Are you sure you want to delete ${customer?.name}? This action cannot be undone.`,
       [
         {
           text: 'Cancel',
@@ -136,7 +136,7 @@ const CustomerDetailScreen = () => {
     { key: null, label: 'All', count: customerJobs.length },
     { key: 'active', label: 'Active', count: stats.activeJobs },
     { key: 'completed', label: 'Completed', count: stats.completedJobs },
-    { key: 'quote', label: 'Quotes', count: customerJobs.filter(j => j.status === 'quote').length },
+    { key: 'on-hold', label: 'On Hold', count: customerJobs.filter(j => j.status === 'on-hold').length },
   ];
 
   const StatCard = ({ title, value, icon, color, subtitle }: {
@@ -210,7 +210,7 @@ const CustomerDetailScreen = () => {
         <View className="flex-row items-center">
           <Ionicons name="list-outline" size={16} color="#6B7280" />
           <Text className="text-gray-600 text-sm ml-1">
-            {job.items.length} items
+            {job.items?.length || 0} items
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />

@@ -14,6 +14,7 @@ export interface Part {
   name: string;
   description?: string;
   unitPrice: number;
+  price: number; // Alias for unitPrice for compatibility
   stock: number;
   sku?: string;
   category?: string;
@@ -23,8 +24,10 @@ export interface Part {
 
 export interface LaborItem {
   id: string;
+  name: string; // Add name for consistency
   description: string;
   hourlyRate: number;
+  price: number; // Alias for hourlyRate for compatibility
   category?: string;
   createdAt: string;
   updatedAt: string;
@@ -36,6 +39,7 @@ export interface JobItem {
   itemId: string;
   quantity: number;
   unitPrice: number;
+  rate: number; // Alias for unitPrice for compatibility
   total: number;
   description?: string;
 }
@@ -55,6 +59,7 @@ export interface Job {
   completedAt?: string;
   estimatedHours?: number;
   actualHours?: number;
+  items?: JobItem[];
 }
 
 // New Quote interface
