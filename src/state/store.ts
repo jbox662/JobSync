@@ -183,6 +183,8 @@ export const useJobStore = create<JobStore>()(
 
         // Authentication methods
         setAuthenticatedUser: (user: AuthUser) => {
+          console.log('🔐 Setting authenticated user:', user.email);
+          
           const currentSettings = get().settings;
           const existingData = get().dataByUser[user.id];
           
@@ -194,6 +196,8 @@ export const useJobStore = create<JobStore>()(
             workspaceId: user.workspaceId || null,
             workspaceName: user.workspaceName || null,
             role: user.role || null,
+            // Clear any authentication errors
+            syncError: null,
             // Update business settings with workspace info
             settings: {
               ...currentSettings,
@@ -211,15 +215,27 @@ export const useJobStore = create<JobStore>()(
             }
           });
           syncTopLevel();
-          // Immediately sync data from Supabase on authentication
-          setTimeout(() => get().syncNow(), 100);
+          
+          // Immediately sync data from Supabase on authentication (with small delay to allow state to settle)
+          setTimeout(() => {
+            const currentState = get();
+            if (currentState.isAuthenticated && currentState.workspaceId) {
+              get().syncNow().catch(error => {
+                console.log('⚠️ Initial sync failed after authentication:', error);
+              });
+            }
+          }, 500);
         },
         
         clearAuthentication: () => {
+          console.log('[Store] Clearing authentication state...');
+          const { isSupabaseConfigured } = get();
+          
           set({ 
             authenticatedUser: null, 
             isAuthenticated: false,
-            isSupabaseConfigured: false, // Clear Supabase config when not authenticated
+            // Preserve environment-based Supabase config
+            isSupabaseConfigured: isSupabaseConfigured,
             userEmail: null,
             workspaceId: null,
             workspaceName: null,
@@ -232,6 +248,8 @@ export const useJobStore = create<JobStore>()(
             quotes: [],
             invoices: []
           });
+          
+          console.log('[Store] Authentication state cleared');
         },
 
         // Business actions
@@ -261,7 +279,7 @@ export const useJobStore = create<JobStore>()(
           set({ userEmail: null, role: null, workspaceId: null });
         },
 
-        // Sync Now
+        // Sync Now with robust error handling
         syncNow: async () => {
           const state = get();
           
@@ -282,36 +300,80 @@ export const useJobStore = create<JobStore>()(
             set({ syncError: 'No authenticated user' });
             return;
           }
-          set({ isSyncing: true, syncError: null });
-          const outbox = get().outboxByUser[uid] || [];
-          const okPush = await pushChanges({ workspaceId: ws, deviceId: get().deviceId, changes: outbox });
-          if (okPush) set({ outboxByUser: { ...get().outboxByUser, [uid]: [] } });
-          const since = get().lastSyncByUser[uid] || null;
-          const pull = await pullChanges(ws, since);
-          if (pull && pull.changes.length > 0) {
-            const slice = get().dataByUser[uid];
-            let { customers, parts, laborItems, jobs } = slice;
-            const byId = {
-              customers: new Map(customers.map((r) => [r.id, r])),
-              parts: new Map(parts.map((r) => [r.id, r])),
-              laborItems: new Map(laborItems.map((r) => [r.id, r])),
-              jobs: new Map(jobs.map((r) => [r.id, r])),
-            } as any;
-            for (const ch of pull.changes) {
-              if (ch.operation === 'delete') { byId[ch.entity].delete(ch.row.id); continue; }
-              const cur = byId[ch.entity].get(ch.row.id);
-              if (!cur || (cur.updatedAt || '') < (ch.updatedAt || '')) byId[ch.entity].set(ch.row.id, ch.row);
+          
+          try {
+            set({ isSyncing: true, syncError: null });
+            const outbox = get().outboxByUser[uid] || [];
+            
+            // Try to push changes
+            const okPush = await pushChanges({ workspaceId: ws, deviceId: get().deviceId, changes: outbox });
+            if (okPush) set({ outboxByUser: { ...get().outboxByUser, [uid]: [] } });
+            
+            // Try to pull changes
+            const since = get().lastSyncByUser[uid] || null;
+            const pull = await pullChanges(ws, since);
+            
+            if (pull && pull.changes.length > 0) {
+              const slice = get().dataByUser[uid];
+              let { customers, parts, laborItems, jobs } = slice;
+              const byId = {
+                customers: new Map(customers.map((r) => [r.id, r])),
+                parts: new Map(parts.map((r) => [r.id, r])),
+                laborItems: new Map(laborItems.map((r) => [r.id, r])),
+                jobs: new Map(jobs.map((r) => [r.id, r])),
+              } as any;
+              
+              for (const ch of pull.changes) {
+                if (ch.operation === 'delete') { byId[ch.entity].delete(ch.row.id); continue; }
+                const cur = byId[ch.entity].get(ch.row.id);
+                if (!cur || (cur.updatedAt || '') < (ch.updatedAt || '')) byId[ch.entity].set(ch.row.id, ch.row);
+              }
+              
+              customers = Array.from(byId.customers.values());
+              parts = Array.from(byId.parts.values());
+              laborItems = Array.from(byId.laborItems.values());
+              jobs = Array.from(byId.jobs.values());
+              set({ dataByUser: { ...get().dataByUser, [uid]: { customers, parts, laborItems, jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } }, lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
+              syncTopLevel();
+            } else if (pull) {
+              set({ lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
             }
-            customers = Array.from(byId.customers.values());
-            parts = Array.from(byId.parts.values());
-            laborItems = Array.from(byId.laborItems.values());
-            jobs = Array.from(byId.jobs.values());
-            set({ dataByUser: { ...get().dataByUser, [uid]: { customers, parts, laborItems, jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } }, lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
-            syncTopLevel();
-          } else if (pull) {
-            set({ lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
+            
+            // Clear any previous sync errors on successful sync
+            set({ syncError: null });
+          } catch (error: any) {
+            console.error('🚨 Sync failed:', error);
+            
+            // Handle authentication-related sync errors
+            if (error.message?.includes('Invalid Refresh Token') || 
+                error.message?.includes('refresh_token') ||
+                error.message?.includes('Refresh Token Not Found') ||
+                error.message?.includes('JWT') ||
+                error.message?.includes('token') ||
+                error.message?.includes('unauthorized') ||
+                error.message?.includes('Unauthorized') ||
+                error.message?.includes('401')) {
+              
+              console.log('🔄 Authentication error during sync, clearing session');
+              
+              // Clear authentication state when sync fails due to token issues
+              get().clearAuthentication();
+              set({ syncError: 'Session expired. Please sign in again.' });
+              
+              // Try to clear stale session from auth service
+              try {
+                const { authService } = require('../services/auth');
+                await authService.clearStaleSession();
+              } catch (clearError) {
+                console.log('Note: Could not clear auth service session');
+              }
+            } else {
+              // Other sync errors
+              set({ syncError: error.message || 'Sync failed. Please try again.' });
+            }
+          } finally {
+            set({ isSyncing: false });
           }
-          set({ isSyncing: false });
         },
 
 

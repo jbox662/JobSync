@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 import CreateBusinessScreen from "./src/screens/CreateBusinessScreen";
 import JoinBusinessScreen from "./src/screens/JoinBusinessScreen";
-import AccountSwitchScreen from "./src/screens/AccountSwitchScreen";
+// import AccountSwitchScreen from "./src/screens/AccountSwitchScreen";
 import SignInScreen from "./src/screens/SignInScreen";
 import SignUpScreen from "./src/screens/SignUpScreen";
 
@@ -45,23 +45,44 @@ export default function App() {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing authentication on app start
+  // Check for existing authentication on app start with robust error handling
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log('🔍 Checking authentication state...');
         const user = await authService.getCurrentUser();
         
         if (user) {
+          console.log('✅ Valid user session found');
           setAuthenticatedUser(user);
           // Sync is automatically triggered by setAuthenticatedUser
         } else {
+          console.log('❌ No valid user session, clearing authentication state');
           // No user found, ensure we're in unauthenticated state
           clearAuthentication();
         }
-      } catch (error) {
-        console.warn('Auth check failed:', error);
-        // Authentication failed, clear any stale auth state
-        clearAuthentication();
+      } catch (error: any) {
+        console.warn('🚨 Auth check failed:', error);
+        
+        // Handle specific authentication errors
+        if (error.message?.includes('Invalid Refresh Token') || 
+            error.message?.includes('refresh_token') ||
+            error.message?.includes('Refresh Token Not Found') ||
+            error.message?.includes('JWT') ||
+            error.message?.includes('token')) {
+          console.log('🔄 Token-related error detected, clearing all authentication state');
+          
+          // Clear authentication state via auth service (which also clears Supabase session)
+          try {
+            await authService.clearStaleSession();
+          } catch (clearError) {
+            console.log('Note: Error clearing stale session (likely already cleared)');
+            clearAuthentication(); // Fallback to clear app state
+          }
+        } else {
+          console.log('🧹 General authentication error, clearing app state');
+          clearAuthentication();
+        }
       } finally {
         setIsLoading(false);
       }

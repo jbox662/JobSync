@@ -212,7 +212,61 @@ class AuthService {
   }
 
   /**
-   * Get current authenticated user
+   * Clear stale session and authentication state
+   */
+  async clearStaleSession(): Promise<void> {
+    if (!supabase) return;
+    
+    try {
+      // Clear Supabase session
+      await supabase.auth.signOut({ scope: 'local' });
+      console.log('🧹 Cleared stale Supabase session');
+    } catch (error) {
+      console.log('Note: Session was already cleared or invalid');
+    }
+    
+    // Clear app authentication state
+    const store = useJobStore.getState();
+    store.clearAuthentication();
+  }
+
+  /**
+   * Validate current session without triggering refresh
+   */
+  async validateSession(): Promise<boolean> {
+    if (!supabase) return false;
+    
+    try {
+      // Get session without triggering auto-refresh
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('📄 No active session found');
+        return false;
+      }
+
+      // Check if session is expired
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at && session.expires_at < now) {
+        console.log('⏰ Session expired, needs refresh');
+        return false;
+      }
+
+      // Check if refresh token exists
+      if (!session.refresh_token) {
+        console.log('🔄 No refresh token available');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.log('❌ Session validation failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get current authenticated user with robust error handling
    */
   async getCurrentUser(): Promise<AuthUser | null> {
     if (!supabase) {
@@ -220,35 +274,96 @@ class AuthService {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // First validate the session
+      const hasValidSession = await this.validateSession();
+      
+      if (!hasValidSession) {
+        console.log('🚫 Invalid session detected, clearing authentication state');
+        await this.clearStaleSession();
+        return null;
+      }
+
+      // Try to get user (this may trigger token refresh)
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.log('👤 Error getting user:', userError.message);
+        
+        // Handle specific authentication errors
+        if (userError.message?.includes('refresh') || 
+            userError.message?.includes('token') || 
+            userError.message?.includes('Invalid')) {
+          console.log('🔑 Token/refresh error detected, clearing stale session');
+          await this.clearStaleSession();
+        }
+        return null;
+      }
       
       if (!user) {
+        console.log('👤 No user found in valid session');
         return null;
       }
 
       // Get workspace info
-      const { data: memberData } = await supabase
-        .from('workspace_members')
-        .select(`
-          role,
-          workspace_id,
-          workspaces (
-            id,
-            name
-          )
-        `)
-        .eq('email', user.email)
-        .single();
+      try {
+        const { data: memberData, error: memberError } = await supabase
+          .from('workspace_members')
+          .select(`
+            role,
+            workspace_id,
+            workspaces (
+              id,
+              name
+            )
+          `)
+          .eq('email', user.email)
+          .single();
 
-      return {
-        id: user.id,
-        email: user.email || '',
-        name: user.user_metadata?.name,
-        role: memberData?.role as 'owner' | 'member',
-        workspaceId: memberData?.workspace_id,
-        workspaceName: (memberData?.workspaces as any)?.name
-      };
-    } catch (error) {
+        if (memberError && !memberError.message?.includes('No rows')) {
+          console.log('🏢 Error getting workspace info:', memberError.message);
+        }
+
+        const authUser: AuthUser = {
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name,
+          role: memberData?.role as 'owner' | 'member' || undefined,
+          workspaceId: memberData?.workspace_id || undefined,
+          workspaceName: (memberData?.workspaces as any)?.name || undefined
+        };
+
+        console.log('✅ Successfully retrieved authenticated user');
+        return authUser;
+
+      } catch (workspaceError) {
+        console.log('🏢 Workspace query failed, but user is valid:', workspaceError);
+        
+        // Return user without workspace info if workspace query fails
+        return {
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name,
+          role: undefined,
+          workspaceId: undefined,
+          workspaceName: undefined
+        };
+      }
+
+    } catch (error: any) {
+      console.error('❌ Failed to get current user:', error);
+      
+      // Handle specific Supabase auth errors
+      if (error.message?.includes('Invalid Refresh Token') || 
+          error.message?.includes('refresh_token') ||
+          error.message?.includes('Refresh Token Not Found')) {
+        console.log('🔄 Refresh token error detected, clearing stale session');
+        await this.clearStaleSession();
+      } else if (error.message?.includes('JWT') || 
+                 error.message?.includes('token')) {
+        console.log('🎟️ Token error detected, clearing authentication state');
+        await this.clearStaleSession();
+      }
+      
       return null;
     }
   }
