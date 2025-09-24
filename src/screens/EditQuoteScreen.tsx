@@ -337,9 +337,9 @@ const EditQuoteScreen = () => {
                           selectedCustomer === customer.id ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
                         }`} />
                         <View>
-                          <Text className="text-gray-900 font-medium">{customer.name}</Text>
-                          {customer.company && (
-                            <Text className="text-gray-500 text-sm">{customer.company}</Text>
+                          <Text className="text-gray-900 font-medium">{customer.company || customer.name}</Text>
+                          {customer.company && customer.name && (
+                            <Text className="text-gray-500 text-sm">{customer.name}</Text>
                           )}
                         </View>
                       </Pressable>

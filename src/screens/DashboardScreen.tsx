@@ -188,7 +188,7 @@ const DashboardScreen = () => {
                         {job.title}
                       </Text>
                       <Text className="text-gray-600 text-sm mt-1">
-                        {customer?.name} • {format(new Date(job.updatedAt), 'MMM d')}
+                        {customer?.company || customer?.name} • {format(new Date(job.updatedAt), 'MMM d')}
                       </Text>
                     </View>
                     <View className="items-end ml-3">

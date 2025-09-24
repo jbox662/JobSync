@@ -110,7 +110,7 @@ const CustomerDetailScreen = () => {
   const handleDelete = () => {
     Alert.alert(
       'Delete Customer',
-      `Are you sure you want to delete ${customer?.name}? This action cannot be undone.`,
+      `Are you sure you want to delete ${customer?.company || customer?.name}? This action cannot be undone.`,
       [
         {
           text: 'Cancel',
@@ -250,17 +250,17 @@ const CustomerDetailScreen = () => {
           <View className="flex-row items-center">
             <View className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center mr-4">
               <Text className="text-blue-600 font-bold text-3xl">
-                {customer.name.charAt(0).toUpperCase()}
+                {(customer.company || customer.name).charAt(0).toUpperCase()}
               </Text>
             </View>
             
             <View className="flex-1">
               <Text className="text-2xl font-bold text-gray-900 mb-1">
-                {customer.name}
+                {customer.company || customer.name}
               </Text>
-              {customer.company && (
+              {customer.company && customer.name && (
                 <Text className="text-gray-600 text-lg mb-2">
-                  {customer.company}
+                  {customer.name}
                 </Text>
               )}
               

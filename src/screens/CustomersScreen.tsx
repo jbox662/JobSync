@@ -21,13 +21,14 @@ const CustomersScreen = () => {
   const filteredCustomers = customers
     .filter(customer => {
       const matchesSearch = !searchQuery || 
+        (customer.company || customer.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.company?.toLowerCase().includes(searchQuery.toLowerCase());
       
       return matchesSearch;
     })
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (a.company || a.name).localeCompare(b.company || b.name));
 
   const getCustomerJobCount = (customerId: string) => {
     return jobs.filter(job => job.customerId === customerId).length;
@@ -109,18 +110,18 @@ const CustomersScreen = () => {
         <View className="flex-row items-start">
           <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-3 flex-shrink-0">
             <Text className="text-blue-600 font-semibold text-lg">
-              {customer.name.charAt(0).toUpperCase()}
+              {(customer.company || customer.name).charAt(0).toUpperCase()}
             </Text>
           </View>
           
           <View className="flex-1 min-w-0">
             <Text className="font-semibold text-gray-900 text-lg" numberOfLines={1}>
-              {customer.name}
+              {customer.company || customer.name}
             </Text>
             
-            {customer.company && (
+            {customer.company && customer.name && (
               <Text className="text-gray-600 text-sm mt-1" numberOfLines={1}>
-                {customer.company}
+                {customer.name}
               </Text>
             )}
             

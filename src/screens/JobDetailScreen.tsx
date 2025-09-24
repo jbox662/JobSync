@@ -346,13 +346,13 @@ const JobDetailScreen = () => {
             >
               <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mr-3">
                 <Text className="text-blue-600 font-semibold text-lg">
-                  {customer.name.charAt(0).toUpperCase()}
+                  {(customer.company || customer.name).charAt(0).toUpperCase()}
                 </Text>
               </View>
               <View className="flex-1">
-                <Text className="font-semibold text-gray-900">{customer.name}</Text>
-                {customer.company && (
-                  <Text className="text-gray-600 text-sm">{customer.company}</Text>
+                <Text className="font-semibold text-gray-900">{customer.company || customer.name}</Text>
+                {customer.company && customer.name && (
+                  <Text className="text-gray-600 text-sm">{customer.name}</Text>
                 )}
                 {customer.phone && (
                   <Text className="text-gray-500 text-sm">{customer.phone}</Text>

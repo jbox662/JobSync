@@ -284,9 +284,9 @@ const QuoteDetailScreen = () => {
               <Ionicons name="person-circle-outline" size={24} color="#6B7280" />
               <View className="ml-3 flex-1">
                 <Text className="text-gray-900 font-medium">Customer</Text>
-                <Text className="text-gray-600 text-sm">{customer?.name || 'Unknown Customer'}</Text>
-                {customer?.company && (
-                  <Text className="text-gray-500 text-xs">{customer.company}</Text>
+                <Text className="text-gray-600 text-sm">{customer?.company || customer?.name || 'Unknown Customer'}</Text>
+                {customer?.company && customer?.name && (
+                  <Text className="text-gray-500 text-xs">{customer.name}</Text>
                 )}
               </View>
             </View>
