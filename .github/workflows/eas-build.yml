@@ -1,0 +1,124 @@
+name: EAS Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+jobs:
+  build:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🏗 Setup repo
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: npm
+
+      - name: 🏗 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 👷 Build app (Development)
+        if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.profile == 'development')
+        run: |
+          PLATFORM="${{ github.event.inputs.platform || 'all' }}"
+          eas build --platform $PLATFORM --profile development --non-interactive --no-wait
+
+      - name: 👷 Build app (Preview)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.profile == 'preview'
+        run: |
+          PLATFORM="${{ github.event.inputs.platform || 'all' }}"
+          eas build --platform $PLATFORM --profile preview --non-interactive --no-wait
+
+      - name: 👷 Build app (Production)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.profile == 'production'
+        run: |
+          PLATFORM="${{ github.event.inputs.platform || 'all' }}"
+          eas build --platform $PLATFORM --profile production --non-interactive --no-wait
+
+      - name: 📱 Comment PR with Build Details
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 EAS Build triggered for this PR! Check your [EAS Dashboard](https://expo.dev/builds) for build status and download links.'
+            });
+
+  submit:
+    name: Submit to app stores
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.profile == 'production' && (github.event.inputs.platform == 'all' || github.event.inputs.platform == 'android' || github.event.inputs.platform == 'ios')
+    
+    steps:
+      - name: 🏗 Setup repo
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: npm
+
+      - name: 🏗 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🚀 Submit to Google Play (Internal Track)
+        if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'android'
+        run: eas submit --platform android --latest --non-interactive
+        continue-on-error: true
+
+      - name: 🚀 Submit to TestFlight
+        if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'ios'
+        run: eas submit --platform ios --latest --non-interactive
+        continue-on-error: true

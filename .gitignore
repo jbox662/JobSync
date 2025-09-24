@@ -36,3 +36,26 @@ yarn-error.*
 # iOS & Android
 ios/
 android/
+
+# EAS Build & Environment Variables
+.env.eas
+.env.local
+.env.production
+.env.staging
+
+# Apple App Store Connect API Keys
+AuthKey_*.p8
+
+# Google Play Service Account
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+
+# Build artifacts
+*.ipa
+*.apk
+*.aab
+
+# EAS Build logs
+build-logs/
+*.log

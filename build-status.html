@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobSync - Build Status Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .builds-container {
+            display: grid;
+            gap: 20px;
+        }
+        .build-card {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .build-card.in-progress {
+            border-color: #ffc107;
+            background: #fff3cd;
+        }
+        .build-card.finished {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .build-card.errored {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .build-card.canceled {
+            border-color: #6c757d;
+            background: #e2e3e5;
+        }
+        .build-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .build-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin: 0;
+            color: #333;
+        }
+        .build-status {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-in-progress {
+            background: #ffc107;
+            color: #856404;
+        }
+        .status-finished {
+            background: #28a745;
+            color: white;
+        }
+        .status-errored {
+            background: #dc3545;
+            color: white;
+        }
+        .status-canceled {
+            background: #6c757d;
+            color: white;
+        }
+        .build-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .build-info-item {
+            text-align: center;
+        }
+        .build-info-item .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .build-info-item .value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        .build-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .empty-state h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Build Status Dashboard</h1>
+            <p>Monitor your JobSync app builds and download artifacts</p>
+        </div>
+
+        <div class="controls">
+            <div class="form-group">
+                <label for="expoToken">Expo Access Token</label>
+                <input type="password" id="expoToken" placeholder="expo_token_here" 
+                       title="Get this from: https://expo.dev/settings/access-tokens">
+            </div>
+            <div style="display: flex; align-items: end;">
+                <button type="button" class="btn btn-primary" onclick="loadBuilds()">
+                    🔄 Load Builds
+                </button>
+            </div>
+        </div>
+
+        <div id="buildsContainer">
+            <div class="empty-state">
+                <h3>👋 Welcome to Build Status Dashboard</h3>
+                <p>Enter your Expo access token above and click "Load Builds" to see your recent builds.</p>
+                <p>You can get your token from: <a href="https://expo.dev/settings/access-tokens" target="_blank">expo.dev/settings/access-tokens</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentBuilds = [];
+        let refreshInterval = null;
+
+        // Load saved token
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedToken = localStorage.getItem('jobsync_expo_token');
+            if (savedToken) {
+                document.getElementById('expoToken').value = savedToken;
+                loadBuilds();
+            }
+        });
+
+        // Save token when it changes
+        document.getElementById('expoToken').addEventListener('change', function() {
+            localStorage.setItem('jobsync_expo_token', this.value);
+        });
+
+        // Load builds from EAS API
+        async function loadBuilds() {
+            const token = document.getElementById('expoToken').value;
+            if (!token) {
+                showError('Please enter your Expo access token');
+                return;
+            }
+
+            const container = document.getElementById('buildsContainer');
+            container.innerHTML = '<div class="loading">🔄 Loading builds...</div>';
+
+            try {
+                const response = await fetch('https://api.expo.dev/v2/builds', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                currentBuilds = data;
+                
+                displayBuilds(currentBuilds);
+                
+                // Auto-refresh every 30 seconds if there are in-progress builds
+                const hasInProgress = currentBuilds.some(build => build.status === 'in-progress');
+                if (hasInProgress) {
+                    startAutoRefresh();
+                } else {
+                    stopAutoRefresh();
+                }
+
+            } catch (error) {
+                showError(`Failed to load builds: ${error.message}`);
+            }
+        }
+
+        // Display builds in the UI
+        function displayBuilds(builds) {
+            const container = document.getElementById('buildsContainer');
+            
+            if (!builds || builds.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📱 No builds found</h3>
+                        <p>You haven't created any builds yet.</p>
+                        <p><a href="./build-trigger.html">Trigger your first build →</a></p>
+                    </div>
+                `;
+                return;
+            }
+
+            const buildsHTML = builds.map(build => {
+                const statusClass = getStatusClass(build.status);
+                const statusText = build.status.replace('_', ' ').toUpperCase();
+                const createdAt = new Date(build.createdAt).toLocaleString();
+                const platform = build.platform || 'unknown';
+                const profile = build.profile || 'unknown';
+
+                return `
+                    <div class="build-card ${statusClass}">
+                        <div class="build-header">
+                            <h3 class="build-title">
+                                ${getEmoji(build.status)} ${build.appName || 'JobSync'} - ${platform}
+                            </h3>
+                            <span class="build-status status-${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                        
+                        ${build.status === 'in-progress' ? '<div class="progress-bar"><div class="progress-fill"></div></div>' : ''}
+                        
+                        <div class="build-info">
+                            <div class="build-info-item">
+                                <div class="label">Platform</div>
+                                <div class="value">${platform}</div>
+                            </div>
+                            <div class="build-info-item">
+                                <div class="label">Profile</div>
+                                <div class="value">${profile}</div>
+                            </div>
+                            <div class="build-info-item">
+                                <div class="label">Created</div>
+                                <div class="value">${createdAt}</div>
+                            </div>
+                            <div class="build-info-item">
+                                <div class="label">Duration</div>
+                                <div class="value">${getBuildDuration(build)}</div>
+                            </div>
+                        </div>
+
+                        <div class="build-actions">
+                            <a href="https://expo.dev/builds/${build.id}" target="_blank" class="btn btn-primary">
+                                📊 View Details
+                            </a>
+                            ${build.artifacts?.buildUrl ? `
+                                <a href="${build.artifacts.buildUrl}" target="_blank" class="btn btn-primary">
+                                    📱 Download App
+                                </a>
+                            ` : ''}
+                            ${build.status === 'finished' && build.artifacts?.buildUrl ? `
+                                <button class="btn btn-primary" onclick="generateQR('${build.artifacts.buildUrl}')">
+                                    📱 Show QR Code
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="builds-container">${buildsHTML}</div>`;
+        }
+
+        // Get status class for styling
+        function getStatusClass(status) {
+            switch (status) {
+                case 'in-progress':
+                case 'pending':
+                    return 'in-progress';
+                case 'finished':
+                case 'completed':
+                    return 'finished';
+                case 'errored':
+                case 'error':
+                case 'failed':
+                    return 'errored';
+                case 'canceled':
+                case 'cancelled':
+                    return 'canceled';
+                default:
+                    return 'in-progress';
+            }
+        }
+
+        // Get emoji for status
+        function getEmoji(status) {
+            switch (status) {
+                case 'in-progress':
+                case 'pending':
+                    return '🔄';
+                case 'finished':
+                case 'completed':
+                    return '✅';
+                case 'errored':
+                case 'error':
+                case 'failed':
+                    return '❌';
+                case 'canceled':
+                case 'cancelled':
+                    return '⏹️';
+                default:
+                    return '📱';
+            }
+        }
+
+        // Calculate build duration
+        function getBuildDuration(build) {
+            if (!build.createdAt) return 'Unknown';
+            
+            const start = new Date(build.createdAt);
+            const end = build.completedAt ? new Date(build.completedAt) : new Date();
+            const duration = Math.floor((end - start) / 1000);
+            
+            if (duration < 60) return `${duration}s`;
+            if (duration < 3600) return `${Math.floor(duration / 60)}m ${duration % 60}s`;
+            return `${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m`;
+        }
+
+        // Show error message
+        function showError(message) {
+            const container = document.getElementById('buildsContainer');
+            container.innerHTML = `
+                <div class="error-message">
+                    ❌ ${message}
+                </div>
+                <div class="empty-state">
+                    <h3>Need help?</h3>
+                    <p>Make sure you have:</p>
+                    <ul style="text-align: left; display: inline-block;">
+                        <li>A valid Expo access token</li>
+                        <li>At least one build created via EAS Build</li>
+                        <li>Proper permissions on your Expo account</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Generate QR code for app download
+        function generateQR(url) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            
+            const popup = window.open('', '_blank', 'width=300,height=300');
+            popup.document.write(`
+                <html>
+                <head><title>Download App</title></head>
+                <body style="text-align: center; padding: 20px; font-family: sans-serif;">
+                    <h3>📱 Scan to Install</h3>
+                    <img src="${qrUrl}" alt="QR Code" style="border: 2px solid #ddd; border-radius: 8px;">
+                    <p>Scan with your phone to download and install the app</p>
+                </body>
+                </html>
+            `);
+        }
+
+        // Auto-refresh functionality
+        function startAutoRefresh() {
+            stopAutoRefresh(); // Clear any existing interval
+            refreshInterval = setInterval(() => {
+                loadBuilds();
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', stopAutoRefresh);
+    </script>
+</body>
+</html>

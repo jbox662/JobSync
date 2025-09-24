@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobSync - EAS Build Trigger</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .instructions ol {
+            color: #666;
+            line-height: 1.6;
+        }
+        .instructions code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        .status-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .link-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+        .link-card:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        .link-card h4 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+        }
+        .link-card p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 JobSync EAS Build</h1>
+            <p>Trigger builds and manage your React Native app deployment</p>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <form id="buildForm">
+            <div class="form-group">
+                <label for="platform">Platform</label>
+                <select id="platform" name="platform">
+                    <option value="all">All Platforms (iOS + Android)</option>
+                    <option value="android">Android Only</option>
+                    <option value="ios">iOS Only</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="profile">Build Profile</label>
+                <select id="profile" name="profile">
+                    <option value="development">Development (Testing)</option>
+                    <option value="preview">Preview (Internal QA)</option>
+                    <option value="production">Production (App Stores)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="githubToken">GitHub Personal Access Token</label>
+                <input type="password" id="githubToken" name="githubToken" 
+                       placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
+                       required>
+                <small style="color: #666; font-size: 14px;">
+                    Get this from: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub Settings</a> 
+                    (needs workflow permissions)
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="repository">Repository (owner/repo)</label>
+                <input type="text" id="repository" name="repository" 
+                       placeholder="yourusername/jobsync" 
+                       required>
+            </div>
+        </form>
+
+        <div class="button-group">
+            <button type="button" class="btn btn-primary" onclick="triggerBuild()">
+                🔨 Trigger Build
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="openEASDashboard()">
+                📊 View EAS Dashboard
+            </button>
+            <button type="button" class="btn btn-success" onclick="openGitHubActions()">
+                ⚡ View GitHub Actions
+            </button>
+        </div>
+
+        <div class="instructions">
+            <h3>🛠️ Setup Instructions</h3>
+            <ol>
+                <li>Create an Expo account at <a href="https://expo.dev/signup" target="_blank">expo.dev/signup</a></li>
+                <li>Generate an access token at <a href="https://expo.dev/settings/access-tokens" target="_blank">expo.dev/settings/access-tokens</a></li>
+                <li>Copy <code>.env.eas.example</code> to <code>.env.eas</code> and add your token</li>
+                <li>Run <code>node initialize-eas-project.js</code> to set up your project</li>
+                <li>Add <code>EXPO_TOKEN</code> secret to your GitHub repository settings</li>
+                <li>Create a GitHub Personal Access Token with workflow permissions</li>
+                <li>Use this interface to trigger builds remotely!</li>
+            </ol>
+        </div>
+
+        <div class="links">
+            <a href="https://expo.dev/builds" target="_blank" class="link-card">
+                <h4>📊 EAS Build Dashboard</h4>
+                <p>View build status, download artifacts, and access build logs</p>
+            </a>
+            <a href="https://docs.expo.dev/build/introduction/" target="_blank" class="link-card">
+                <h4>📚 EAS Build Documentation</h4>
+                <p>Complete guide to EAS Build configuration and usage</p>
+            </a>
+            <a href="https://expo.dev/settings/access-tokens" target="_blank" class="link-card">
+                <h4>🔑 Generate Access Token</h4>
+                <p>Create tokens for programmatic access to Expo services</p>
+            </a>
+            <a href="./build-status.html" class="link-card">
+                <h4>📱 Build Status Monitor</h4>
+                <p>Monitor build progress and download completed builds</p>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Show status messages
+        function showStatus(message, isError = false) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+            statusEl.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // Trigger build via GitHub Actions API
+        async function triggerBuild() {
+            const platform = document.getElementById('platform').value;
+            const profile = document.getElementById('profile').value;
+            const githubToken = document.getElementById('githubToken').value;
+            const repository = document.getElementById('repository').value;
+
+            if (!githubToken || !repository) {
+                showStatus('Please fill in all required fields', true);
+                return;
+            }
+
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '🔄 Triggering Build...';
+
+            try {
+                const response = await fetch(`https://api.github.com/repos/${repository}/actions/workflows/eas-build.yml/dispatches`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ref: 'main',
+                        inputs: {
+                            platform: platform,
+                            profile: profile
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    showStatus(`✅ Build triggered successfully! Platform: ${platform}, Profile: ${profile}`);
+                    setTimeout(() => {
+                        openGitHubActions();
+                    }, 2000);
+                } else {
+                    const errorData = await response.json();
+                    showStatus(`❌ Failed to trigger build: ${errorData.message}`, true);
+                }
+            } catch (error) {
+                showStatus(`❌ Error: ${error.message}`, true);
+            } finally {
+                button.disabled = false;
+                button.textContent = '🔨 Trigger Build';
+            }
+        }
+
+        // Open EAS Dashboard
+        function openEASDashboard() {
+            window.open('https://expo.dev/builds', '_blank');
+        }
+
+        // Open GitHub Actions
+        function openGitHubActions() {
+            const repository = document.getElementById('repository').value;
+            if (repository) {
+                window.open(`https://github.com/${repository}/actions`, '_blank');
+            } else {
+                window.open('https://github.com', '_blank');
+            }
+        }
+
+        // Load saved values from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedRepo = localStorage.getItem('jobsync_repository');
+            if (savedRepo) {
+                document.getElementById('repository').value = savedRepo;
+            }
+
+            // Save repository when it changes
+            document.getElementById('repository').addEventListener('change', function() {
+                localStorage.setItem('jobsync_repository', this.value);
+            });
+        });
+    </script>
+</body>
+</html>
