@@ -114,29 +114,70 @@ export const useJobStore = create<JobStore>()(
         }
       };
 
-      const appendChange = (entity: ChangeEvent['entity'], operation: ChangeEvent['operation'], row: any) => {
-        const uid = getCurrentUserId();
-        if (!uid) return; // No user authenticated, skip change tracking
-        const ev: ChangeEvent = {
-          id: uuidv4(),
-          entity,
-          operation,
-          row,
-          updatedAt: new Date().toISOString(),
-          deletedAt: operation === 'delete' ? new Date().toISOString() : null,
-        };
-        const cur = get().outboxByUser[uid] || [];
-        set({ outboxByUser: { ...get().outboxByUser, [uid]: [...cur, ev] } });
+      const appendChange = (
+        entity: ChangeEvent['entity'], 
+        operation: ChangeEvent['operation'], 
+        row: any, 
+        getStore?: () => any, 
+        setState?: (state: any) => void, 
+        getUserId?: () => string | null
+      ) => {
+        try {
+          // Use provided store references or fallback to original get/set
+          const getRef = getStore || get;
+          const setRef = setState || set;
+          const getUidRef = getUserId || getCurrentUserId;
+          
+          const uid = getUidRef();
+          if (!uid) {
+            console.warn('[appendChange] No user authenticated, skipping change tracking');
+            return;
+          }
+          
+          const ev: ChangeEvent = {
+            id: uuidv4(),
+            entity,
+            operation,
+            row,
+            updatedAt: new Date().toISOString(),
+            deletedAt: operation === 'delete' ? new Date().toISOString() : null,
+          };
+          
+          const currentState = getRef();
+          const cur = currentState.outboxByUser?.[uid] || [];
+          setRef({ outboxByUser: { ...currentState.outboxByUser, [uid]: [...cur, ev] } });
+        } catch (error) {
+          console.error('[appendChange] Store context lost, skipping change tracking:', error);
+        }
       };
 
-      const syncTopLevel = () => {
-        const state = get();
-        const uid = getCurrentUserId(); // Use the helper function that prioritizes authenticatedUser.id
-        if (!uid || !state.dataByUser[uid]) {
-          return;
+      const syncTopLevel = (getStore?: () => any, setState?: (state: any) => void, getUserId?: () => string | null) => {
+        try {
+          // Use provided store references or fallback to original get/set
+          const getRef = getStore || get;
+          const setRef = setState || set;
+          const getUidRef = getUserId || getCurrentUserId;
+          
+          const state = getRef();
+          const uid = getUidRef();
+          
+          if (!uid || !state?.dataByUser?.[uid]) {
+            console.warn('[syncTopLevel] No user or user data slice available');
+            return;
+          }
+          
+          const slice = state.dataByUser[uid];
+          setRef({ 
+            customers: slice.customers || [], 
+            parts: slice.parts || [], 
+            laborItems: slice.laborItems || [], 
+            jobs: slice.jobs || [], 
+            quotes: slice.quotes || [], 
+            invoices: slice.invoices || [] 
+          } as Partial<JobStore>);
+        } catch (error) {
+          console.error('[syncTopLevel] Store context lost, skipping top-level sync:', error);
         }
-        const slice = state.dataByUser[uid];
-        set({ customers: slice.customers, parts: slice.parts, laborItems: slice.laborItems, jobs: slice.jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } as Partial<JobStore>);
       };
 
       const now = new Date().toISOString();
@@ -222,7 +263,7 @@ export const useJobStore = create<JobStore>()(
               [user.id]: get().dataByUser[user.id] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] } 
             }
           });
-          syncTopLevel();
+          syncTopLevel(get, set, getCurrentUserId);
           
           // Note: Manual sync should be triggered after authentication when needed
           console.log('[Store] User authenticated - sync can be triggered manually via syncNow()');
@@ -409,7 +450,7 @@ export const useJobStore = create<JobStore>()(
                   }, 
                   lastSyncByUser: { ...finalState.lastSyncByUser, [uid]: pull.serverTime } 
                 });
-                syncTopLevel();
+                syncTopLevel(getStore, setState, () => uid);
               } catch (storeError) {
                 console.error('🚨 Store context lost during pull processing:', storeError);
               }
@@ -513,20 +554,20 @@ export const useJobStore = create<JobStore>()(
           const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
           const updated = { ...slice, customers: [...slice.customers, customer] }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          appendChange('customers', 'create', customer); 
-          syncTopLevel();
+           appendChange('customers', 'create', customer, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
           // Note: Manual sync can be triggered via syncNow() when needed 
         },
-        updateCustomer: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.customers.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)); const updated = { ...slice, customers: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((c) => c.id === id)!; appendChange('customers', 'update', row); syncTopLevel(); },
-        deleteCustomer: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.customers.find((c) => c.id === id); const updated = { ...slice, customers: slice.customers.filter((c) => c.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('customers', 'delete', row); syncTopLevel(); },
+        updateCustomer: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.customers.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)); const updated = { ...slice, customers: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((c) => c.id === id)!; appendChange('customers', 'update', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
+        deleteCustomer: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.customers.find((c) => c.id === id); const updated = { ...slice, customers: slice.customers.filter((c) => c.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('customers', 'delete', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
 
-        addPart: (partData) => { const uid = getCurrentUserId(); if (!uid) return; const part: Part = { ...partData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updated = { ...slice, parts: [...slice.parts, part] }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('parts', 'create', part); syncTopLevel(); },
-        updatePart: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.parts.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p)); const updated = { ...slice, parts: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((p) => p.id === id)!; appendChange('parts', 'update', row); syncTopLevel(); },
-        deletePart: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.parts.find((p) => p.id === id); const updated = { ...slice, parts: slice.parts.filter((p) => p.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('parts', 'delete', row); syncTopLevel(); },
+        addPart: (partData) => { const uid = getCurrentUserId(); if (!uid) return; const part: Part = { ...partData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updated = { ...slice, parts: [...slice.parts, part] }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('parts', 'create', part, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
+        updatePart: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.parts.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p)); const updated = { ...slice, parts: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((p) => p.id === id)!; appendChange('parts', 'update', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
+        deletePart: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.parts.find((p) => p.id === id); const updated = { ...slice, parts: slice.parts.filter((p) => p.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('parts', 'delete', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
 
-        addLaborItem: (itemData) => { const uid = getCurrentUserId(); if (!uid) return; const item: LaborItem = { ...itemData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updated = { ...slice, laborItems: [...slice.laborItems, item] }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('laborItems', 'create', item); syncTopLevel(); },
-        updateLaborItem: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.laborItems.map((it) => (it.id === id ? { ...it, ...updates, updatedAt: new Date().toISOString() } : it)); const updated = { ...slice, laborItems: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((it) => it.id === id)!; appendChange('laborItems', 'update', row); syncTopLevel(); },
-        deleteLaborItem: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.laborItems.find((it) => it.id === id); const updated = { ...slice, laborItems: slice.laborItems.filter((it) => it.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('laborItems', 'delete', row); syncTopLevel(); },
+        addLaborItem: (itemData) => { const uid = getCurrentUserId(); if (!uid) return; const item: LaborItem = { ...itemData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updated = { ...slice, laborItems: [...slice.laborItems, item] }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('laborItems', 'create', item, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
+        updateLaborItem: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.laborItems.map((it) => (it.id === id ? { ...it, ...updates, updatedAt: new Date().toISOString() } : it)); const updated = { ...slice, laborItems: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((it) => it.id === id)!; appendChange('laborItems', 'update', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
+        deleteLaborItem: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.laborItems.find((it) => it.id === id); const updated = { ...slice, laborItems: slice.laborItems.filter((it) => it.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('laborItems', 'delete', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
 
         // Job CRUD (simplified - no pricing)
         addJob: (jobData) => { 
@@ -537,8 +578,8 @@ export const useJobStore = create<JobStore>()(
           const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
           const updated = { ...slice, jobs: [...slice.jobs, job] }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          appendChange('jobs', 'create', job); 
-          syncTopLevel(); 
+          appendChange('jobs', 'create', job, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
         updateJob: (id, updates) => { 
           const uid = getCurrentUserId(); 
@@ -549,8 +590,8 @@ export const useJobStore = create<JobStore>()(
           const updated = { ...slice, jobs: updatedJobs }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
           const row = updatedJobs.find((j) => j.id === id)!; 
-          appendChange('jobs', 'update', row); 
-          syncTopLevel(); 
+          appendChange('jobs', 'update', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
         deleteJob: (id) => { 
           const uid = getCurrentUserId(); 
@@ -560,8 +601,8 @@ export const useJobStore = create<JobStore>()(
           const row = slice.jobs.find((j) => j.id === id); 
           const updated = { ...slice, jobs: slice.jobs.filter((j) => j.id !== id) }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          if (row) appendChange('jobs', 'delete', row); 
-          syncTopLevel(); 
+          if (row) appendChange('jobs', 'delete', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
 
         // Quote CRUD
@@ -581,8 +622,8 @@ export const useJobStore = create<JobStore>()(
           const slice = state.dataByUser[uid]; 
           const updated = { ...slice, quotes: [...(slice.quotes || []), quote] }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          appendChange('quotes', 'create', quote); 
-          syncTopLevel(); 
+          appendChange('quotes', 'create', quote, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
         updateQuote: (id, updates) => { 
           const state = get(); 
@@ -602,8 +643,8 @@ export const useJobStore = create<JobStore>()(
           const updated = { ...slice, quotes: updatedQuotes }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
           const row = updatedQuotes.find((q) => q.id === id)!; 
-          appendChange('quotes', 'update', row); 
-          syncTopLevel(); 
+          appendChange('quotes', 'update', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
         deleteQuote: (id) => { 
           const state = get(); 
@@ -612,8 +653,8 @@ export const useJobStore = create<JobStore>()(
           const row = (slice.quotes || []).find((q) => q.id === id); 
           const updated = { ...slice, quotes: (slice.quotes || []).filter((q) => q.id !== id) }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          if (row) appendChange('quotes', 'delete', row); 
-          syncTopLevel(); 
+          if (row) appendChange('quotes', 'delete', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
 
         // Invoice CRUD
@@ -633,8 +674,8 @@ export const useJobStore = create<JobStore>()(
           const slice = state.dataByUser[uid]; 
           const updated = { ...slice, invoices: [...(slice.invoices || []), invoice] }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          appendChange('invoices', 'create', invoice); 
-          syncTopLevel(); 
+          appendChange('invoices', 'create', invoice, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
         updateInvoice: (id, updates) => { 
           const state = get(); 
@@ -654,8 +695,8 @@ export const useJobStore = create<JobStore>()(
           const updated = { ...slice, invoices: updatedInvoices }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
           const row = updatedInvoices.find((i) => i.id === id)!; 
-          appendChange('invoices', 'update', row); 
-          syncTopLevel(); 
+          appendChange('invoices', 'update', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
         deleteInvoice: (id) => { 
           const state = get(); 
@@ -664,8 +705,8 @@ export const useJobStore = create<JobStore>()(
           const row = (slice.invoices || []).find((i) => i.id === id); 
           const updated = { ...slice, invoices: (slice.invoices || []).filter((i) => i.id !== id) }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          if (row) appendChange('invoices', 'delete', row); 
-          syncTopLevel(); 
+          if (row) appendChange('invoices', 'delete', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId); 
         },
 
         // Utility functions
