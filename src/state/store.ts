@@ -219,15 +219,8 @@ export const useJobStore = create<JobStore>()(
           });
           syncTopLevel();
           
-          // Immediately sync data from Supabase on authentication (with small delay to allow state to settle)
-          setTimeout(() => {
-            const currentState = get();
-            if (currentState.isAuthenticated && currentState.workspaceId) {
-              get().syncNow().catch(error => {
-                console.log('⚠️ Initial sync failed after authentication:', error);
-              });
-            }
-          }, 500);
+          // Note: Manual sync should be triggered after authentication when needed
+          console.log('[Store] User authenticated - sync can be triggered manually via syncNow()');
         },
         
         clearAuthentication: () => {
@@ -391,11 +384,10 @@ export const useJobStore = create<JobStore>()(
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
           appendChange('customers', 'create', customer); 
           syncTopLevel();
-          // Auto-sync to Supabase after a short delay
-          setTimeout(() => get().syncNow(), 1000); 
+          // Note: Manual sync can be triggered via syncNow() when needed 
         },
-        updateCustomer: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.customers.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)); const updated = { ...slice, customers: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((c) => c.id === id)!; appendChange('customers', 'update', row); syncTopLevel(); setTimeout(() => get().syncNow(), 1000); },
-        deleteCustomer: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.customers.find((c) => c.id === id); const updated = { ...slice, customers: slice.customers.filter((c) => c.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('customers', 'delete', row); syncTopLevel(); setTimeout(() => get().syncNow(), 1000); },
+        updateCustomer: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.customers.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)); const updated = { ...slice, customers: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((c) => c.id === id)!; appendChange('customers', 'update', row); syncTopLevel(); },
+        deleteCustomer: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.customers.find((c) => c.id === id); const updated = { ...slice, customers: slice.customers.filter((c) => c.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('customers', 'delete', row); syncTopLevel(); },
 
         addPart: (partData) => { const uid = getCurrentUserId(); if (!uid) return; const part: Part = { ...partData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updated = { ...slice, parts: [...slice.parts, part] }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('parts', 'create', part); syncTopLevel(); },
         updatePart: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.parts.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p)); const updated = { ...slice, parts: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((p) => p.id === id)!; appendChange('parts', 'update', row); syncTopLevel(); },
@@ -601,76 +593,79 @@ export const useJobStore = create<JobStore>()(
 
         // Sample data generation
         generateSampleData: () => {
-          const { addCustomer, addPart, addLaborItem, addJob, customers, parts, laborItems } = get();
+          console.log('[Store] Generating sample data...');
+          const store = get();
+          const { addCustomer, addPart, addLaborItem, addJob } = store;
           const now = new Date().toISOString();
 
-          // Add sample customers
-          addCustomer({
-            name: "ACME Construction",
-            email: "contact@acmeconstruction.com",
-            phone: "(555) 123-4567",
-            address: "123 Main St, Anytown, NY 12345",
-            company: "ACME Construction LLC"
-          });
+          try {
+            // Add sample customers
+            addCustomer({
+              name: "ACME Construction",
+              email: "contact@acmeconstruction.com",
+              phone: "(555) 123-4567",
+              address: "123 Main St, Anytown, NY 12345",
+              company: "ACME Construction LLC"
+            });
 
-          addCustomer({
-            name: "Smith Residence",
-            email: "john@smithfamily.com",
-            phone: "(555) 987-6543",
-            address: "456 Oak Ave, Somewhere, CA 90210"
-          });
+            addCustomer({
+              name: "Smith Residence", 
+              email: "john@smithfamily.com",
+              phone: "(555) 987-6543",
+              address: "456 Oak Ave, Somewhere, CA 90210"
+            });
 
-          // Add sample parts
-          addPart({
-            name: "Premium Wood Flooring",
-            description: "High-quality hardwood flooring planks",
-            unitPrice: 8.50,
-            price: 8.50,
-            stock: 500,
-            sku: "WF-001",
-            category: "Flooring"
-          });
+            // Add sample parts
+            addPart({
+              name: "Premium Wood Flooring",
+              description: "High-quality hardwood flooring planks",
+              unitPrice: 8.50,
+              price: 8.50,
+              stock: 500,
+              sku: "WF-001",
+              category: "Flooring"
+            });
 
-          addPart({
-            name: "Paint - Interior White",
-            description: "Premium interior paint, 1 gallon",
-            unitPrice: 45.00,
-            price: 45.00,
-            stock: 25,
-            sku: "PT-002",
-            category: "Paint"
-          });
+            addPart({
+              name: "Paint - Interior White",
+              description: "Premium interior paint, 1 gallon",
+              unitPrice: 45.00,
+              price: 45.00,
+              stock: 25,
+              sku: "PT-002", 
+              category: "Paint"
+            });
 
-          // Add sample labor items
-          addLaborItem({
-            name: "Flooring Installation",
-            description: "Professional flooring installation service",
-            hourlyRate: 75.00,
-            price: 75.00,
-            category: "Installation"
-          });
+            // Add sample labor items
+            addLaborItem({
+              name: "Flooring Installation",
+              description: "Professional flooring installation service",
+              hourlyRate: 75.00,
+              price: 75.00,
+              category: "Installation"
+            });
 
-          addLaborItem({
-            name: "Interior Painting",
-            description: "Professional interior painting service",
-            hourlyRate: 55.00,
-            price: 55.00,
-            category: "Painting"
-          });
+            addLaborItem({
+              name: "Interior Painting", 
+              description: "Professional interior painting service",
+              hourlyRate: 55.00,
+              price: 55.00,
+              category: "Painting"
+            });
 
-          // Wait a moment for items to be added, then create jobs
-          setTimeout(() => {
-            const currentCustomers = get().customers;
-            const currentParts = get().parts;
-            const currentLabor = get().laborItems;
+            // Get updated store state after adding items
+            const updatedStore = get();
+            const currentCustomers = updatedStore.customers;
+            const currentParts = updatedStore.parts;
+            const currentLabor = updatedStore.laborItems;
 
             if (currentCustomers.length >= 2 && currentParts.length >= 2 && currentLabor.length >= 2) {
-              const customer1Id = currentCustomers[0].id;
-              const customer2Id = currentCustomers[1].id;
-              const part1Id = currentParts[0].id;
-              const part2Id = currentParts[1].id;
-              const labor1Id = currentLabor[0].id;
-              const labor2Id = currentLabor[1].id;
+              const customer1Id = currentCustomers[currentCustomers.length - 2].id; // Second to last (ACME)
+              const customer2Id = currentCustomers[currentCustomers.length - 1].id; // Last (Smith)
+              const part1Id = currentParts[currentParts.length - 2].id; // Wood flooring
+              const part2Id = currentParts[currentParts.length - 1].id; // Paint
+              const labor1Id = currentLabor[currentLabor.length - 2].id; // Flooring install
+              const labor2Id = currentLabor[currentLabor.length - 1].id; // Interior painting
 
               // Add sample jobs with items
               const job1Items: JobItem[] = [
@@ -703,7 +698,7 @@ export const useJobStore = create<JobStore>()(
                 status: 'active',
                 notes: "Client wants premium materials throughout",
                 startDate: now,
-                dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+                dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
                 estimatedHours: 40,
                 items: job1Items
               });
@@ -738,14 +733,18 @@ export const useJobStore = create<JobStore>()(
                 status: 'active',
                 notes: "Customer prefers neutral colors",
                 startDate: now,
-                dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+                dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
                 estimatedHours: 20,
                 items: job2Items
               });
 
               console.log('[Store] Sample data generated successfully');
+            } else {
+              console.log('[Store] Not enough base data created for jobs');
             }
-          }, 100);
+          } catch (error) {
+            console.error('[Store] Error generating sample data:', error);
+          }
         },
       };
     },
