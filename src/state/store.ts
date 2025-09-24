@@ -151,30 +151,79 @@ export const useJobStore = create<JobStore>()(
         }
       };
 
-      const syncTopLevel = (getStore?: () => any, setState?: (state: any) => void, getUserId?: () => string | null) => {
+      const syncTopLevel = (getStore?: () => any, setState?: (state: any) => void, getUserId?: (() => string | null) | string) => {
         try {
+          // Enhanced null checking and store validation
+          if (!getStore && !get) {
+            console.error('[syncTopLevel] No store getter available');
+            return;
+          }
+          if (!setState && !set) {
+            console.error('[syncTopLevel] No state setter available');
+            return;
+          }
+          
           // Use provided store references or fallback to original get/set
           const getRef = getStore || get;
           const setRef = setState || set;
-          const getUidRef = getUserId || getCurrentUserId;
           
-          const state = getRef();
-          const uid = getUidRef();
+          // Handle uid parameter - can be a function or direct string value
+          let uid: string | null = null;
+          if (typeof getUserId === 'string') {
+            // Direct string value passed
+            uid = getUserId;
+          } else if (typeof getUserId === 'function') {
+            // Function that returns uid
+            try {
+              uid = getUserId();
+            } catch (uidError) {
+              console.warn('[syncTopLevel] Error getting uid from function:', uidError);
+              uid = null;
+            }
+          } else {
+            // Fallback to getCurrentUserId
+            try {
+              uid = getCurrentUserId();
+            } catch (uidError) {
+              console.warn('[syncTopLevel] Error getting uid from getCurrentUserId:', uidError);
+              uid = null;
+            }
+          }
           
-          if (!uid || !state?.dataByUser?.[uid]) {
-            console.warn('[syncTopLevel] No user or user data slice available');
+          if (!uid) {
+            console.warn('[syncTopLevel] No user ID available');
+            return;
+          }
+          
+          // Safely get state
+          let state: any;
+          try {
+            state = getRef();
+          } catch (stateError) {
+            console.error('[syncTopLevel] Error getting state:', stateError);
+            return;
+          }
+          
+          if (!state?.dataByUser?.[uid]) {
+            console.warn('[syncTopLevel] No user data slice available for uid:', uid);
             return;
           }
           
           const slice = state.dataByUser[uid];
-          setRef({ 
-            customers: slice.customers || [], 
-            parts: slice.parts || [], 
-            laborItems: slice.laborItems || [], 
-            jobs: slice.jobs || [], 
-            quotes: slice.quotes || [], 
-            invoices: slice.invoices || [] 
-          } as Partial<JobStore>);
+          
+          // Safely update state
+          try {
+            setRef({ 
+              customers: slice.customers || [], 
+              parts: slice.parts || [], 
+              laborItems: slice.laborItems || [], 
+              jobs: slice.jobs || [], 
+              quotes: slice.quotes || [], 
+              invoices: slice.invoices || [] 
+            } as Partial<JobStore>);
+          } catch (setError) {
+            console.error('[syncTopLevel] Error setting state:', setError);
+          }
         } catch (error) {
           console.error('[syncTopLevel] Store context lost, skipping top-level sync:', error);
         }
@@ -346,6 +395,7 @@ export const useJobStore = create<JobStore>()(
           // Capture store references at the start to prevent context loss during async operations
           const getStore = get;
           const setState = set;
+          const getCurrentUserIdRef = getCurrentUserId;
           
           let state;
           try {
@@ -368,8 +418,8 @@ export const useJobStore = create<JobStore>()(
             return;
           }
           
-          // Get current user ID safely
-          let uid;
+          // Get current user ID safely and capture it as a constant
+          let uid: string | null = null;
           try {
             uid = state.authenticatedUser?.id || state.currentUserId;
           } catch (uidError) {
@@ -380,6 +430,9 @@ export const useJobStore = create<JobStore>()(
             setState({ syncError: 'No authenticated user' });
             return;
           }
+          
+          // Capture uid as const to prevent closure context loss
+          const capturedUid = uid;
           
           try {
             setState({ isSyncing: true, syncError: null });
@@ -401,19 +454,52 @@ export const useJobStore = create<JobStore>()(
             const okPush = await pushChanges({ workspaceId: ws, deviceId, changes: outbox });
             if (okPush) {
               try {
+                // Validate store references before push cleanup
+                if (!getStore || typeof getStore !== 'function') {
+                  throw new Error('getStore reference is invalid during push cleanup');
+                }
+                if (!setState || typeof setState !== 'function') {
+                  throw new Error('setState reference is invalid during push cleanup');
+                }
+                
                 const latestState = getStore();
-                setState({ outboxByUser: { ...latestState.outboxByUser, [uid]: [] } });
-              } catch (storeError) {
+                if (!latestState) {
+                  throw new Error('latestState is null during push cleanup');
+                }
+                
+                setState({ 
+                  outboxByUser: { 
+                    ...latestState.outboxByUser, 
+                    [capturedUid]: [] 
+                  } 
+                });
+              } catch (storeError: any) {
                 console.error('🚨 Store context lost during push cleanup:', storeError);
+                console.error('Push cleanup error details:', {
+                  hasGetStore: !!getStore,
+                  hasSetState: !!setState,
+                  capturedUid,
+                  errorMessage: storeError?.message || 'Unknown error'
+                });
               }
             }
             
             // Try to pull changes
             let since;
             try {
+              // Validate store reference before getting since timestamp
+              if (!getStore || typeof getStore !== 'function') {
+                throw new Error('getStore reference is invalid when getting since timestamp');
+              }
+              
               const latestState = getStore();
-              since = latestState.lastSyncByUser[uid] || null;
-            } catch (storeError) {
+              if (!latestState) {
+                throw new Error('latestState is null when getting since timestamp');
+              }
+              
+              since = latestState.lastSyncByUser?.[capturedUid] || null;
+            } catch (storeError: any) {
+              console.warn('🚨 Store context lost getting since timestamp:', storeError?.message);
               since = null;
             }
             
@@ -421,9 +507,32 @@ export const useJobStore = create<JobStore>()(
             
             if (pull && pull.changes.length > 0) {
               try {
+                // Validate store references before proceeding
+                if (!getStore || typeof getStore !== 'function') {
+                  throw new Error('getStore reference is invalid');
+                }
+                if (!setState || typeof setState !== 'function') {
+                  throw new Error('setState reference is invalid');
+                }
+                
                 const latestState = getStore();
-                const slice = latestState.dataByUser[uid];
+                if (!latestState) {
+                  throw new Error('latestState is null or undefined');
+                }
+                
+                if (!latestState.dataByUser || !latestState.dataByUser[capturedUid]) {
+                  throw new Error(`User data slice not found for uid: ${capturedUid}`);
+                }
+                
+                const slice = latestState.dataByUser[capturedUid];
                 let { customers, parts, laborItems, jobs } = slice;
+                
+                // Ensure arrays exist
+                customers = customers || [];
+                parts = parts || [];
+                laborItems = laborItems || [];
+                jobs = jobs || [];
+                
                 const byId = {
                   customers: new Map(customers.map((r) => [r.id, r])),
                   parts: new Map(parts.map((r) => [r.id, r])),
@@ -432,9 +541,14 @@ export const useJobStore = create<JobStore>()(
                 } as any;
                 
                 for (const ch of pull.changes) {
-                  if (ch.operation === 'delete') { byId[ch.entity].delete(ch.row.id); continue; }
-                  const cur = byId[ch.entity].get(ch.row.id);
-                  if (!cur || (cur.updatedAt || '') < (ch.updatedAt || '')) byId[ch.entity].set(ch.row.id, ch.row);
+                  if (ch.operation === 'delete') { 
+                    byId[ch.entity]?.delete(ch.row.id); 
+                    continue; 
+                  }
+                  const cur = byId[ch.entity]?.get(ch.row.id);
+                  if (!cur || (cur.updatedAt || '') < (ch.updatedAt || '')) {
+                    byId[ch.entity]?.set(ch.row.id, ch.row);
+                  }
                 }
                 
                 customers = Array.from(byId.customers.values());
@@ -442,24 +556,61 @@ export const useJobStore = create<JobStore>()(
                 laborItems = Array.from(byId.laborItems.values());
                 jobs = Array.from(byId.jobs.values());
                 
+                // Validate store again before final state update
                 const finalState = getStore();
+                if (!finalState) {
+                  throw new Error('finalState is null or undefined');
+                }
+                
                 setState({ 
                   dataByUser: { 
                     ...finalState.dataByUser, 
-                    [uid]: { customers, parts, laborItems, jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } 
+                    [capturedUid]: { customers, parts, laborItems, jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } 
                   }, 
-                  lastSyncByUser: { ...finalState.lastSyncByUser, [uid]: pull.serverTime } 
+                  lastSyncByUser: { ...finalState.lastSyncByUser, [capturedUid]: pull.serverTime } 
                 });
-                syncTopLevel(getStore, setState, () => uid);
-              } catch (storeError) {
+                
+                // Use captured uid value to prevent closure context loss
+                syncTopLevel(getStore, setState, () => capturedUid);
+              } catch (storeError: any) {
                 console.error('🚨 Store context lost during pull processing:', storeError);
+                console.error('Store error details:', {
+                  hasGetStore: !!getStore,
+                  hasSetState: !!setState,
+                  capturedUid,
+                  errorMessage: storeError?.message || 'Unknown error',
+                  errorStack: storeError?.stack || 'No stack trace available'
+                });
               }
             } else if (pull) {
               try {
+                // Validate store references
+                if (!getStore || typeof getStore !== 'function') {
+                  throw new Error('getStore reference is invalid during timestamp update');
+                }
+                if (!setState || typeof setState !== 'function') {
+                  throw new Error('setState reference is invalid during timestamp update');
+                }
+                
                 const latestState = getStore();
-                setState({ lastSyncByUser: { ...latestState.lastSyncByUser, [uid]: pull.serverTime } });
-              } catch (storeError) {
+                if (!latestState) {
+                  throw new Error('latestState is null during timestamp update');
+                }
+                
+                setState({ 
+                  lastSyncByUser: { 
+                    ...latestState.lastSyncByUser, 
+                    [capturedUid]: pull.serverTime 
+                  } 
+                });
+              } catch (storeError: any) {
                 console.error('🚨 Store context lost during timestamp update:', storeError);
+                console.error('Timestamp update error details:', {
+                  hasGetStore: !!getStore,
+                  hasSetState: !!setState,
+                  capturedUid,
+                  errorMessage: storeError?.message || 'Unknown error'
+                });
               }
             }
             
@@ -483,6 +634,14 @@ export const useJobStore = create<JobStore>()(
                 
                 // Clear authentication state when sync fails due to token issues
                 try {
+                  // Validate store references before clearing
+                  if (!getStore || typeof getStore !== 'function') {
+                    throw new Error('getStore reference is invalid during auth clear');
+                  }
+                  if (!setState || typeof setState !== 'function') {
+                    throw new Error('setState reference is invalid during auth clear');
+                  }
+                  
                   const storeForClear = getStore();
                   // Call clearAuthentication safely
                   if (storeForClear && typeof storeForClear.clearAuthentication === 'function') {
@@ -499,18 +658,28 @@ export const useJobStore = create<JobStore>()(
                       currentUserId: null 
                     });
                   }
-                } catch (clearError) {
+                } catch (clearError: any) {
                   console.error('🚨 Error clearing authentication during sync error:', clearError);
-                  // Force authentication clear even if store context is lost
-                  setState({ 
-                    authenticatedUser: null, 
-                    isAuthenticated: false,
-                    userEmail: null,
-                    workspaceId: null,
-                    workspaceName: null,
-                    role: null,
-                    currentUserId: null 
+                  console.error('Auth clear error details:', {
+                    hasGetStore: !!getStore,
+                    hasSetState: !!setState,
+                    errorMessage: clearError?.message || 'Unknown clear error'
                   });
+                  
+                  // Last resort: force authentication clear even if store context is lost
+                  try {
+                    setState({ 
+                      authenticatedUser: null, 
+                      isAuthenticated: false,
+                      userEmail: null,
+                      workspaceId: null,
+                      workspaceName: null,
+                      role: null,
+                      currentUserId: null 
+                    });
+                  } catch (finalClearError: any) {
+                    console.error('🚨 Critical: Cannot clear authentication state:', finalClearError);
+                  }
                 }
                 
                 setState({ syncError: 'Session expired. Please sign in again.' });
