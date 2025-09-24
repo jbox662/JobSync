@@ -1,17 +1,54 @@
 {
   "expo": {
-    "name": "vibecode",
-    "slug": "vibecode",
+    "name": "JobSync",
+    "slug": "jobsync",
     "scheme": "vibecode",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "sdkVersion": "53.0.0",
+    "platforms": ["ios", "android", "web"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vibecode.jobsync.yos9j3",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSContactsUsageDescription": "This app may access contacts to provide personalized experiences.",
+        "NSCalendarsUsageDescription": "This app may access calendar data to provide scheduling features.",
+        "NSLocationWhenInUseUsageDescription": "This app may use location services to provide location-based features.",
+        "NSPhotoLibraryAddUsageDescription": "This app may access the photo library to provide photo editing features.",
+        "NSCameraUsageDescription": "This app may use the camera for enhanced features and functionality.",
+        "NSPhotoLibraryUsageDescription": "This app may access the photo library to provide photo editing features."
+      }
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.vibecode.jobsync.yos9j3",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_CONTACTS",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./icon.png"
+    },
+    "icon": "./icon.png",
+    "splash": {
+      "image": "./icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "updates": {
+      "fallbackToCacheTimeout": 0
     }
   }
 }
