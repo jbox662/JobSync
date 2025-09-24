@@ -105,8 +105,13 @@ export const useJobStore = create<JobStore>()(
     (set, get) => {
       // Helper function to get current user ID (authenticated user preferred)
       const getCurrentUserId = () => {
-        const state = get();
-        return state.authenticatedUser?.id || state.currentUserId;
+        try {
+          const state = get();
+          return state?.authenticatedUser?.id || state?.currentUserId || null;
+        } catch (error) {
+          console.warn('Store context lost in getCurrentUserId, returning null');
+          return null;
+        }
       };
 
       const appendChange = (entity: ChangeEvent['entity'], operation: ChangeEvent['operation'], row: any) => {
@@ -256,20 +261,40 @@ export const useJobStore = create<JobStore>()(
           return { inviteCode: res.inviteCode };
         },
         inviteMembers: async (emails: string[]) => {
-          const ws = get().workspaceId;
-          if (!ws) return [];
-          return await createInvites(ws, emails);
+          try {
+            const state = get();
+            const ws = state.workspaceId;
+            if (!ws) return [];
+            return await createInvites(ws, emails);
+          } catch (error) {
+            console.error('Store context lost in inviteMembers:', error);
+            return [];
+          }
         },
         acceptBusinessInvite: async (email: string, inviteCode: string) => {
-          const res = await acceptInvite(email, inviteCode, get().deviceId);
-          if (!res) return false;
-          set({ workspaceId: res.workspaceId, role: res.role, userEmail: email });
-          return true;
+          try {
+            const getStore = get;
+            const setState = set;
+            const state = getStore();
+            const res = await acceptInvite(email, inviteCode, state.deviceId);
+            if (!res) return false;
+            setState({ workspaceId: res.workspaceId, role: res.role, userEmail: email });
+            return true;
+          } catch (error) {
+            console.error('Store context lost in acceptBusinessInvite:', error);
+            return false;
+          }
         },
         listWorkspaceMembers: async () => {
-          const ws = get().workspaceId;
-          if (!ws) return [];
-          return await listMembers(ws);
+          try {
+            const state = get();
+            const ws = state.workspaceId;
+            if (!ws) return [];
+            return await listMembers(ws);
+          } catch (error) {
+            console.error('Store context lost in listWorkspaceMembers:', error);
+            return [];
+          }
         },
         logout: () => {
           set({ userEmail: null, role: null, workspaceId: null });
@@ -277,98 +302,204 @@ export const useJobStore = create<JobStore>()(
 
         // Sync Now with robust error handling
         syncNow: async () => {
-          const state = get();
+          // Capture store references at the start to prevent context loss during async operations
+          const getStore = get;
+          const setState = set;
+          
+          let state;
+          try {
+            state = getStore();
+          } catch (storeError) {
+            console.error('🚨 Store context lost during sync initialization:', storeError);
+            return;
+          }
           
           // Check if user is authenticated (which means Supabase is working)
           if (!state.isAuthenticated) {
-            set({ syncError: 'User not authenticated. Please sign in.' });
+            setState({ syncError: 'User not authenticated. Please sign in.' });
             return;
           }
           
           // Check if workspace is linked
           const ws = state.workspaceId;
           if (!ws) {
-            set({ syncError: 'Workspace not linked. Create or join a business first.' });
+            setState({ syncError: 'Workspace not linked. Create or join a business first.' });
             return;
           }
-          const uid = getCurrentUserId();
+          
+          // Get current user ID safely
+          let uid;
+          try {
+            uid = state.authenticatedUser?.id || state.currentUserId;
+          } catch (uidError) {
+            uid = null;
+          }
+          
           if (!uid) {
-            set({ syncError: 'No authenticated user' });
+            setState({ syncError: 'No authenticated user' });
             return;
           }
           
           try {
-            set({ isSyncing: true, syncError: null });
-            const outbox = get().outboxByUser[uid] || [];
+            setState({ isSyncing: true, syncError: null });
+            
+            // Get current state safely before async operations
+            let currentState;
+            try {
+              currentState = getStore();
+            } catch (storeError) {
+              console.error('🚨 Store context lost during sync:', storeError);
+              setState({ isSyncing: false, syncError: 'Store context error during sync' });
+              return;
+            }
+            
+            const outbox = currentState.outboxByUser[uid] || [];
+            const deviceId = currentState.deviceId;
             
             // Try to push changes
-            const okPush = await pushChanges({ workspaceId: ws, deviceId: get().deviceId, changes: outbox });
-            if (okPush) set({ outboxByUser: { ...get().outboxByUser, [uid]: [] } });
+            const okPush = await pushChanges({ workspaceId: ws, deviceId, changes: outbox });
+            if (okPush) {
+              try {
+                const latestState = getStore();
+                setState({ outboxByUser: { ...latestState.outboxByUser, [uid]: [] } });
+              } catch (storeError) {
+                console.error('🚨 Store context lost during push cleanup:', storeError);
+              }
+            }
             
             // Try to pull changes
-            const since = get().lastSyncByUser[uid] || null;
+            let since;
+            try {
+              const latestState = getStore();
+              since = latestState.lastSyncByUser[uid] || null;
+            } catch (storeError) {
+              since = null;
+            }
+            
             const pull = await pullChanges(ws, since);
             
             if (pull && pull.changes.length > 0) {
-              const slice = get().dataByUser[uid];
-              let { customers, parts, laborItems, jobs } = slice;
-              const byId = {
-                customers: new Map(customers.map((r) => [r.id, r])),
-                parts: new Map(parts.map((r) => [r.id, r])),
-                laborItems: new Map(laborItems.map((r) => [r.id, r])),
-                jobs: new Map(jobs.map((r) => [r.id, r])),
-              } as any;
-              
-              for (const ch of pull.changes) {
-                if (ch.operation === 'delete') { byId[ch.entity].delete(ch.row.id); continue; }
-                const cur = byId[ch.entity].get(ch.row.id);
-                if (!cur || (cur.updatedAt || '') < (ch.updatedAt || '')) byId[ch.entity].set(ch.row.id, ch.row);
+              try {
+                const latestState = getStore();
+                const slice = latestState.dataByUser[uid];
+                let { customers, parts, laborItems, jobs } = slice;
+                const byId = {
+                  customers: new Map(customers.map((r) => [r.id, r])),
+                  parts: new Map(parts.map((r) => [r.id, r])),
+                  laborItems: new Map(laborItems.map((r) => [r.id, r])),
+                  jobs: new Map(jobs.map((r) => [r.id, r])),
+                } as any;
+                
+                for (const ch of pull.changes) {
+                  if (ch.operation === 'delete') { byId[ch.entity].delete(ch.row.id); continue; }
+                  const cur = byId[ch.entity].get(ch.row.id);
+                  if (!cur || (cur.updatedAt || '') < (ch.updatedAt || '')) byId[ch.entity].set(ch.row.id, ch.row);
+                }
+                
+                customers = Array.from(byId.customers.values());
+                parts = Array.from(byId.parts.values());
+                laborItems = Array.from(byId.laborItems.values());
+                jobs = Array.from(byId.jobs.values());
+                
+                const finalState = getStore();
+                setState({ 
+                  dataByUser: { 
+                    ...finalState.dataByUser, 
+                    [uid]: { customers, parts, laborItems, jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } 
+                  }, 
+                  lastSyncByUser: { ...finalState.lastSyncByUser, [uid]: pull.serverTime } 
+                });
+                syncTopLevel();
+              } catch (storeError) {
+                console.error('🚨 Store context lost during pull processing:', storeError);
               }
-              
-              customers = Array.from(byId.customers.values());
-              parts = Array.from(byId.parts.values());
-              laborItems = Array.from(byId.laborItems.values());
-              jobs = Array.from(byId.jobs.values());
-              set({ dataByUser: { ...get().dataByUser, [uid]: { customers, parts, laborItems, jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } }, lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
-              syncTopLevel();
             } else if (pull) {
-              set({ lastSyncByUser: { ...get().lastSyncByUser, [uid]: pull.serverTime } });
+              try {
+                const latestState = getStore();
+                setState({ lastSyncByUser: { ...latestState.lastSyncByUser, [uid]: pull.serverTime } });
+              } catch (storeError) {
+                console.error('🚨 Store context lost during timestamp update:', storeError);
+              }
             }
             
             // Clear any previous sync errors on successful sync
-            set({ syncError: null });
+            setState({ syncError: null });
           } catch (error: any) {
-            console.error('🚨 Sync failed:', error);
-            
-            // Handle authentication-related sync errors
-            if (error.message?.includes('Invalid Refresh Token') || 
-                error.message?.includes('refresh_token') ||
-                error.message?.includes('Refresh Token Not Found') ||
-                error.message?.includes('JWT') ||
-                error.message?.includes('token') ||
-                error.message?.includes('unauthorized') ||
-                error.message?.includes('Unauthorized') ||
-                error.message?.includes('401')) {
+            try {
+              console.error('🚨 Sync failed:', error);
               
-              console.log('🔄 Authentication error during sync, clearing session');
-              
-              // Clear authentication state when sync fails due to token issues
-              get().clearAuthentication();
-              set({ syncError: 'Session expired. Please sign in again.' });
-              
-              // Try to clear stale session from auth service
-              try {
-                const { authService } = require('../services/auth');
-                await authService.clearStaleSession();
-              } catch (clearError) {
-                console.log('Note: Could not clear auth service session');
+              // Handle authentication-related sync errors
+              if (error.message?.includes('Invalid Refresh Token') || 
+                  error.message?.includes('refresh_token') ||
+                  error.message?.includes('Refresh Token Not Found') ||
+                  error.message?.includes('JWT') ||
+                  error.message?.includes('token') ||
+                  error.message?.includes('unauthorized') ||
+                  error.message?.includes('Unauthorized') ||
+                  error.message?.includes('401')) {
+                
+                console.log('🔄 Authentication error during sync, clearing session');
+                
+                // Clear authentication state when sync fails due to token issues
+                try {
+                  const storeForClear = getStore();
+                  // Call clearAuthentication safely
+                  if (storeForClear && typeof storeForClear.clearAuthentication === 'function') {
+                    storeForClear.clearAuthentication();
+                  } else {
+                    // Manual authentication clearing if context is lost
+                    setState({ 
+                      authenticatedUser: null, 
+                      isAuthenticated: false,
+                      userEmail: null,
+                      workspaceId: null,
+                      workspaceName: null,
+                      role: null,
+                      currentUserId: null 
+                    });
+                  }
+                } catch (clearError) {
+                  console.error('🚨 Error clearing authentication during sync error:', clearError);
+                  // Force authentication clear even if store context is lost
+                  setState({ 
+                    authenticatedUser: null, 
+                    isAuthenticated: false,
+                    userEmail: null,
+                    workspaceId: null,
+                    workspaceName: null,
+                    role: null,
+                    currentUserId: null 
+                  });
+                }
+                
+                setState({ syncError: 'Session expired. Please sign in again.' });
+                
+                // Try to clear stale session from auth service
+                try {
+                  const { authService } = require('../services/auth');
+                  await authService.clearStaleSession();
+                } catch (clearError) {
+                  console.log('Note: Could not clear auth service session');
+                }
+              } else {
+                // Other sync errors
+                setState({ syncError: error.message || 'Sync failed. Please try again.' });
               }
-            } else {
-              // Other sync errors
-              set({ syncError: error.message || 'Sync failed. Please try again.' });
+            } catch (errorHandlingError) {
+              console.error('🚨 Error during sync error handling:', errorHandlingError);
+              // Last resort error state
+              try {
+                setState({ syncError: 'Sync failed with context error. Please restart app.' });
+              } catch (finalError) {
+                console.error('🚨 Critical: Cannot set sync error state');
+              }
             }
           } finally {
-            set({ isSyncing: false });
+            try {
+              setState({ isSyncing: false });
+            } catch (finallyError) {
+              console.error('🚨 Error in sync finally block:', finallyError);
+            }
           }
         },
 
