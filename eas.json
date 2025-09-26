@@ -1,7 +1,6 @@
 {
   "cli": {
-    "version": "16.19.3",
-    "appVersionSource": "remote"
+    "version": "16.17.4"
   },
   "build": {
     "development": {
@@ -9,22 +8,21 @@
       "distribution": "internal",
       "ios": {
         "simulator": true
-      },
-      "android": {
-        "buildType": "apk"
       }
     },
     "preview": {
-      "distribution": "internal",
-      "ios": {
-        "distribution": "internal"
-      },
-      "android": {
-        "buildType": "apk"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY": "sk-proj-anielepohng9eing5Ol6Phex3oin9geg-n0tr3al",
+        "EXPO_PUBLIC_VIBECODE_ANTHROPIC_API_KEY": "sk-ant-api03-gu2gohc4sha1Thohpeep7ro9vie1ikai-n0tr3al",
+        "EXPO_PUBLIC_VIBECODE_GROK_API_KEY": "xai-ahDi8ofei1Em2chaichoac2Beehi8thu-n0tr3al",
+        "EXPO_PUBLIC_VIBECODE_GOOGLE_API_KEY": "UeHoh2oot2IWe6ooW4Oofahd6waebeiw-n0tr3al",
+        "EXPO_PUBLIC_VIBECODE_ELEVENLABS_API_KEY": "elevenlabs-api-key-oa9Shahx4Zi4oof2bei5kee9nee7eeng-n0tr3al",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://fyymdsvxylcnbeacwgkd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW1kc3Z4eWxjbmJlYWN3Z2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MTkyMjMsImV4cCI6MjA2OTQ5NTIyM30.BMRmivHeekCWKkaaXW2LN7cBfLYFezerEGSj9w2fHbI"
+      },
       "ios": {
         "distribution": "store"
       },
@@ -35,11 +33,7 @@
   },
   "submit": {
     "production": {
-      "ios": {},
-      "android": {
-        "serviceAccountKeyPath": "./path/to/key.json",
-        "track": "internal"
-      }
+      "ios": {}
     }
   }
 }

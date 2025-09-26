@@ -8,18 +8,20 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "sdkVersion": "53.0.0",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vibecode.jobsync.yos9j3",
-      "buildNumber": "1",
+      "buildNumber": "9",
       "infoPlist": {
-        "NSContactsUsageDescription": "This app may access contacts to provide personalized experiences.",
-        "NSCalendarsUsageDescription": "This app may access calendar data to provide scheduling features.",
-        "NSLocationWhenInUseUsageDescription": "This app may use location services to provide location-based features.",
-        "NSPhotoLibraryAddUsageDescription": "This app may access the photo library to provide photo editing features.",
-        "NSCameraUsageDescription": "This app may use the camera for enhanced features and functionality.",
-        "NSPhotoLibraryUsageDescription": "This app may access the photo library to provide photo editing features."
+        "NSCalendarsUsageDescription": "JobSync accesses your calendar to help you schedule and manage events",
+        "NSContactsUsageDescription": "JobSync accesses your contacts to help you connect and share with friends",
+        "NSCameraUsageDescription": "JobSync uses the camera to capture photos and videos for your content",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -49,6 +51,11 @@
     ],
     "updates": {
       "fallbackToCacheTimeout": 0
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1a20e6d8-8967-49b2-a3ba-ea0fd65e26d6"
+      }
     }
   }
 }
