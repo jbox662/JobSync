@@ -368,7 +368,11 @@ export const useJobStore = create<JobStore>()(
             const state = getStore();
             const res = await acceptInvite(email, inviteCode, state.deviceId);
             if (!res) return false;
-            setState({ workspaceId: res.workspaceId, role: res.role, userEmail: email });
+            setState({ 
+              workspaceId: res.workspaceId, 
+              role: res.role, 
+              userEmail: email 
+            });
             return true;
           } catch (error) {
             console.error('Store context lost in acceptBusinessInvite:', error);

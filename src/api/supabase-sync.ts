@@ -151,9 +151,13 @@ export async function createInvites(workspaceId: string, emails: string[]): Prom
 }
 
 export async function acceptInvite(email: string, inviteCode: string, deviceId: string): Promise<{ workspaceId: string; role: "owner" | "member" } | null> {
-  // Return mock response if Supabase is not configured
+  // Return mock response if Supabase is not configured - ALWAYS SUCCESS for demo
   if (!isSupabaseAvailable() || !supabase) {
-    return { workspaceId: `ws-${inviteCode}`, role: "member" };
+    // In demo mode, accept any invite code that looks reasonable
+    if (inviteCode && inviteCode.length >= 3 && inviteCode.trim()) {
+      return { workspaceId: `demo-workspace-${inviteCode.toLowerCase().replace(/[^a-z0-9]/g, '')}`, role: "member" };
+    }
+    return null;
   }
 
   try {
@@ -165,7 +169,6 @@ export async function acceptInvite(email: string, inviteCode: string, deviceId: 
       .single();
 
     if (workspaceError) {
-      // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error finding workspace:', workspaceError);
       return null;
     }
 
@@ -180,7 +183,6 @@ export async function acceptInvite(email: string, inviteCode: string, deviceId: 
       });
 
     if (memberError) {
-      // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error adding member:', memberError);
       return null;
     }
 
@@ -189,7 +191,6 @@ export async function acceptInvite(email: string, inviteCode: string, deviceId: 
       role: 'member'
     };
   } catch (error) {
-    // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error in acceptInvite:', error);
     return null;
   }
 }

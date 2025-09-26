@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useJobStore } from "../state/store";
+import { isSupabaseAvailable } from "../api/supabase";
 
 const JoinBusinessScreen = () => {
   const insets = useSafeAreaInsets();
@@ -11,13 +12,61 @@ const JoinBusinessScreen = () => {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const onJoin = async () => {
     setError(null);
-    const ok = await acceptBusinessInvite(email.trim(), code.trim());
-    if (!ok) { setError("Invalid invite or backend not configured"); return; }
+    setLoading(true);
     
-    // App will automatically navigate via conditional rendering when workspaceId is set
+    // Validate inputs
+    if (!email.trim()) {
+      setError("Please enter your email address");
+      setLoading(false);
+      return;
+    }
+    
+    if (!code.trim()) {
+      setError("Please enter the invite code");
+      setLoading(false);
+      return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      // Handle demo mode directly in the UI
+      if (!isSupabaseAvailable()) {
+        // In demo mode, just set the store directly
+        const store = useJobStore.getState();
+        store.workspaceId = `demo-workspace-${code.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+        store.role = "member";
+        store.userEmail = email.trim();
+        setLoading(false);
+        // App will automatically navigate when workspaceId is set
+        return;
+      }
+      
+      const ok = await acceptBusinessInvite(email.trim(), code.trim());
+      
+      if (!ok) {
+        setError("Invalid invite code. Please check with the business owner.");
+        setLoading(false);
+        return;
+      }
+      
+      // Success - app will navigate automatically
+      setLoading(false);
+    } catch (error) {
+      console.error("Error joining business:", error);
+      setError("An error occurred. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,9 +83,36 @@ const JoinBusinessScreen = () => {
 
         {error && <Text className="text-red-600 mb-3">{error}</Text>}
 
-        <Pressable onPress={onJoin} className="bg-green-600 rounded-lg py-4 items-center">
-          <Text className="text-white font-semibold text-lg">Join</Text>
+        <Pressable 
+          onPress={onJoin} 
+          disabled={loading}
+          className={`${loading ? 'bg-gray-400' : 'bg-green-600'} rounded-lg py-4 items-center`}
+        >
+          <Text className="text-white font-semibold text-lg">
+            {loading ? 'Joining...' : 'Join'}
+          </Text>
         </Pressable>
+        
+        {!isSupabaseAvailable() && (
+          <View className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <Text className="text-blue-800 text-sm font-medium mb-1">Demo Mode Active</Text>
+            <Text className="text-blue-700 text-sm">
+              Try any invite code like: DEMO123, TEST-CODE, or INV-SAMPLE
+            </Text>
+          </View>
+        )}
+        
+        {!isSupabaseAvailable() && (
+          <Pressable 
+            onPress={() => {
+              setEmail("demo@example.com");
+              setCode("DEMO123");
+            }}
+            className="mt-2 py-2 px-4 bg-gray-100 rounded-lg"
+          >
+            <Text className="text-gray-600 text-center text-sm">Fill Demo Data</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
