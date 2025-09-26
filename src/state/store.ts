@@ -367,7 +367,11 @@ export const useJobStore = create<JobStore>()(
             const setState = set;
             const state = getStore();
             const res = await acceptInvite(email, inviteCode, state.deviceId);
-            if (!res) return false;
+            if (!res) {
+              console.log('acceptInvite returned null for:', { email, inviteCode });
+              return false;
+            }
+            console.log('acceptInvite success:', res);
             setState({ 
               workspaceId: res.workspaceId, 
               role: res.role, 

@@ -168,8 +168,24 @@ export async function acceptInvite(email: string, inviteCode: string, deviceId: 
       .eq('invite_code', inviteCode)
       .single();
 
-    if (workspaceError) {
+    if (workspaceError || !workspace) {
       return null;
+    }
+
+    // Check if user is already a member
+    const { data: existingMember } = await supabase
+      .from('workspace_members')
+      .select('id, role')
+      .eq('workspace_id', workspace.id)
+      .eq('email', email)
+      .single();
+
+    if (existingMember) {
+      // User is already a member, return success
+      return {
+        workspaceId: workspace.id,
+        role: existingMember.role as "owner" | "member"
+      };
     }
 
     // Add member
