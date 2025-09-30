@@ -49,7 +49,7 @@ class SmartInvoiceParser {
     try {
       // Let user pick any file
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
+        type: ['text/csv', 'text/plain', 'application/json'],
         copyToCacheDirectory: true
       });
 
@@ -61,15 +61,36 @@ class SmartInvoiceParser {
       }
 
       const file = result.assets[0];
+      
+      // Check if it's a PDF
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        return {
+          success: false,
+          message: 'PDF files are not yet supported. Please export your Square invoice as CSV or text format, or manually enter the invoice details.'
+        };
+      }
+
       const fileContent = await FileSystem.readAsStringAsync(file.uri);
 
-      // Use AI to parse the invoice
-      const parsedInvoice = await this.parseWithAI(fileContent, file.name);
+      if (!fileContent || fileContent.trim().length === 0) {
+        return {
+          success: false,
+          message: 'File is empty or unreadable'
+        };
+      }
+
+      // Try to parse with AI first
+      let parsedInvoice = await this.parseWithAI(fileContent, file.name);
+      
+      // If AI fails, try Square format
+      if (!parsedInvoice && fileContent.includes('Invoice Number')) {
+        parsedInvoice = this.parseSquareInvoice(fileContent);
+      }
 
       if (!parsedInvoice) {
         return {
           success: false,
-          message: 'Could not parse invoice. Please check the file format.'
+          message: 'Could not parse invoice. Please check the file format or try exporting as CSV/text format.'
         };
       }
 
