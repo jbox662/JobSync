@@ -3,8 +3,15 @@ import { Customer, Part, LaborItem, Job, Quote, Invoice } from '../types';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import * as Print from 'expo-print';
 import { Alert } from 'react-native';
+
+// Conditional import for expo-print (only available in native builds)
+let Print: any = null;
+try {
+  Print = require('expo-print');
+} catch (error) {
+  console.log('expo-print not available - PDF export will be disabled');
+}
 
 export interface ExportData {
   customers: Customer[];
@@ -142,11 +149,11 @@ class ImportExportService {
    */
   async exportQuotesToPDF(): Promise<{ success: boolean; message: string; filePath?: string }> {
     try {
-      // Check if Print is available
-      if (!Print.printToFileAsync) {
+      // Check if Print module is available
+      if (!Print || !Print.printToFileAsync) {
         return {
           success: false,
-          message: 'PDF export requires a native build. Please use CSV export or build with EAS.'
+          message: 'PDF export is not available in this build. Please use CSV export or rebuild with: bun run build:dev:ios'
         };
       }
 
@@ -183,13 +190,6 @@ class ImportExportService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'PDF export failed';
-      // Check if it's a native module error
-      if (errorMessage.includes('ExpoPrint') || errorMessage.includes('native module')) {
-        return {
-          success: false,
-          message: 'PDF export requires a native build. Please use CSV export or rebuild the app with: npx expo prebuild'
-        };
-      }
       return {
         success: false,
         message: errorMessage
@@ -202,11 +202,11 @@ class ImportExportService {
    */
   async exportInvoicesToPDF(): Promise<{ success: boolean; message: string; filePath?: string }> {
     try {
-      // Check if Print is available
-      if (!Print.printToFileAsync) {
+      // Check if Print module is available
+      if (!Print || !Print.printToFileAsync) {
         return {
           success: false,
-          message: 'PDF export requires a native build. Please use CSV export or build with EAS.'
+          message: 'PDF export is not available in this build. Please use CSV export or rebuild with: bun run build:dev:ios'
         };
       }
 
@@ -243,13 +243,6 @@ class ImportExportService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'PDF export failed';
-      // Check if it's a native module error
-      if (errorMessage.includes('ExpoPrint') || errorMessage.includes('native module')) {
-        return {
-          success: false,
-          message: 'PDF export requires a native build. Please use CSV export or rebuild the app with: npx expo prebuild'
-        };
-      }
       return {
         success: false,
         message: errorMessage

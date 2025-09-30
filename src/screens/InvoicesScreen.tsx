@@ -9,6 +9,15 @@ import { format } from 'date-fns';
 import EmailButton from '../components/EmailButton';
 import { importExportService } from '../services/importExport';
 
+// Check if PDF export is available
+let isPDFAvailable = false;
+try {
+  require('expo-print');
+  isPDFAvailable = true;
+} catch (error) {
+  isPDFAvailable = false;
+}
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const InvoicesScreen = () => {
@@ -390,7 +399,9 @@ const InvoicesScreen = () => {
               <View className="flex-row items-start">
                 <Ionicons name="information-circle-outline" size={18} color="#3B82F6" />
                 <Text className="text-blue-700 text-xs ml-2 flex-1">
-                  PDF export requires a native build. If PDF export fails, use CSV export or rebuild with EAS Build.
+                  {isPDFAvailable 
+                    ? "PDF export is available! Choose your preferred format below."
+                    : "PDF export requires a native build. Please use CSV export or rebuild with EAS Build."}
                 </Text>
               </View>
             </View>
@@ -416,8 +427,8 @@ const InvoicesScreen = () => {
 
             <Pressable
               onPress={handleExportPDF}
-              disabled={isExporting || invoices.length === 0}
-              className={`${isExporting || invoices.length === 0 ? 'bg-gray-300' : 'bg-red-600'} rounded-lg py-4 items-center`}
+              disabled={isExporting || invoices.length === 0 || !isPDFAvailable}
+              className={`${isExporting || invoices.length === 0 || !isPDFAvailable ? 'bg-gray-300' : 'bg-red-600'} rounded-lg py-4 items-center`}
             >
               {isExporting ? (
                 <ActivityIndicator color="white" />
@@ -425,7 +436,7 @@ const InvoicesScreen = () => {
                 <View className="flex-row items-center">
                   <Ionicons name="document-outline" size={20} color="white" />
                   <Text className="text-white font-semibold text-lg ml-2">
-                    Export as PDF
+                    Export as PDF {!isPDFAvailable && '(Unavailable)'}
                   </Text>
                 </View>
               )}
