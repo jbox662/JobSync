@@ -4,7 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 
 /**
  * Smart Invoice Parser Service
- * Handles importing invoices from various formats (Square, QuickBooks, etc.)
+ * Handles importing invoices from various formats (Square, QuickBooks, PDF, etc.)
  */
 
 export interface ParsedInvoice {
@@ -47,9 +47,9 @@ class SmartInvoiceParser {
    */
   async parseInvoiceFile(): Promise<{ success: boolean; message: string; invoice?: ParsedInvoice }> {
     try {
-      // Let user pick any file
+      // Let user pick any file including PDFs
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['text/csv', 'text/plain', 'application/json'],
+        type: ['text/csv', 'text/plain', 'application/json', 'application/pdf'],
         copyToCacheDirectory: true
       });
 
@@ -62,12 +62,9 @@ class SmartInvoiceParser {
 
       const file = result.assets[0];
       
-      // Check if it's a PDF
-      if (file.name.toLowerCase().endsWith('.pdf')) {
-        return {
-          success: false,
-          message: 'PDF files are not yet supported. Please export your Square invoice as CSV or text format, or manually enter the invoice details.'
-        };
+      // Check if it's a PDF and handle it differently
+      if (file.name.toLowerCase().endsWith('.pdf') || file.mimeType === 'application/pdf') {
+        return await this.parsePDFInvoice(file.uri);
       }
 
       const fileContent = await FileSystem.readAsStringAsync(file.uri);
@@ -109,9 +106,98 @@ class SmartInvoiceParser {
   }
 
   /**
+   * Parse PDF invoice using GPT-4o Vision
+   */
+  private async parsePDFInvoice(pdfUri: string): Promise<{ success: boolean; message: string; invoice?: ParsedInvoice }> {
+    try {
+      // Read PDF as base64
+      const base64 = await FileSystem.readAsStringAsync(pdfUri, {
+        encoding: FileSystem.EncodingType.Base64
+      });
+
+      // Use GPT-4o vision to extract invoice data from PDF
+      const { getOpenAIClient } = require('../api/openai');
+      const openai = getOpenAIClient();
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Analyze this invoice PDF and extract the following information in JSON format:
+{
+  "invoiceNumber": "string",
+  "issueDate": "YYYY-MM-DD",
+  "dueDate": "YYYY-MM-DD or null",
+  "customer": {
+    "name": "string",
+    "email": "string or null",
+    "phone": "string or null",
+    "address": "string or null"
+  },
+  "items": [
+    {
+      "description": "string",
+      "quantity": number,
+      "unitPrice": number,
+      "total": number
+    }
+  ],
+  "subtotal": number,
+  "tax": number or null,
+  "taxRate": number or null,
+  "total": number,
+  "notes": "string or null",
+  "status": "draft|sent|paid|overdue|cancelled",
+  "paymentUrl": "string or null"
+}
+
+Extract ALL line items from the invoice. Return ONLY the JSON object, no other text.`
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:application/pdf;base64,${base64}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.1
+      });
+
+      const content = response.choices[0]?.message?.content || '';
+      
+      // Extract JSON from response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Could not extract invoice data from PDF');
+      }
+
+      const parsedInvoice = JSON.parse(jsonMatch[0]) as ParsedInvoice;
+
+      return {
+        success: true,
+        message: 'PDF invoice parsed successfully',
+        invoice: parsedInvoice
+      };
+    } catch (error) {
+      console.error('PDF parsing error:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to parse PDF invoice'
+      };
+    }
+  }
+
+  /**
    * Use AI to intelligently parse invoice data
    */
-  private async parseWithAI(fileContent: string, fileName: string): Promise<ParsedInvoice | null> {
+  private async parseWithAI(fileContent: string, _fileName: string): Promise<ParsedInvoice | null> {
     try {
       const prompt = `Parse this invoice data and extract the following information in JSON format:
 {
@@ -316,7 +402,7 @@ Return ONLY the JSON object, no other text.`;
   }
 
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 }
 
