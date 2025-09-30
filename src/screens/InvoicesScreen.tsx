@@ -91,6 +91,20 @@ const InvoicesScreen = () => {
     }
   };
 
+  // Download sample CSV template
+  const handleDownloadSample = async () => {
+    try {
+      const result = await importExportService.generateSampleCSV('invoices');
+      if (result.success) {
+        Alert.alert('Success', result.message);
+      } else {
+        Alert.alert('Error', result.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create sample CSV');
+    }
+  };
+
   // Filter invoices
   const filteredInvoices = invoices
     .filter(invoice => {
@@ -474,13 +488,25 @@ const InvoicesScreen = () => {
                 <Ionicons name="warning-outline" size={20} color="#F59E0B" />
                 <View className="flex-1 ml-2">
                   <Text className="text-yellow-800 font-medium mb-1">CSV Import Requirements:</Text>
-                  <Text className="text-yellow-700 text-sm">• Export a sample CSV first to see the format</Text>
+                  <Text className="text-yellow-700 text-sm">• Download sample CSV below to see format</Text>
                   <Text className="text-yellow-700 text-sm">• Required: Title, Customer ID</Text>
                   <Text className="text-yellow-700 text-sm">• Customer IDs must already exist</Text>
                   <Text className="text-yellow-700 text-sm">• Duplicate IDs will be skipped</Text>
                 </View>
               </View>
             </View>
+
+            <Pressable
+              onPress={handleDownloadSample}
+              className="bg-blue-600 rounded-lg py-3 items-center mb-3"
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="download-outline" size={20} color="white" />
+                <Text className="text-white font-semibold ml-2">
+                  Download Sample CSV
+                </Text>
+              </View>
+            </Pressable>
 
             <Pressable
               onPress={handleImport}
@@ -490,9 +516,12 @@ const InvoicesScreen = () => {
               {isImporting ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-white font-semibold text-lg">
-                  Select CSV File
-                </Text>
+                <View className="flex-row items-center">
+                  <Ionicons name="cloud-upload-outline" size={20} color="white" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Select CSV File to Import
+                  </Text>
+                </View>
               )}
             </Pressable>
           </View>

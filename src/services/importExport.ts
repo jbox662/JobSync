@@ -594,6 +594,60 @@ class ImportExportService {
   }
 
   /**
+   * Generate a sample CSV template for testing
+   */
+  async generateSampleCSV(dataType: 'invoices' | 'quotes'): Promise<{ success: boolean; message: string; filePath?: string }> {
+    try {
+      const store = useJobStore.getState();
+      const { customers } = store;
+      
+      // Get a sample customer ID
+      const sampleCustomerId = customers.length > 0 ? customers[0].id : 'CUSTOMER_ID_HERE';
+      const sampleCustomerName = customers.length > 0 ? customers[0].name : 'Sample Customer';
+      
+      let csvContent = '';
+      
+      if (dataType === 'invoices') {
+        // Create sample invoice CSV
+        csvContent = `ID,Job ID,Customer ID,Quote ID,Invoice Number,Title,Description,Status,Subtotal,Tax,Tax Rate,Total,Notes,Due Date,Payment Terms,Sent At,Paid At,Paid Amount,Created At,Updated At
+sample-inv-001,,,sample-quote-001,INV-001,Sample Invoice for ${sampleCustomerName},This is a sample invoice,draft,1000,100,0.10,1100,Sample invoice for testing,2025-12-31,Net 30,,,0,${new Date().toISOString()},${new Date().toISOString()}`;
+      } else {
+        // Create sample quote CSV
+        csvContent = `ID,Job ID,Customer ID,Quote Number,Title,Description,Status,Subtotal,Tax,Tax Rate,Total,Notes,Valid Until,Sent At,Approved At,Created At,Updated At
+sample-quote-001,,${sampleCustomerId},QT-001,Sample Quote for ${sampleCustomerName},This is a sample quote,draft,1000,100,0.10,1100,Sample quote for testing,2025-12-31,,,${new Date().toISOString()},${new Date().toISOString()}`;
+      }
+      
+      const fileName = `sample-${dataType}-template.csv`;
+      const filePath = `${FileSystem.documentDirectory}${fileName}`;
+      
+      await FileSystem.writeAsStringAsync(
+        filePath,
+        csvContent,
+        { encoding: FileSystem.EncodingType.UTF8 }
+      );
+
+      // Share the file
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(filePath, {
+          mimeType: 'text/csv',
+          dialogTitle: `Sample ${dataType} Template`
+        });
+      }
+
+      return {
+        success: true,
+        message: `Sample ${dataType} CSV template created. Edit this file with your data and import it back.`,
+        filePath
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to create sample CSV'
+      };
+    }
+  }
+
+  /**
    * Import data from CSV file
    */
   async importFromCSV(dataType: 'customers' | 'parts' | 'laborItems' | 'jobs' | 'quotes' | 'invoices'): Promise<ImportResult> {
