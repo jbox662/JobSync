@@ -3,6 +3,7 @@ import { Customer, Part, LaborItem, Job, Quote, Invoice } from '../types';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Print from 'expo-print';
 import { Alert } from 'react-native';
 
 export interface ExportData {
@@ -134,6 +135,400 @@ class ImportExportService {
         message: error instanceof Error ? error.message : 'CSV export failed'
       };
     }
+  }
+
+  /**
+   * Export quotes to PDF
+   */
+  async exportQuotesToPDF(): Promise<{ success: boolean; message: string; filePath?: string }> {
+    try {
+      const store = useJobStore.getState();
+      const { quotes, getCustomerById, getJobById } = store;
+
+      if (!quotes || quotes.length === 0) {
+        return {
+          success: false,
+          message: 'No quotes data to export'
+        };
+      }
+
+      const html = this.generateQuotesPDFHTML(quotes, getCustomerById, getJobById);
+      const { uri } = await Print.printToFileAsync({ html });
+      
+      // Create a better filename
+      const fileName = `quotes-export-${new Date().toISOString().split('T')[0]}.pdf`;
+      const newPath = `${FileSystem.documentDirectory}${fileName}`;
+      await FileSystem.moveAsync({ from: uri, to: newPath });
+
+      // Share the file
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(newPath, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Export Quotes'
+        });
+      }
+
+      return {
+        success: true,
+        message: `Successfully exported ${quotes.length} quotes to PDF`,
+        filePath: newPath
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'PDF export failed'
+      };
+    }
+  }
+
+  /**
+   * Export invoices to PDF
+   */
+  async exportInvoicesToPDF(): Promise<{ success: boolean; message: string; filePath?: string }> {
+    try {
+      const store = useJobStore.getState();
+      const { invoices, getCustomerById, getJobById } = store;
+
+      if (!invoices || invoices.length === 0) {
+        return {
+          success: false,
+          message: 'No invoices data to export'
+        };
+      }
+
+      const html = this.generateInvoicesPDFHTML(invoices, getCustomerById, getJobById);
+      const { uri } = await Print.printToFileAsync({ html });
+      
+      // Create a better filename
+      const fileName = `invoices-export-${new Date().toISOString().split('T')[0]}.pdf`;
+      const newPath = `${FileSystem.documentDirectory}${fileName}`;
+      await FileSystem.moveAsync({ from: uri, to: newPath });
+
+      // Share the file
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(newPath, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Export Invoices'
+        });
+      }
+
+      return {
+        success: true,
+        message: `Successfully exported ${invoices.length} invoices to PDF`,
+        filePath: newPath
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'PDF export failed'
+      };
+    }
+  }
+
+  /**
+   * Generate HTML for quotes PDF
+   */
+  private generateQuotesPDFHTML(quotes: Quote[], getCustomerById: any, getJobById: any): string {
+    const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(amount);
+    };
+
+    const formatDate = (date: string) => {
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    };
+
+    const quoteRows = quotes.map(quote => {
+      const customer = getCustomerById(quote.customerId);
+      const job = getJobById(quote.jobId);
+      
+      return `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${quote.quoteNumber}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${quote.title}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${customer?.name || 'Unknown'}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${job?.title || 'N/A'}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-transform: capitalize;">${quote.status}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(quote.total)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${formatDate(quote.createdAt)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalAmount = quotes.reduce((sum, q) => sum + q.total, 0);
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Quotes Export</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            font-size: 12px;
+            color: #1f2937;
+          }
+          h1 {
+            color: #111827;
+            margin-bottom: 10px;
+            font-size: 24px;
+          }
+          .header {
+            margin-bottom: 30px;
+          }
+          .export-date {
+            color: #6b7280;
+            font-size: 14px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+          }
+          th {
+            background-color: #f3f4f6;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #d1d5db;
+          }
+          th:last-child, td:last-child {
+            text-align: right;
+          }
+          .summary {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+          }
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          }
+          .summary-label {
+            font-weight: 600;
+            color: #374151;
+          }
+          .summary-value {
+            color: #1f2937;
+            font-weight: 700;
+            font-size: 16px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Quotes Export</h1>
+          <p class="export-date">Exported on ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Quote #</th>
+              <th>Title</th>
+              <th>Customer</th>
+              <th>Job</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${quoteRows}
+          </tbody>
+        </table>
+
+        <div class="summary">
+          <div class="summary-row">
+            <span class="summary-label">Total Quotes:</span>
+            <span class="summary-value">${quotes.length}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Value:</span>
+            <span class="summary-value">${formatCurrency(totalAmount)}</span>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Generate HTML for invoices PDF
+   */
+  private generateInvoicesPDFHTML(invoices: Invoice[], getCustomerById: any, getJobById: any): string {
+    const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(amount);
+    };
+
+    const formatDate = (date: string) => {
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    };
+
+    const invoiceRows = invoices.map(invoice => {
+      const customer = getCustomerById(invoice.customerId);
+      const job = getJobById(invoice.jobId);
+      const statusColor = invoice.status === 'paid' ? '#10b981' : invoice.status === 'overdue' ? '#ef4444' : '#6b7280';
+      
+      return `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${invoice.invoiceNumber}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${invoice.title}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${customer?.name || 'Unknown'}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${job?.title || 'N/A'}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+            <span style="color: ${statusColor}; font-weight: 600; text-transform: capitalize;">${invoice.status}</span>
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(invoice.total)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${formatDate(invoice.dueDate)}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${invoice.paidAt ? formatDate(invoice.paidAt) : '-'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.total, 0);
+    const totalPaid = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + (inv.paidAmount || inv.total), 0);
+    const totalOutstanding = totalInvoiced - totalPaid;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Invoices Export</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            font-size: 12px;
+            color: #1f2937;
+          }
+          h1 {
+            color: #111827;
+            margin-bottom: 10px;
+            font-size: 24px;
+          }
+          .header {
+            margin-bottom: 30px;
+          }
+          .export-date {
+            color: #6b7280;
+            font-size: 14px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+          }
+          th {
+            background-color: #f3f4f6;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #d1d5db;
+          }
+          th:nth-child(6), td:nth-child(6) {
+            text-align: right;
+          }
+          .summary {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+          }
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .summary-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+          }
+          .summary-label {
+            font-weight: 600;
+            color: #374151;
+          }
+          .summary-value {
+            font-weight: 700;
+            font-size: 16px;
+          }
+          .value-invoiced { color: #1f2937; }
+          .value-paid { color: #10b981; }
+          .value-outstanding { color: #f59e0b; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Invoices Export</h1>
+          <p class="export-date">Exported on ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Title</th>
+              <th>Customer</th>
+              <th>Job</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Due Date</th>
+              <th>Paid Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${invoiceRows}
+          </tbody>
+        </table>
+
+        <div class="summary">
+          <div class="summary-row">
+            <span class="summary-label">Total Invoices:</span>
+            <span class="summary-value value-invoiced">${invoices.length}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Invoiced:</span>
+            <span class="summary-value value-invoiced">${formatCurrency(totalInvoiced)}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Paid:</span>
+            <span class="summary-value value-paid">${formatCurrency(totalPaid)}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Outstanding:</span>
+            <span class="summary-value value-outstanding">${formatCurrency(totalOutstanding)}</span>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
   }
 
   /**

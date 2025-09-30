@@ -20,7 +20,7 @@ const InvoicesScreen = () => {
   const [isImporting, setIsImporting] = useState(false);
 
   // Export invoices to CSV
-  const handleExport = async () => {
+  const handleExportCSV = async () => {
     setIsExporting(true);
     try {
       const result = await importExportService.exportToCSV('invoices');
@@ -30,7 +30,24 @@ const InvoicesScreen = () => {
         Alert.alert('Export Failed', result.message);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to export invoices');
+      Alert.alert('Error', 'Failed to export invoices to CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export invoices to PDF
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const result = await importExportService.exportInvoicesToPDF();
+      if (result.success) {
+        Alert.alert('Success', result.message);
+      } else {
+        Alert.alert('Export Failed', result.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export invoices to PDF');
     } finally {
       setIsExporting(false);
     }
@@ -354,7 +371,7 @@ const InvoicesScreen = () => {
               </View>
               <Text className="text-xl font-bold text-gray-900">Export Invoices</Text>
               <Text className="text-gray-500 text-center mt-2">
-                Export all your invoices to a CSV file
+                Choose your export format
               </Text>
             </View>
 
@@ -369,19 +386,45 @@ const InvoicesScreen = () => {
               <Text className="text-gray-600 text-sm ml-7">• Payment status</Text>
             </View>
 
+            <Text className="text-gray-700 font-semibold mb-3">Select Format:</Text>
+
             <Pressable
-              onPress={handleExport}
+              onPress={handleExportCSV}
               disabled={isExporting || invoices.length === 0}
-              className={`${isExporting || invoices.length === 0 ? 'bg-gray-300' : 'bg-blue-600'} rounded-lg py-4 items-center`}
+              className={`${isExporting || invoices.length === 0 ? 'bg-gray-300' : 'bg-blue-600'} rounded-lg py-4 items-center mb-3`}
             >
               {isExporting ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-white font-semibold text-lg">
-                  Export {invoices.length} Invoices
-                </Text>
+                <View className="flex-row items-center">
+                  <Ionicons name="document-text-outline" size={20} color="white" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Export as CSV
+                  </Text>
+                </View>
               )}
             </Pressable>
+
+            <Pressable
+              onPress={handleExportPDF}
+              disabled={isExporting || invoices.length === 0}
+              className={`${isExporting || invoices.length === 0 ? 'bg-gray-300' : 'bg-red-600'} rounded-lg py-4 items-center`}
+            >
+              {isExporting ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <View className="flex-row items-center">
+                  <Ionicons name="document-outline" size={20} color="white" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Export as PDF
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
+            <Text className="text-gray-500 text-xs text-center mt-4">
+              {invoices.length} invoice{invoices.length !== 1 ? 's' : ''} will be exported
+            </Text>
 
             {invoices.length === 0 && (
               <Text className="text-gray-400 text-sm text-center mt-3">

@@ -20,7 +20,7 @@ const QuotesScreen = () => {
   const [isImporting, setIsImporting] = useState(false);
 
   // Export quotes to CSV
-  const handleExport = async () => {
+  const handleExportCSV = async () => {
     setIsExporting(true);
     try {
       const result = await importExportService.exportToCSV('quotes');
@@ -30,7 +30,24 @@ const QuotesScreen = () => {
         Alert.alert('Export Failed', result.message);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to export quotes');
+      Alert.alert('Error', 'Failed to export quotes to CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export quotes to PDF
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const result = await importExportService.exportQuotesToPDF();
+      if (result.success) {
+        Alert.alert('Success', result.message);
+      } else {
+        Alert.alert('Export Failed', result.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export quotes to PDF');
     } finally {
       setIsExporting(false);
     }
@@ -306,7 +323,7 @@ const QuotesScreen = () => {
               </View>
               <Text className="text-xl font-bold text-gray-900">Export Quotes</Text>
               <Text className="text-gray-500 text-center mt-2">
-                Export all your quotes to a CSV file
+                Choose your export format
               </Text>
             </View>
 
@@ -321,19 +338,45 @@ const QuotesScreen = () => {
               <Text className="text-gray-600 text-sm ml-7">• Status and dates</Text>
             </View>
 
+            <Text className="text-gray-700 font-semibold mb-3">Select Format:</Text>
+
             <Pressable
-              onPress={handleExport}
+              onPress={handleExportCSV}
               disabled={isExporting || quotes.length === 0}
-              className={`${isExporting || quotes.length === 0 ? 'bg-gray-300' : 'bg-blue-600'} rounded-lg py-4 items-center`}
+              className={`${isExporting || quotes.length === 0 ? 'bg-gray-300' : 'bg-blue-600'} rounded-lg py-4 items-center mb-3`}
             >
               {isExporting ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-white font-semibold text-lg">
-                  Export {quotes.length} Quotes
-                </Text>
+                <View className="flex-row items-center">
+                  <Ionicons name="document-text-outline" size={20} color="white" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Export as CSV
+                  </Text>
+                </View>
               )}
             </Pressable>
+
+            <Pressable
+              onPress={handleExportPDF}
+              disabled={isExporting || quotes.length === 0}
+              className={`${isExporting || quotes.length === 0 ? 'bg-gray-300' : 'bg-red-600'} rounded-lg py-4 items-center`}
+            >
+              {isExporting ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <View className="flex-row items-center">
+                  <Ionicons name="document-outline" size={20} color="white" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Export as PDF
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
+            <Text className="text-gray-500 text-xs text-center mt-4">
+              {quotes.length} quote{quotes.length !== 1 ? 's' : ''} will be exported
+            </Text>
 
             {quotes.length === 0 && (
               <Text className="text-gray-400 text-sm text-center mt-3">
