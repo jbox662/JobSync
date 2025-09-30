@@ -8,6 +8,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { format } from 'date-fns';
 import EmailButton from '../components/EmailButton';
 import { importExportService } from '../services/importExport';
+import { smartInvoiceParser } from '../services/smartInvoiceParser';
 
 // Check if PDF export is available
 let isPDFAvailable = false;
@@ -87,6 +88,45 @@ const InvoicesScreen = () => {
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to import invoices');
+      setIsImporting(false);
+    }
+  };
+
+  // Smart import from any format
+  const handleSmartImport = async () => {
+    setIsImporting(true);
+    try {
+      // Parse the invoice file
+      const parseResult = await smartInvoiceParser.parseInvoiceFile();
+      
+      if (!parseResult.success || !parseResult.invoice) {
+        Alert.alert('Import Failed', parseResult.message);
+        setIsImporting(false);
+        return;
+      }
+
+      // Show preview and confirm
+      Alert.alert(
+        'Import Invoice?',
+        `Invoice: ${parseResult.invoice.invoiceNumber}\nCustomer: ${parseResult.invoice.customer.name}\nTotal: $${parseResult.invoice.total.toFixed(2)}\n\nImport this invoice?`,
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => setIsImporting(false) },
+          {
+            text: 'Import',
+            onPress: async () => {
+              const importResult = await smartInvoiceParser.importParsedInvoice(parseResult.invoice!);
+              if (importResult.success) {
+                Alert.alert('Success!', importResult.message);
+              } else {
+                Alert.alert('Import Failed', importResult.message);
+              }
+              setIsImporting(false);
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to import invoice');
       setIsImporting(false);
     }
   };
@@ -471,15 +511,52 @@ const InvoicesScreen = () => {
 
       {/* Import Tab */}
       {activeTab === 'import' && (
-        <View className="flex-1 px-4 pt-6">
+        <ScrollView className="flex-1 px-4 pt-6">
+          {/* Smart Import Section */}
+          <View className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl p-6 shadow-lg mb-4">
+            <View className="items-center mb-4">
+              <View className="bg-white bg-opacity-20 rounded-full p-4 mb-3">
+                <Ionicons name="sparkles-outline" size={32} color="white" />
+              </View>
+              <Text className="text-xl font-bold text-white">Smart Import (AI)</Text>
+              <Text className="text-white text-center mt-2 opacity-90">
+                Import from Square, QuickBooks, or any invoice format
+              </Text>
+            </View>
+
+            <View className="bg-white bg-opacity-10 rounded-lg p-3 mb-4">
+              <Text className="text-white text-sm">✨ Automatically creates customers</Text>
+              <Text className="text-white text-sm">✨ Extracts all invoice details</Text>
+              <Text className="text-white text-sm">✨ Handles any format (CSV, text, etc.)</Text>
+            </View>
+
+            <Pressable
+              onPress={handleSmartImport}
+              disabled={isImporting}
+              className={`${isImporting ? 'bg-gray-400' : 'bg-white'} rounded-lg py-4 items-center`}
+            >
+              {isImporting ? (
+                <ActivityIndicator color="#7C3AED" />
+              ) : (
+                <View className="flex-row items-center">
+                  <Ionicons name="sparkles" size={20} color="#7C3AED" />
+                  <Text className="text-purple-600 font-bold text-lg ml-2">
+                    Smart Import Invoice
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
+
+          {/* Regular CSV Import Section */}
           <View className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <View className="items-center mb-4">
               <View className="bg-green-100 rounded-full p-4 mb-3">
-                <Ionicons name="cloud-upload-outline" size={32} color="#10B981" />
+                <Ionicons name="document-text-outline" size={32} color="#10B981" />
               </View>
-              <Text className="text-xl font-bold text-gray-900">Import Invoices</Text>
+              <Text className="text-xl font-bold text-gray-900">CSV Import</Text>
               <Text className="text-gray-500 text-center mt-2">
-                Import invoices from a CSV file
+                Import from this app's CSV format
               </Text>
             </View>
 
@@ -525,7 +602,7 @@ const InvoicesScreen = () => {
               )}
             </Pressable>
           </View>
-        </View>
+        </ScrollView>
       )}
     </View>
   );
