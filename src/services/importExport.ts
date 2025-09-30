@@ -611,12 +611,23 @@ class ImportExportService {
       }
 
       const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      
+      if (!fileContent || fileContent.trim().length === 0) {
+        return {
+          success: false,
+          message: 'CSV file is empty'
+        };
+      }
+
       const records = this.parseCSV(fileContent, dataType);
+
+      console.log(`Parsed ${records.length} records from CSV`);
+      console.log('Sample record:', records[0]);
 
       if (records.length === 0) {
         return {
           success: false,
-          message: 'No valid records found in CSV file'
+          message: 'No valid records found in CSV file. Please check the CSV format matches the export format.'
         };
       }
 
@@ -624,12 +635,20 @@ class ImportExportService {
       const store = useJobStore.getState();
       const importCount = await this.importRecords(dataType, records, store);
 
+      if (importCount === 0) {
+        return {
+          success: false,
+          message: `Could not import any ${dataType}. Check that:\n• CSV headers match export format\n• Required fields (title, customerId) are present\n• Customer IDs exist in your database`
+        };
+      }
+
       return {
         success: true,
-        message: `Successfully imported ${importCount} ${dataType} records`,
+        message: `Successfully imported ${importCount} ${dataType} record${importCount !== 1 ? 's' : ''}`,
         imported: { [dataType]: importCount } as any
       };
     } catch (error) {
+      console.error('CSV import error:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'CSV import failed'
@@ -1033,52 +1052,71 @@ class ImportExportService {
    */
   private async importRecords(dataType: string, records: any[], store: any): Promise<number> {
     let imported = 0;
+    const errors: string[] = [];
 
-    records.forEach(record => {
+    records.forEach((record, index) => {
       try {
         switch (dataType) {
           case 'customers':
             if (record.name) {
               store.addCustomer(record);
               imported++;
+            } else {
+              errors.push(`Row ${index + 2}: Missing name`);
             }
             break;
           case 'parts':
             if (record.name) {
               store.addPart(record);
               imported++;
+            } else {
+              errors.push(`Row ${index + 2}: Missing name`);
             }
             break;
           case 'laborItems':
             if (record.description) {
               store.addLaborItem(record);
               imported++;
+            } else {
+              errors.push(`Row ${index + 2}: Missing description`);
             }
             break;
           case 'jobs':
             if (record.title && record.customerId) {
               store.addJob(record);
               imported++;
+            } else {
+              errors.push(`Row ${index + 2}: Missing ${!record.title ? 'title' : 'customerId'}`);
             }
             break;
           case 'quotes':
             if (record.title && record.customerId) {
               store.addQuote(record);
               imported++;
+            } else {
+              errors.push(`Row ${index + 2}: Missing ${!record.title ? 'title' : 'customerId'}`);
             }
             break;
           case 'invoices':
             if (record.title && record.customerId) {
               store.addInvoice(record);
               imported++;
+            } else {
+              errors.push(`Row ${index + 2}: Missing ${!record.title ? 'title' : 'customerId'}`);
             }
             break;
         }
       } catch (error) {
         // Skip invalid records
+        errors.push(`Row ${index + 2}: ${error instanceof Error ? error.message : 'Import failed'}`);
         console.warn(`Failed to import record:`, error);
       }
     });
+
+    // Log errors for debugging
+    if (errors.length > 0) {
+      console.log('Import errors:', errors.slice(0, 10)); // Log first 10 errors
+    }
 
     return imported;
   }

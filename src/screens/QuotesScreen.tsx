@@ -425,9 +425,10 @@ const QuotesScreen = () => {
               <View className="flex-row items-start">
                 <Ionicons name="warning-outline" size={20} color="#F59E0B" />
                 <View className="flex-1 ml-2">
-                  <Text className="text-yellow-800 font-medium mb-1">Important Notes:</Text>
-                  <Text className="text-yellow-700 text-sm">• CSV must match export format</Text>
-                  <Text className="text-yellow-700 text-sm">• Customer IDs must exist</Text>
+                  <Text className="text-yellow-800 font-medium mb-1">CSV Import Requirements:</Text>
+                  <Text className="text-yellow-700 text-sm">• Export a sample CSV first to see the format</Text>
+                  <Text className="text-yellow-700 text-sm">• Required: Title, Customer ID</Text>
+                  <Text className="text-yellow-700 text-sm">• Customer IDs must already exist</Text>
                   <Text className="text-yellow-700 text-sm">• Duplicate IDs will be skipped</Text>
                 </View>
               </View>
