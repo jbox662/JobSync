@@ -520,14 +520,16 @@ const InvoicesScreen = () => {
               </View>
               <Text className="text-xl font-bold text-white">Smart Import (AI)</Text>
               <Text className="text-white text-center mt-2 opacity-90">
-                Import from Square, QuickBooks, or any PDF/CSV invoice
+                Import from Square, QuickBooks (CSV/Text recommended)
               </Text>
             </View>
 
             <View className="bg-white bg-opacity-10 rounded-lg p-3 mb-4">
-              <Text className="text-white text-sm">✨ Supports PDF, CSV, and text formats</Text>
+              <Text className="text-white text-sm">✨ Supports CSV and text formats</Text>
+              <Text className="text-white text-sm">✨ Experimental PDF support (text-based PDFs only)</Text>
               <Text className="text-white text-sm">✨ Automatically creates customers</Text>
               <Text className="text-white text-sm">✨ Extracts all invoice details</Text>
+              <Text className="text-white text-sm text-opacity-75 mt-2">Note: Scanned/image PDFs not supported. Use CSV for best results.</Text>
             </View>
 
             <Pressable
@@ -541,7 +543,7 @@ const InvoicesScreen = () => {
                 <View className="flex-row items-center">
                   <Ionicons name="sparkles" size={20} color="#7C3AED" />
                   <Text className="text-purple-600 font-bold text-lg ml-2">
-                    Smart Import (PDF/CSV/Text)
+                    Smart Import (CSV/Text/PDF)
                   </Text>
                 </View>
               )}

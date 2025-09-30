@@ -106,90 +106,85 @@ class SmartInvoiceParser {
   }
 
   /**
-   * Parse PDF invoice using GPT-4o Vision
+   * Parse PDF invoice - extract text and use AI to parse
    */
   private async parsePDFInvoice(pdfUri: string): Promise<{ success: boolean; message: string; invoice?: ParsedInvoice }> {
     try {
-      // Read PDF as base64
-      const base64 = await FileSystem.readAsStringAsync(pdfUri, {
-        encoding: FileSystem.EncodingType.Base64
-      });
-
-      // Use GPT-4o vision to extract invoice data from PDF
-      const { getOpenAIClient } = require('../api/openai');
-      const openai = getOpenAIClient();
-
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Analyze this invoice PDF and extract the following information in JSON format:
-{
-  "invoiceNumber": "string",
-  "issueDate": "YYYY-MM-DD",
-  "dueDate": "YYYY-MM-DD or null",
-  "customer": {
-    "name": "string",
-    "email": "string or null",
-    "phone": "string or null",
-    "address": "string or null"
-  },
-  "items": [
-    {
-      "description": "string",
-      "quantity": number,
-      "unitPrice": number,
-      "total": number
-    }
-  ],
-  "subtotal": number,
-  "tax": number or null,
-  "taxRate": number or null,
-  "total": number,
-  "notes": "string or null",
-  "status": "draft|sent|paid|overdue|cancelled",
-  "paymentUrl": "string or null"
-}
-
-Extract ALL line items from the invoice. Return ONLY the JSON object, no other text.`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64}`
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 2000,
-        temperature: 0.1
-      });
-
-      const content = response.choices[0]?.message?.content || '';
+      // Try to read PDF as text (works for text-based PDFs, not scanned images)
+      let pdfText = '';
       
-      // Extract JSON from response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('Could not extract invoice data from PDF');
+      try {
+        // Attempt to read as UTF-8 text (some PDFs have extractable text)
+        pdfText = await FileSystem.readAsStringAsync(pdfUri, {
+          encoding: FileSystem.EncodingType.UTF8
+        });
+        
+        // Clean up PDF binary junk and extract readable text
+        // PDF text is usually between stream and endstream tags or in plain text
+        const textMatches = pdfText.match(/\(([^)]+)\)/g);
+        if (textMatches && textMatches.length > 0) {
+          pdfText = textMatches
+            .map(match => match.replace(/[()]/g, ''))
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
+        
+        // Also try to extract text that's not in parentheses
+        const cleanText = pdfText
+          .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ') // Remove control characters
+          .replace(/[^\x20-\x7E\s]/g, '') // Keep only printable ASCII
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (cleanText.length > pdfText.length) {
+          pdfText = cleanText;
+        }
+        
+      } catch (error) {
+        console.log('Could not extract text from PDF:', error);
       }
 
-      const parsedInvoice = JSON.parse(jsonMatch[0]) as ParsedInvoice;
+      // Check if we got meaningful text
+      if (!pdfText || pdfText.length < 50) {
+        return {
+          success: false,
+          message: 'Could not extract text from this PDF. This may be a scanned image or secured PDF.\n\nPlease try:\n• Export the invoice as CSV or text from your system\n• Copy the text content and save as a .txt file\n• Take a screenshot and use image import (future feature)'
+        };
+      }
+
+      // Check if extracted text looks like invoice data
+      const hasInvoiceKeywords = /invoice|bill|total|amount|customer|date|due/i.test(pdfText);
+      if (!hasInvoiceKeywords) {
+        return {
+          success: false,
+          message: 'This PDF does not appear to contain invoice data, or the text could not be extracted.\n\nFor best results:\n• Use CSV export from your invoicing system\n• Copy invoice details to a text file'
+        };
+      }
+
+      console.log('Extracted PDF text (first 500 chars):', pdfText.substring(0, 500));
+
+      // Use AI to parse the extracted text
+      const parsedInvoice = await this.parseWithAI(pdfText, 'invoice.pdf');
+      
+      if (!parsedInvoice) {
+        return {
+          success: false,
+          message: 'AI could not parse the invoice data from this PDF.\n\nThe text was extracted but the format may be unusual. Try CSV export instead.'
+        };
+      }
 
       return {
         success: true,
-        message: 'PDF invoice parsed successfully',
+        message: 'PDF invoice parsed successfully!',
         invoice: parsedInvoice
       };
     } catch (error) {
       console.error('PDF parsing error:', error);
+      
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to parse PDF invoice'
+        message: 'PDF import is experimental and works best with text-based PDFs.\n\nFor reliable import, please use:\n• CSV export from your invoicing system\n• Copy/paste invoice text to a .txt file'
       };
     }
   }
