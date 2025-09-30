@@ -338,6 +338,15 @@ const QuotesScreen = () => {
               <Text className="text-gray-600 text-sm ml-7">• Status and dates</Text>
             </View>
 
+            <View className="bg-blue-50 rounded-lg p-3 mb-4 border border-blue-200">
+              <View className="flex-row items-start">
+                <Ionicons name="information-circle-outline" size={18} color="#3B82F6" />
+                <Text className="text-blue-700 text-xs ml-2 flex-1">
+                  PDF export requires a native build. If PDF export fails, use CSV export or rebuild with EAS Build.
+                </Text>
+              </View>
+            </View>
+
             <Text className="text-gray-700 font-semibold mb-3">Select Format:</Text>
 
             <Pressable

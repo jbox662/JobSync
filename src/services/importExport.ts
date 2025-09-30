@@ -142,6 +142,14 @@ class ImportExportService {
    */
   async exportQuotesToPDF(): Promise<{ success: boolean; message: string; filePath?: string }> {
     try {
+      // Check if Print is available
+      if (!Print.printToFileAsync) {
+        return {
+          success: false,
+          message: 'PDF export requires a native build. Please use CSV export or build with EAS.'
+        };
+      }
+
       const store = useJobStore.getState();
       const { quotes, getCustomerById, getJobById } = store;
 
@@ -174,9 +182,17 @@ class ImportExportService {
         filePath: newPath
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'PDF export failed';
+      // Check if it's a native module error
+      if (errorMessage.includes('ExpoPrint') || errorMessage.includes('native module')) {
+        return {
+          success: false,
+          message: 'PDF export requires a native build. Please use CSV export or rebuild the app with: npx expo prebuild'
+        };
+      }
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'PDF export failed'
+        message: errorMessage
       };
     }
   }
@@ -186,6 +202,14 @@ class ImportExportService {
    */
   async exportInvoicesToPDF(): Promise<{ success: boolean; message: string; filePath?: string }> {
     try {
+      // Check if Print is available
+      if (!Print.printToFileAsync) {
+        return {
+          success: false,
+          message: 'PDF export requires a native build. Please use CSV export or build with EAS.'
+        };
+      }
+
       const store = useJobStore.getState();
       const { invoices, getCustomerById, getJobById } = store;
 
@@ -218,9 +242,17 @@ class ImportExportService {
         filePath: newPath
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'PDF export failed';
+      // Check if it's a native module error
+      if (errorMessage.includes('ExpoPrint') || errorMessage.includes('native module')) {
+        return {
+          success: false,
+          message: 'PDF export requires a native build. Please use CSV export or rebuild the app with: npx expo prebuild'
+        };
+      }
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'PDF export failed'
+        message: errorMessage
       };
     }
   }
