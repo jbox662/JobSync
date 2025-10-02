@@ -8,6 +8,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { format } from 'date-fns';
 import EmailButton from '../components/EmailButton';
 import { importExportService } from '../services/importExport';
+import { smartInvoiceParser } from '../services/smartInvoiceParser';
 
 // Check if PDF export is available
 let isPDFAvailable = false;
@@ -87,6 +88,39 @@ const QuotesScreen = () => {
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to import quotes');
+      setIsImporting(false);
+    }
+  };
+
+  // Smart AI Import for quotes
+  const handleSmartImport = async () => {
+    setIsImporting(true);
+    try {
+      const parseResult = await smartInvoiceParser.parseQuoteFile();
+      
+      if (!parseResult.success) {
+        Alert.alert('Import Failed', parseResult.message);
+        return;
+      }
+      
+      if (parseResult.quote) {
+        try {
+          const importResult = await smartInvoiceParser.importParsedQuote(parseResult.quote);
+          
+          if (importResult.success) {
+            Alert.alert('Success', importResult.message);
+          } else {
+            Alert.alert('Import Failed', importResult.message);
+          }
+        } catch (importError) {
+          console.error('Import error:', importError);
+          Alert.alert('Import Failed', 'Failed to save the parsed quote to your account.');
+        }
+      }
+    } catch (error) {
+      console.error('Smart import error:', error);
+      Alert.alert('Import Failed', 'An error occurred during smart import.');
+    } finally {
       setIsImporting(false);
     }
   };
@@ -409,23 +443,74 @@ const QuotesScreen = () => {
 
       {/* Import Tab */}
       {activeTab === 'import' && (
-        <View className="flex-1 px-4 pt-6">
-          <View className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <ScrollView className="flex-1 px-4 pt-6" showsVerticalScrollIndicator={false}>
+          {/* Smart Import (AI) Section */}
+          <View className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+            <View className="items-center mb-4">
+              <View className="bg-purple-100 rounded-full p-4 mb-3">
+                <Ionicons name="sparkles-outline" size={32} color="#8B5CF6" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900">Smart Import (AI)</Text>
+              <Text className="text-gray-500 text-center mt-2">
+                Supports Square PDF quotes, CSV exports, and text files
+              </Text>
+            </View>
+
+            <View className="bg-blue-50 rounded-lg p-4 mb-4 border border-blue-200">
+              <View className="flex-row items-start">
+                <Ionicons name="information-circle-outline" size={18} color="#3B82F6" />
+                <View className="flex-1 ml-2">
+                  <Text className="text-blue-800 font-medium mb-1">AI-Powered Import:</Text>
+                  <Text className="text-blue-700 text-sm">• Automatically detects quote format</Text>
+                  <Text className="text-blue-700 text-sm">• Extracts customer and item details</Text>
+                  <Text className="text-blue-700 text-sm">• Handles Square, QuickBooks, and custom formats</Text>
+                  <Text className="text-blue-700 text-sm">• Works with PDF, CSV, and text files</Text>
+                </View>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={handleSmartImport}
+              disabled={isImporting}
+              className={`${isImporting ? 'bg-gray-300' : 'bg-purple-600'} rounded-lg py-4 items-center mb-4`}
+            >
+              {isImporting ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <View className="flex-row items-center">
+                  <Ionicons name="sparkles" size={20} color="white" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Smart Import (CSV/Text/PDF)
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
+            <View className="bg-gray-50 rounded-lg p-3">
+              <Text className="text-gray-700 font-medium text-sm mb-2">💡 Tips for best results:</Text>
+              <Text className="text-gray-600 text-xs">• For PDFs: Use text-based PDFs (not scanned images)</Text>
+              <Text className="text-gray-600 text-xs">• For CSV: Export directly from your quote system</Text>
+              <Text className="text-gray-600 text-xs">• For text: Copy/paste quote details into a .txt file</Text>
+            </View>
+          </View>
+
+          {/* Traditional CSV Import Section */}
+          <View className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
             <View className="items-center mb-4">
               <View className="bg-green-100 rounded-full p-4 mb-3">
-                <Ionicons name="cloud-upload-outline" size={32} color="#10B981" />
+                <Ionicons name="document-text-outline" size={32} color="#10B981" />
               </View>
-              <Text className="text-xl font-bold text-gray-900">Import Quotes</Text>
+              <Text className="text-xl font-bold text-gray-900">CSV Import</Text>
               <Text className="text-gray-500 text-center mt-2">
-                Import quotes from a CSV file
+                Import from a structured CSV file
               </Text>
             </View>
 
             <View className="bg-yellow-50 rounded-lg p-4 mb-4 border border-yellow-200">
               <View className="flex-row items-start">
-                <Ionicons name="warning-outline" size={20} color="#F59E0B" />
+                <Ionicons name="warning-outline" size={18} color="#F59E0B" />
                 <View className="flex-1 ml-2">
-                  <Text className="text-yellow-800 font-medium mb-1">CSV Import Requirements:</Text>
+                  <Text className="text-yellow-800 font-medium mb-1">CSV Requirements:</Text>
                   <Text className="text-yellow-700 text-sm">• Export a sample CSV first to see the format</Text>
                   <Text className="text-yellow-700 text-sm">• Required: Title, Customer ID</Text>
                   <Text className="text-yellow-700 text-sm">• Customer IDs must already exist</Text>
@@ -442,13 +527,16 @@ const QuotesScreen = () => {
               {isImporting ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-white font-semibold text-lg">
-                  Select CSV File
-                </Text>
+                <View className="flex-row items-center">
+                  <Ionicons name="document-text-outline" size={20} color="white" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Select CSV File
+                  </Text>
+                </View>
               )}
             </Pressable>
           </View>
-        </View>
+        </ScrollView>
       )}
     </View>
   );
