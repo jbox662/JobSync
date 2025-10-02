@@ -309,7 +309,7 @@ const EditInvoiceScreen = () => {
                   <View className="flex-1">
                     <Text className="text-sm text-gray-600 mb-1">Quantity</Text>
                     <TextInput
-                      value={item.quantity.toString()}
+                      value={(item.quantity || 0).toString()}
                       onChangeText={(value) => updateItem(index, 'quantity', parseFloat(value) || 0)}
                       placeholder="0"
                       keyboardType="numeric"
@@ -319,7 +319,7 @@ const EditInvoiceScreen = () => {
                   <View className="flex-1">
                     <Text className="text-sm text-gray-600 mb-1">Price</Text>
                     <TextInput
-                      value={item.price.toString()}
+                      value={(item.price || 0).toString()}
                       onChangeText={(value) => updateItem(index, 'price', parseFloat(value) || 0)}
                       placeholder="0.00"
                       keyboardType="numeric"
@@ -364,7 +364,7 @@ const EditInvoiceScreen = () => {
             <View className="mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-2">Tax Rate (%)</Text>
               <TextInput
-                value={taxRate.toString()}
+                value={(taxRate || 0).toString()}
                 onChangeText={(value) => setTaxRate(parseFloat(value) || 0)}
                 placeholder="0"
                 keyboardType="numeric"

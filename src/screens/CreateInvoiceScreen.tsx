@@ -37,7 +37,7 @@ const CreateInvoiceScreen = () => {
         setDescription(quote.description || '');
         setSelectedCustomer(quote.customerId);
         setItems(quote.items);
-        setTaxRate(quote.taxRate.toString());
+        setTaxRate((quote.taxRate || 0).toString());
       }
     }
   }, [selectedQuote, getQuoteById]);

@@ -42,7 +42,7 @@ const EditQuoteScreen = () => {
       setDescription(quote.description || '');
       setSelectedCustomer(quote.customerId || '');
       setSelectedJob(quote.jobId || '');
-      setTaxRate(quote.taxRate.toString());
+      setTaxRate((quote.taxRate || 0).toString());
       setItems(quote.items || []);
       setStatus(quote.status || 'draft');
       setLinkToExistingJob(!!quote.jobId);

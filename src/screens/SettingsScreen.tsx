@@ -80,7 +80,7 @@ const SettingsScreen = () => {
     resetSettings();
     const newSettings = useJobStore.getState().settings;
     setEnableTax(newSettings.enableTax);
-    setDefaultTaxRate(newSettings.defaultTaxRate.toString());
+    setDefaultTaxRate((newSettings.defaultTaxRate || 0).toString());
     setBusinessName(newSettings.businessName || '');
     setBusinessEmail(newSettings.businessEmail || '');
     setBusinessPhone(newSettings.businessPhone || '');
