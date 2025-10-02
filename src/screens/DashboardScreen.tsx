@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
@@ -7,7 +7,39 @@ import { format } from 'date-fns';
 
 const DashboardScreen = () => {
   const insets = useSafeAreaInsets();
-  const { jobs, customers, parts, laborItems, generateSampleData } = useJobStore();
+  const { 
+    jobs, 
+    customers, 
+    parts, 
+    laborItems, 
+    generateSampleData,
+    syncNow,
+    isSyncing,
+    syncError,
+    isAuthenticated,
+    workspaceId,
+    workspaceName,
+    lastSyncByUser,
+    outboxByUser,
+    authenticatedUser,
+    currentUserId
+  } = useJobStore();
+  
+  const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
+  
+  const getCurrentUserId = () => {
+    return authenticatedUser?.id || currentUserId || 'none';
+  };
+  
+  const handleSyncNow = async () => {
+    setLastSyncResult(null);
+    try {
+      await syncNow();
+      setLastSyncResult('Sync completed successfully');
+    } catch (error) {
+      setLastSyncResult(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   // Calculate stats
   const totalJobs = jobs.length;
@@ -167,6 +199,69 @@ const DashboardScreen = () => {
           </View>
         </View>
 
+
+        {/* Sync Status Card */}
+        {isAuthenticated && workspaceId && (
+          <View className="bg-white rounded-xl p-4 mb-6 shadow-sm border border-gray-100">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-lg font-semibold text-gray-900">Sync Status</Text>
+              <Pressable
+                onPress={handleSyncNow}
+                disabled={isSyncing}
+                className={`flex-row items-center px-3 py-2 rounded-lg ${
+                  isSyncing ? 'bg-gray-100' : 'bg-blue-500'
+                }`}
+              >
+                {isSyncing ? (
+                  <ActivityIndicator size="small" color="#6B7280" />
+                ) : (
+                  <Ionicons name="sync-outline" size={16} color="white" />
+                )}
+                <Text className={`ml-2 font-medium ${
+                  isSyncing ? 'text-gray-500' : 'text-white'
+                }`}>
+                  {isSyncing ? 'Syncing...' : 'Sync Now'}
+                </Text>
+              </Pressable>
+            </View>
+            
+            <View className="space-y-2">
+              <View className="flex-row justify-between">
+                <Text className="text-gray-600">Workspace:</Text>
+                <Text className="text-gray-900 font-medium">{workspaceName || 'Connected'}</Text>
+              </View>
+              
+              <View className="flex-row justify-between">
+                <Text className="text-gray-600">Last Sync:</Text>
+                <Text className="text-gray-900">
+                  {lastSyncByUser?.[getCurrentUserId()] 
+                    ? new Date(lastSyncByUser[getCurrentUserId()]!).toLocaleTimeString()
+                    : 'Never'
+                  }
+                </Text>
+              </View>
+              
+              <View className="flex-row justify-between">
+                <Text className="text-gray-600">Pending Changes:</Text>
+                <Text className="text-gray-900 font-medium">
+                  {outboxByUser?.[getCurrentUserId()]?.length || 0}
+                </Text>
+              </View>
+              
+              {(syncError || lastSyncResult) && (
+                <View className={`mt-2 p-2 rounded-lg ${
+                  syncError ? 'bg-red-50' : 'bg-green-50'
+                }`}>
+                  <Text className={`text-sm ${
+                    syncError ? 'text-red-700' : 'text-green-700'
+                  }`}>
+                    {syncError || lastSyncResult}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Recent Jobs */}
         {recentJobs.length > 0 && (

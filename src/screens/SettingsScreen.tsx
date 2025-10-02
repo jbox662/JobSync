@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Switch } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Switch, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
@@ -7,7 +7,21 @@ import { authService } from '../services/auth';
 
 const SettingsScreen = () => {
   const insets = useSafeAreaInsets();
-  const { settings, updateSettings, resetSettings } = useJobStore();
+  const { 
+    settings, 
+    updateSettings, 
+    resetSettings,
+    syncNow,
+    isSyncing,
+    syncError,
+    isAuthenticated,
+    workspaceId,
+    workspaceName,
+    lastSyncByUser,
+    outboxByUser,
+    authenticatedUser,
+    currentUserId
+  } = useJobStore();
   
   const [enableTax, setEnableTax] = useState(settings.enableTax);
   const [defaultTaxRate, setDefaultTaxRate] = useState(settings.defaultTaxRate.toString());
@@ -17,6 +31,21 @@ const SettingsScreen = () => {
   const [businessAddress, setBusinessAddress] = useState(settings.businessAddress || '');
   const [defaultPaymentTerms, setDefaultPaymentTerms] = useState(settings.defaultPaymentTerms || 'Net 30 days');
   const [defaultValidityDays, setDefaultValidityDays] = useState(settings.defaultValidityDays?.toString() || '30');
+  const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
+  
+  const getCurrentUserId = () => {
+    return authenticatedUser?.id || currentUserId || 'none';
+  };
+  
+  const handleSyncNow = async () => {
+    setLastSyncResult(null);
+    try {
+      await syncNow();
+      setLastSyncResult('Sync completed successfully');
+    } catch (error) {
+      setLastSyncResult(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   const handleSave = () => {
     const taxRate = parseFloat(defaultTaxRate);
@@ -224,6 +253,71 @@ const SettingsScreen = () => {
             keyboardType="number-pad"
           />
         </SettingCard>
+
+        {/* Sync Settings */}
+        {isAuthenticated && workspaceId && (
+          <SettingCard title="Sync & Backup">
+            <View className="mb-4">
+              <View className="flex-row items-center justify-between mb-3">
+                <View className="flex-1">
+                  <Text className="text-gray-900 font-medium text-base">Workspace Sync</Text>
+                  <Text className="text-gray-600 text-sm mt-1">
+                    Sync your data with {workspaceName || 'your workspace'}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={handleSyncNow}
+                  disabled={isSyncing}
+                  className={`flex-row items-center px-3 py-2 rounded-lg ${
+                    isSyncing ? 'bg-gray-100' : 'bg-blue-500'
+                  }`}
+                >
+                  {isSyncing ? (
+                    <ActivityIndicator size="small" color="#6B7280" />
+                  ) : (
+                    <Ionicons name="sync-outline" size={16} color="white" />
+                  )}
+                  <Text className={`ml-2 font-medium text-sm ${
+                    isSyncing ? 'text-gray-500' : 'text-white'
+                  }`}>
+                    {isSyncing ? 'Syncing...' : 'Sync Now'}
+                  </Text>
+                </Pressable>
+              </View>
+              
+              <View className="bg-gray-50 rounded-lg p-3 space-y-2">
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-600 text-sm">Last Sync:</Text>
+                  <Text className="text-gray-900 text-sm">
+                    {lastSyncByUser?.[getCurrentUserId()] 
+                      ? new Date(lastSyncByUser[getCurrentUserId()]!).toLocaleString()
+                      : 'Never'
+                    }
+                  </Text>
+                </View>
+                
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-600 text-sm">Pending Changes:</Text>
+                  <Text className="text-gray-900 text-sm font-medium">
+                    {outboxByUser?.[getCurrentUserId()]?.length || 0}
+                  </Text>
+                </View>
+                
+                {(syncError || lastSyncResult) && (
+                  <View className={`mt-2 p-2 rounded-lg ${
+                    syncError ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'
+                  }`}>
+                    <Text className={`text-sm ${
+                      syncError ? 'text-red-700' : 'text-green-700'
+                    }`}>
+                      {syncError || lastSyncResult}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </SettingCard>
+        )}
 
         {/* Data Management */}
         <SettingCard title="Data Management">
