@@ -298,10 +298,10 @@ const DashboardScreen = () => {
                           if (syncNow) {
                             try {
                               // Clear lastSyncByUser to force full sync
-                              const state = get();
+                              const state = useJobStore.getState();
                               const uid = getCurrentUserId();
                               if (uid) {
-                                set({ 
+                                useJobStore.setState({ 
                                   lastSyncByUser: { 
                                     ...state.lastSyncByUser, 
                                     [uid]: null 
