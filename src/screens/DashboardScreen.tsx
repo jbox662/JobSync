@@ -41,17 +41,33 @@ const DashboardScreen = () => {
     }
   };
 
+  // Get all data from store to ensure live updates
+  const { invoices, quotes, syncNow, isSyncing, syncError, outboxByUser, currentUserId } = useJobStore();
+  
   // Calculate stats
   const totalJobs = jobs.length;
   const activeJobs = jobs.filter(job => job.status === 'active').length;
   const completedJobs = jobs.filter(job => job.status === 'completed').length;
-  const pendingQuotes = useJobStore((s) => s.quotes.filter(q => ['draft', 'sent'].includes(q.status)).length);
-  const approvedInvoices = useJobStore((s) => s.invoices.filter(i => i.status === 'paid').length);
   
-  // Calculate total revenue from paid invoices instead of jobs
-  const { invoices } = useJobStore();
+  // Invoice statistics
+  const totalInvoices = invoices.length;
+  const paidInvoices = invoices.filter(i => i.status === 'paid').length;
+  const sentInvoices = invoices.filter(i => i.status === 'sent').length;
+  const overdueInvoices = invoices.filter(i => i.status === 'overdue').length;
+  
+  // Quote statistics  
+  const totalQuotes = quotes.length;
+  const pendingQuotes = quotes.filter(q => ['draft', 'sent'].includes(q.status)).length;
+  const approvedQuotes = quotes.filter(q => q.status === 'approved').length;
+  
+  // Calculate total revenue from paid invoices
   const totalRevenue = invoices
     .filter(invoice => invoice.status === 'paid')
+    .reduce((sum, invoice) => sum + invoice.total, 0);
+    
+  // Calculate outstanding amount (sent + overdue invoices)
+  const outstandingAmount = invoices
+    .filter(invoice => ['sent', 'overdue'].includes(invoice.status))
     .reduce((sum, invoice) => sum + invoice.total, 0);
 
   const recentJobs = jobs
@@ -64,14 +80,21 @@ const DashboardScreen = () => {
     icon: keyof typeof Ionicons.glyphMap;
     color: string;
   }) => (
-    <View className="bg-white rounded-xl p-4 flex-1 mx-1 shadow-sm border border-gray-100">
+    <View className="bg-white rounded-xl p-3 flex-1 mx-0.5 shadow-sm border border-gray-100">
       <View className="flex-row items-center justify-between">
-        <View>
-          <Text className="text-gray-600 text-sm font-medium">{title}</Text>
-          <Text className="text-2xl font-bold text-gray-900 mt-1">{value}</Text>
+        <View className="flex-1 pr-2">
+          <Text className="text-gray-600 text-xs font-medium" numberOfLines={1}>{title}</Text>
+          <Text 
+            className="text-lg font-bold text-gray-900 mt-1" 
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {value}
+          </Text>
         </View>
-        <View className={`w-12 h-12 rounded-full items-center justify-center ${color}`}>
-          <Ionicons name={icon} size={24} color="white" />
+        <View className={`w-10 h-10 rounded-full items-center justify-center ${color} flex-shrink-0`}>
+          <Ionicons name={icon} size={20} color="white" />
         </View>
       </View>
     </View>
@@ -105,7 +128,7 @@ const DashboardScreen = () => {
         {/* Header */}
         <View className="mb-6">
           <Text className="text-2xl font-bold text-gray-900">Dashboard</Text>
-          <Text className="text-gray-600 mt-1">Welcome back to Job Manager</Text>
+          <Text className="text-gray-600 mt-1">Welcome back to JobSync</Text>
         </View>
 
         {/* Sample Data Generation */}
@@ -123,7 +146,7 @@ const DashboardScreen = () => {
         )}
 
         {/* Stats Cards */}
-        <View className="flex-row mb-6">
+        <View className="flex-row mb-4 px-1">
           <StatCard
             title="Total Jobs"
             value={totalJobs}
@@ -138,29 +161,49 @@ const DashboardScreen = () => {
           />
         </View>
 
-        <View className="flex-row mb-6">
+        <View className="flex-row mb-4 px-1">
           <StatCard
-            title="Quotes"
-            value={pendingQuotes}
+            title="Total Quotes"
+            value={totalQuotes}
             icon="document-text"
             color="bg-yellow-500"
           />
           <StatCard
-            title="Invoices"
-            value={approvedInvoices}
+            title="Total Invoices"
+            value={totalInvoices}
             icon="receipt"
             color="bg-blue-500"
           />
         </View>
 
-        <View className="flex-row mb-6">
+        <View className="flex-row mb-4 px-1">
           <StatCard
-            title="Completed"
-            value={completedJobs}
+            title="Paid Invoices"
+            value={paidInvoices}
             icon="checkmark-circle"
             color="bg-green-500"
           />
-          <View className="flex-1 mx-1" />
+          <StatCard
+            title="Pending Invoices"
+            value={sentInvoices + overdueInvoices}
+            icon="time-outline"
+            color="bg-orange-500"
+          />
+        </View>
+
+        <View className="flex-row mb-4 px-1">
+          <StatCard
+            title="Revenue"
+            value={formatCurrency(totalRevenue)}
+            icon="trending-up"
+            color="bg-green-500"
+          />
+          <StatCard
+            title="Outstanding"
+            value={formatCurrency(outstandingAmount)}
+            icon="alert-circle"
+            color="bg-red-500"
+          />
         </View>
 
         {/* Revenue Card */}

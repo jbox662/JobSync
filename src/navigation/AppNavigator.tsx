@@ -1,11 +1,12 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, Alert, Modal } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useJobStore } from '../state/store';
+import { authService } from '../services/auth';
 
 // Import screens
 import DashboardScreen from '../screens/DashboardScreen';
@@ -79,6 +80,8 @@ const OnbStack = createNativeStackNavigator();
 
 const CustomDrawerContent = (props: any) => {
   const insets = useSafeAreaInsets();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const { authenticatedUser, workspaceName } = useJobStore();
   
   const menuItems = [
     { name: 'Dashboard', icon: 'home-outline', label: 'Dashboard' },
@@ -89,8 +92,25 @@ const CustomDrawerContent = (props: any) => {
     { name: 'Parts', icon: 'construct-outline', label: 'Parts' },
     { name: 'Labor', icon: 'time-outline', label: 'Labor' },
     { name: 'Settings', icon: 'settings-outline', label: 'Settings' },
-    { name: 'Debug', icon: 'bug-outline', label: 'Debug Info' },
   ];
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Sign Out', 
+          style: 'destructive',
+          onPress: async () => {
+            setShowUserMenu(false);
+            await authService.signOut();
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View 
@@ -108,7 +128,7 @@ const CustomDrawerContent = (props: any) => {
             <Ionicons name="briefcase" size={24} color="white" />
           </View>
           <View>
-            <Text className="text-white text-xl font-bold">Job Manager</Text>
+            <Text className="text-white text-xl font-bold">JobSync</Text>
             <Text className="text-gray-400 text-sm">Professional Edition</Text>
           </View>
         </View>
@@ -149,21 +169,76 @@ const CustomDrawerContent = (props: any) => {
 
       {/* Footer */}
       <View className="px-4 py-4 border-t border-gray-700 bg-gray-900" style={{ width: 280 }}>
-        {/* User Info */}
-        <View className="flex-row items-center">
+        {/* User Info - Clickable */}
+        <Pressable 
+          onPress={() => setShowUserMenu(true)}
+          className="flex-row items-center p-2 rounded-lg active:bg-gray-800"
+        >
           <View className="w-10 h-10 bg-gray-700 rounded-full items-center justify-center mr-3">
             <Ionicons name="person" size={20} color="#9CA3AF" />
           </View>
           <View className="flex-1">
             <Text className="text-gray-300 font-medium text-sm" numberOfLines={1}>
-              {useJobStore.getState().authenticatedUser?.name || 'Account'}
+              {authenticatedUser?.name || 'Account'}
             </Text>
             <Text className="text-gray-500 text-xs" numberOfLines={1}>
-              {useJobStore.getState().workspaceName || 'Business Account'}
+              {workspaceName || 'Business Account'}
             </Text>
           </View>
-        </View>
+          <Ionicons name="chevron-up" size={16} color="#9CA3AF" />
+        </Pressable>
       </View>
+
+      {/* User Menu Modal */}
+      <Modal
+        visible={showUserMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUserMenu(false)}
+      >
+        <Pressable 
+          className="flex-1 bg-black bg-opacity-50 justify-center items-center"
+          onPress={() => setShowUserMenu(false)}
+        >
+          <View className="bg-white rounded-xl p-6 mx-4 w-80 max-w-sm">
+            <Text className="text-xl font-bold text-gray-900 mb-4">Account Menu</Text>
+            
+            <View className="mb-4">
+              <Text className="text-gray-600 text-sm">Signed in as:</Text>
+              <Text className="text-gray-900 font-medium">{authenticatedUser?.email}</Text>
+              <Text className="text-gray-600 text-sm mt-1">Workspace: {workspaceName}</Text>
+            </View>
+
+            <View className="space-y-2">
+              <Pressable
+                onPress={() => {
+                  setShowUserMenu(false);
+                  props.navigation.navigate('Settings');
+                }}
+                className="flex-row items-center p-3 rounded-lg bg-gray-50"
+              >
+                <Ionicons name="settings-outline" size={20} color="#374151" />
+                <Text className="ml-3 text-gray-900 font-medium">Account Settings</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSignOut}
+                className="flex-row items-center p-3 rounded-lg bg-red-50"
+              >
+                <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+                <Text className="ml-3 text-red-600 font-medium">Sign Out</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setShowUserMenu(false)}
+                className="flex-row items-center justify-center p-3 rounded-lg bg-gray-100 mt-2"
+              >
+                <Text className="text-gray-600 font-medium">Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
