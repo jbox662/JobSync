@@ -210,83 +210,76 @@ const InvoicesScreen = () => {
         onPress={() => {
           navigation.navigate('InvoiceDetail', { invoiceId: invoice.id });
         }}
-        className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100"
+        className="bg-white rounded-xl p-3 mb-3 shadow-sm border border-gray-100"
       >
-        <View className="flex-row items-start justify-between">
-          <View className="flex-1">
-            <View className="flex-row items-center mb-2">
-              <Text className="font-bold text-green-600 text-base mr-2">
-                {invoice.invoiceNumber}
-              </Text>
-              <View className={`px-2 py-1 rounded-full border flex-row items-center ${getStatusColor(isOverdue ? 'overdue' : invoice.status)}`}>
-                <Ionicons 
-                  name={getStatusIcon(isOverdue ? 'overdue' : invoice.status) as keyof typeof Ionicons.glyphMap} 
-                  size={12} 
-                  color={isOverdue ? '#DC2626' : invoice.status === 'paid' ? '#166534' : invoice.status === 'sent' ? '#1E40AF' : '#6B7280'}
-                  style={{ marginRight: 4 }}
-                />
-                <Text className="text-xs font-medium">
-                  {getStatusLabel(isOverdue ? 'overdue' : invoice.status)}
-                </Text>
-              </View>
-            </View>
-            
-            <Text className="font-semibold text-gray-900 text-lg mb-1" numberOfLines={1}>
-              {invoice.title}
+        {/* Row 1: Invoice Number + Status + Amount */}
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center flex-1 mr-2">
+            <Text className="font-bold text-green-600 text-sm mr-2" numberOfLines={1}>
+              {invoice.invoiceNumber}
             </Text>
-            
-            <View className="flex-row items-center mb-1">
-              <Ionicons name="person-outline" size={14} color="#6B7280" />
-              <Text className="text-gray-600 text-sm ml-1" numberOfLines={1}>
-                {customer?.name || 'Unknown Customer'}
-              </Text>
-            </View>
-            
-            <View className="flex-row items-center">
-              <Ionicons name="briefcase-outline" size={14} color="#6B7280" />
-              <Text className="text-gray-600 text-sm ml-1" numberOfLines={1}>
-                {job?.title || 'Unknown Job'}
+            <View className={`px-2 py-1 rounded-full flex-row items-center ${getStatusColor(isOverdue ? 'overdue' : invoice.status)}`}>
+              <Ionicons 
+                name={getStatusIcon(isOverdue ? 'overdue' : invoice.status) as keyof typeof Ionicons.glyphMap} 
+                size={10} 
+                color={isOverdue ? '#DC2626' : invoice.status === 'paid' ? '#166534' : invoice.status === 'sent' ? '#1E40AF' : '#6B7280'}
+                style={{ marginRight: 2 }}
+              />
+              <Text className="text-xs font-medium">
+                {getStatusLabel(isOverdue ? 'overdue' : invoice.status)}
               </Text>
             </View>
           </View>
           
-          <View className="items-end ml-3">
-            <Text className="font-bold text-gray-900 text-lg">
-              {formatCurrency(invoice.total)}
-            </Text>
-            <Text className="text-gray-500 text-xs mt-1">
-              Due {format(new Date(invoice.dueDate), 'MMM d, yyyy')}
-            </Text>
-            {invoice.paidAt && (
-              <Text className="text-green-600 text-xs mt-1 font-medium">
-                Paid {format(new Date(invoice.paidAt), 'MMM d')}
-              </Text>
-            )}
-          </View>
+          <Text className="font-bold text-gray-900 text-base" numberOfLines={1} adjustsFontSizeToFit>
+            {formatCurrency(invoice.total)}
+          </Text>
         </View>
         
-        {invoice.description && (
-          <Text className="text-gray-600 text-sm mt-3" numberOfLines={2}>
-            {invoice.description}
-          </Text>
-        )}
-
-        <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-gray-100">
-          <View className="flex-row items-center">
-            <Ionicons name="list-outline" size={16} color="#6B7280" />
-            <Text className="text-gray-600 text-sm ml-1">
-              {invoice.items.length} items
+        {/* Row 2: Invoice Title */}
+        <Text className="font-semibold text-gray-900 text-base mb-2" numberOfLines={1}>
+          {invoice.title}
+        </Text>
+        
+        {/* Row 3: Customer + Due Date */}
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center flex-1 mr-2">
+            <Ionicons name="person-outline" size={12} color="#6B7280" />
+            <Text className="text-gray-600 text-xs ml-1 flex-1" numberOfLines={1}>
+              {customer?.company || customer?.name || 'Unknown Customer'}
             </Text>
           </View>
           
+          <Text className="text-gray-500 text-xs" numberOfLines={1}>
+            Due {format(new Date(invoice.dueDate), 'MMM d')}
+          </Text>
+        </View>
+        
+        {/* Row 4: Items + Actions */}
+        <View className="flex-row items-center justify-between pt-2 border-t border-gray-100">
           <View className="flex-row items-center">
-            {invoice.paymentTerms && (
-              <>
-                <Ionicons name="card-outline" size={16} color="#6B7280" />
-                <Text className="text-gray-500 text-xs ml-1 mr-3">
-                  {invoice.paymentTerms}
+            <Ionicons name="list-outline" size={12} color="#6B7280" />
+            <Text className="text-gray-600 text-xs ml-1">
+              {invoice.items.length} items
+            </Text>
+            {invoice.paidAt && (
+              <View className="flex-row items-center ml-3">
+                <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
+                <Text className="text-green-600 text-xs ml-1 font-medium">
+                  Paid {format(new Date(invoice.paidAt), 'MMM d')}
                 </Text>
-              </>
+              </View>
+            )}
+          </View>
+          
+          <View className="flex-row items-center">
+            {invoice.reminderEnabled && (
+              <View className="flex-row items-center mr-2">
+                <Ionicons name="alarm-outline" size={12} color="#F59E0B" />
+                <Text className="text-amber-600 text-xs ml-1">
+                  {invoice.reminderFrequency}
+                </Text>
+              </View>
             )}
             
             {/* Email Button */}
@@ -296,7 +289,6 @@ const InvoicesScreen = () => {
               variant="icon"
               size="small"
               onEmailSent={() => {
-                // Refresh the invoice list or show success feedback
                 console.log('Invoice emailed successfully');
               }}
             />
