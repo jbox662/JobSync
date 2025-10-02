@@ -533,19 +533,23 @@ export const useJobStore = create<JobStore>()(
                 }
                 
                 const slice = latestState.dataByUser[capturedUid];
-                let { customers, parts, laborItems, jobs } = slice;
+                let { customers, parts, laborItems, jobs, quotes, invoices } = slice;
                 
                 // Ensure arrays exist
                 customers = customers || [];
                 parts = parts || [];
                 laborItems = laborItems || [];
                 jobs = jobs || [];
+                quotes = quotes || [];
+                invoices = invoices || [];
                 
                 const byId = {
                   customers: new Map(customers.map((r) => [r.id, r])),
                   parts: new Map(parts.map((r) => [r.id, r])),
                   laborItems: new Map(laborItems.map((r) => [r.id, r])),
                   jobs: new Map(jobs.map((r) => [r.id, r])),
+                  quotes: new Map(quotes.map((r) => [r.id, r])),
+                  invoices: new Map(invoices.map((r) => [r.id, r])),
                 } as any;
                 
                 for (const ch of pull.changes) {
@@ -563,6 +567,8 @@ export const useJobStore = create<JobStore>()(
                 parts = Array.from(byId.parts.values());
                 laborItems = Array.from(byId.laborItems.values());
                 jobs = Array.from(byId.jobs.values());
+                quotes = Array.from(byId.quotes.values());
+                invoices = Array.from(byId.invoices.values());
                 
                 // Validate store again before final state update
                 const finalState = getStore();
@@ -573,7 +579,7 @@ export const useJobStore = create<JobStore>()(
                 setState({ 
                   dataByUser: { 
                     ...finalState.dataByUser, 
-                    [capturedUid]: { customers, parts, laborItems, jobs, quotes: slice.quotes || [], invoices: slice.invoices || [] } 
+                    [capturedUid]: { customers, parts, laborItems, jobs, quotes, invoices } 
                   }, 
                   lastSyncByUser: { ...finalState.lastSyncByUser, [capturedUid]: pull.serverTime } 
                 });
