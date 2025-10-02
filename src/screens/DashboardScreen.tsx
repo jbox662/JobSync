@@ -314,25 +314,30 @@ const DashboardScreen = () => {
             </View>
             
             <View className="space-y-2">
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600">Workspace:</Text>
-                <Text className="text-gray-900 font-medium">{workspaceName || 'Connected'}</Text>
+              <View className="flex-row justify-between items-center">
+                <Text className="text-gray-600 text-sm">Workspace:</Text>
+                <Text className="text-gray-900 font-medium text-sm flex-1 text-right" numberOfLines={1}>
+                  {workspaceName || 'Connected'}
+                </Text>
               </View>
               
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600">Last Sync:</Text>
-                <Text className="text-gray-900">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-gray-600 text-sm">Last Sync:</Text>
+                <Text className="text-gray-900 text-sm" numberOfLines={1}>
                   {lastSyncByUser?.[getCurrentUserId()] 
-                    ? new Date(lastSyncByUser[getCurrentUserId()]!).toLocaleTimeString()
+                    ? new Date(lastSyncByUser[getCurrentUserId()]!).toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })
                     : 'Never'
                   }
                 </Text>
               </View>
               
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600">Pending Changes:</Text>
-                <Text className="text-gray-900 font-medium">
-                  {outboxByUser?.[getCurrentUserId()]?.length || 0}
+              <View className="flex-row justify-between items-center">
+                <Text className="text-gray-600 text-sm">Pending:</Text>
+                <Text className="text-gray-900 font-medium text-sm">
+                  {outboxByUser?.[getCurrentUserId()]?.length || 0} changes
                 </Text>
               </View>
               
@@ -340,9 +345,9 @@ const DashboardScreen = () => {
                 <View className={`mt-2 p-2 rounded-lg ${
                   syncError ? 'bg-red-50' : 'bg-green-50'
                 }`}>
-                  <Text className={`text-sm ${
+                  <Text className={`text-xs ${
                     syncError ? 'text-red-700' : 'text-green-700'
-                  }`}>
+                  }`} numberOfLines={2}>
                     {syncError || lastSyncResult}
                   </Text>
                 </View>
