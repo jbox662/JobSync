@@ -42,7 +42,7 @@ const DashboardScreen = () => {
   };
 
   // Get all data from store to ensure live updates
-  const { invoices, quotes, syncNow, isSyncing, syncError, outboxByUser, currentUserId } = useJobStore();
+  const { invoices, quotes } = useJobStore();
   
   // Calculate stats
   const totalJobs = jobs.length;
