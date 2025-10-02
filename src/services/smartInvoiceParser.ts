@@ -3,8 +3,8 @@ import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 
 /**
- * Smart Invoice Parser Service
- * Handles importing invoices from various formats (Square, QuickBooks, PDF, etc.)
+ * Smart Invoice & Quote Parser Service
+ * Handles importing invoices and quotes from various formats (Square, QuickBooks, PDF, CSV, etc.)
  */
 
 export interface ParsedInvoice {
