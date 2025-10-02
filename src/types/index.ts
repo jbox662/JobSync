@@ -82,6 +82,18 @@ export interface Quote {
   updatedAt: string;
   sentAt?: string;
   approvedAt?: string;
+  // Enhanced quote details
+  scopeOfWork?: string;
+  specifications?: string;
+  paymentTerms?: string;
+  deliveryTerms?: string;
+  warranty?: string;
+  additionalNotes?: string;
+  companyInfo?: {
+    name?: string;
+    address?: string;
+    contact?: string;
+  };
 }
 
 // New Invoice interface

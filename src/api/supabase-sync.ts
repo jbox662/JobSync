@@ -276,13 +276,15 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
 
       try {
         if (change.operation === 'create') {
+          console.log(`🐛 DEBUG: Inserting into ${tableName}:`, JSON.stringify(row, null, 2));
           const { error } = await supabase
             .from(tableName)
             .insert(row);
 
           if (error && error.code !== '23505') { // Ignore unique constraint violations
-            // Error will be handled by sync status in UI
-            return false;
+            console.error(`❌ Insert error for ${tableName}:`, error);
+            const errorDetails = `Failed to insert ${change.entity}: ${error.message}\n\nDEBUG INFO:\nTable: ${tableName}\nError Code: ${error.code}\nRow Data: ${JSON.stringify(row, null, 2).substring(0, 500)}...`;
+            throw new Error(errorDetails);
           }
         } else if (change.operation === 'update') {
           const { error } = await supabase

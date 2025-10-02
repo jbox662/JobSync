@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS quotes (
   total DECIMAL(10,2) NOT NULL,
   notes TEXT,
   valid_until TIMESTAMP WITH TIME ZONE,
+  company_info JSONB DEFAULT NULL,
+  scope_of_work TEXT DEFAULT NULL,
+  specifications TEXT DEFAULT NULL,
+  payment_terms TEXT DEFAULT NULL,
+  delivery_terms TEXT DEFAULT NULL,
+  warranty TEXT DEFAULT NULL,
+  additional_notes TEXT DEFAULT NULL,
   sent_at TIMESTAMP WITH TIME ZONE,
   approved_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -242,6 +249,15 @@ CREATE POLICY "Allow full access to invoices" ON invoices FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Allow full access to sync_events" ON sync_events;
 CREATE POLICY "Allow full access to sync_events" ON sync_events FOR ALL USING (true);
+
+-- Add comments for enhanced quote columns
+COMMENT ON COLUMN quotes.company_info IS 'JSON object containing company information (name, address, contact)';
+COMMENT ON COLUMN quotes.scope_of_work IS 'Detailed description of work to be performed';
+COMMENT ON COLUMN quotes.specifications IS 'Technical specifications and requirements';
+COMMENT ON COLUMN quotes.payment_terms IS 'Payment terms and conditions';
+COMMENT ON COLUMN quotes.delivery_terms IS 'Delivery terms and timeline';
+COMMENT ON COLUMN quotes.warranty IS 'Warranty information and terms';
+COMMENT ON COLUMN quotes.additional_notes IS 'Additional notes and comments';
 
 -- Verification queries to confirm setup
 SELECT 'SUCCESS: Database schema setup completed successfully!' as status;
