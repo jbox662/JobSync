@@ -365,18 +365,24 @@ const InvoicesScreen = () => {
         <>
           {/* Financial Summary */}
           <View className="bg-white px-4 py-3 border-b border-gray-200">
-            <View className="flex-row justify-between">
-              <View className="flex-1">
-                <Text className="text-gray-500 text-xs font-medium">Total Invoiced</Text>
-                <Text className="text-gray-900 font-bold text-lg">{formatCurrency(totalInvoiced)}</Text>
+            <View className="flex-row justify-between items-center">
+              <View className="flex-1 items-center mx-1">
+                <Text className="text-gray-500 text-xs font-medium">Invoiced</Text>
+                <Text className="text-gray-900 font-bold text-sm" numberOfLines={1} adjustsFontSizeToFit>
+                  {formatCurrency(totalInvoiced)}
+                </Text>
               </View>
-              <View className="flex-1">
+              <View className="flex-1 items-center mx-1">
                 <Text className="text-gray-500 text-xs font-medium">Paid</Text>
-                <Text className="text-green-600 font-bold text-lg">{formatCurrency(totalPaid)}</Text>
+                <Text className="text-green-600 font-bold text-sm" numberOfLines={1} adjustsFontSizeToFit>
+                  {formatCurrency(totalPaid)}
+                </Text>
               </View>
-              <View className="flex-1">
+              <View className="flex-1 items-center mx-1">
                 <Text className="text-gray-500 text-xs font-medium">Outstanding</Text>
-                <Text className="text-orange-600 font-bold text-lg">{formatCurrency(totalOutstanding)}</Text>
+                <Text className="text-orange-600 font-bold text-sm" numberOfLines={1} adjustsFontSizeToFit>
+                  {formatCurrency(totalOutstanding)}
+                </Text>
               </View>
             </View>
           </View>
