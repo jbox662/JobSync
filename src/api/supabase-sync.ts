@@ -33,13 +33,74 @@ const mapEntityToTable = (entity: string) => {
   return mapping[entity] || entity;
 };
 
+// Helper function to check if a string is a valid UUID format
+const isValidUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Simple hash function for React Native compatibility
+const simpleHash = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(16).padStart(8, '0');
+};
+
+// Helper function to convert non-standard IDs to valid UUIDs
+const normalizeUUID = (value: string): string => {
+  if (isValidUUID(value)) {
+    return value;
+  }
+  
+  // For non-standard IDs, create a deterministic UUID based on the value
+  // This ensures the same input always generates the same UUID
+  const hash1 = simpleHash(value);
+  const hash2 = simpleHash(value + 'salt1');
+  const hash3 = simpleHash(value + 'salt2');
+  const hash4 = simpleHash(value + 'salt3');
+  
+  // Create a 32-character hex string
+  const fullHash = (hash1 + hash2 + hash3 + hash4).substring(0, 32);
+  
+  // Format as UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  return [
+    fullHash.substring(0, 8),
+    fullHash.substring(8, 12),
+    fullHash.substring(12, 16),
+    fullHash.substring(16, 20),
+    fullHash.substring(20, 32)
+  ].join('-');
+};
+
 const mapRowToSupabaseFormat = (entity: string, row: any) => {
   // Convert camelCase to snake_case for database
   const converted: any = {};
   
   Object.keys(row).forEach(key => {
     const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-    converted[snakeKey] = row[key];
+    let value = row[key];
+    
+    // Handle UUID fields
+    if (typeof value === 'string') {
+      if (value === '') {
+        // Convert empty strings to null for UUID fields
+        if (key.endsWith('Id') || key === 'id' || snakeKey.endsWith('_id') || snakeKey === 'id') {
+          value = null;
+        }
+      } else if (key.endsWith('Id') || key === 'id' || snakeKey.endsWith('_id') || snakeKey === 'id') {
+        // Normalize non-standard UUIDs to valid format
+        if (!isValidUUID(value)) {
+          console.warn(`Converting non-standard UUID ${key}: ${value} -> normalized UUID`);
+          value = normalizeUUID(value);
+        }
+      }
+    }
+    
+    converted[snakeKey] = value;
   });
   
   // Handle special cases
@@ -241,33 +302,75 @@ export async function listMembers(workspaceId: string): Promise<Array<{ email: s
 
 // Sync operations
 export async function pushChanges(payload: PushPayload): Promise<boolean> {
+  console.log('🔄 pushChanges v3.0 called with:', {
+    workspaceId: payload.workspaceId,
+    deviceId: payload.deviceId,
+    changeCount: payload.changes.length,
+    supabaseAvailable: isSupabaseAvailable()
+  });
+  
   // Return success if Supabase is not configured (offline mode)
   if (!isSupabaseAvailable() || !supabase) {
+    console.log('❌ Supabase not available, returning true (offline mode)');
     return true;
   }
 
   try {
-    // First, record sync events
-    const syncEvents = payload.changes.map(change => ({
-      workspace_id: payload.workspaceId,
-      device_id: payload.deviceId,
-      entity: change.entity,
-      operation: change.operation,
-      entity_id: change.row.id,
-      row_data: change.row
-    }));
+    // First, record sync events - filter out invalid changes
+    const validChanges = payload.changes.filter(change => {
+      if (!change.row) {
+        console.warn('Filtering out change with missing row:', change);
+        return false;
+      }
+      if (!change.row.id) {
+        console.warn('Filtering out change with missing row ID:', change);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log(`Filtered ${payload.changes.length} changes to ${validChanges.length} valid changes`);
+    
+    if (validChanges.length === 0) {
+      console.log('No valid changes to sync');
+      return true;
+    }
+    
+    const syncEvents = validChanges.map(change => {
+      if (!change.row || !change.row.id) {
+        throw new Error(`Invalid change in validChanges: ${JSON.stringify(change)}`);
+      }
+      return {
+        workspace_id: payload.workspaceId,
+        device_id: payload.deviceId,
+        entity: change.entity,
+        operation: change.operation,
+        entity_id: change.row.id,
+        row_data: change.row
+      };
+    });
 
     const { error: syncError } = await supabase
       .from('sync_events')
       .insert(syncEvents);
 
     if (syncError) {
-      // Don't spam console in development - user will see sync status in UI
-      return false;
+      console.error('Sync events insert error:', syncError);
+      throw new Error(`Failed to record sync events: ${syncError.message}`);
     }
 
+    // Sort changes by dependency order to avoid foreign key violations
+    const dependencyOrder = ['customers', 'parts', 'laborItems', 'jobs', 'quotes', 'invoices'];
+    const sortedChanges = validChanges.sort((a, b) => {
+      const aIndex = dependencyOrder.indexOf(a.entity);
+      const bIndex = dependencyOrder.indexOf(b.entity);
+      return aIndex - bIndex;
+    });
+    
+    console.log(`Sorted ${validChanges.length} changes by dependency order`);
+    
     // Apply changes to actual tables
-    for (const change of payload.changes) {
+    for (const change of sortedChanges) {
       const tableName = mapEntityToTable(change.entity);
       const row = mapRowToSupabaseFormat(change.entity, change.row);
       
@@ -276,15 +379,27 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
 
       try {
         if (change.operation === 'create') {
-          console.log(`🐛 DEBUG: Inserting into ${tableName}:`, JSON.stringify(row, null, 2));
+          console.log('Processing change:', {
+            entity: change.entity,
+            operation: change.operation,
+            rowId: change.row.id
+          });
+          
           const { error } = await supabase
             .from(tableName)
             .insert(row);
 
           if (error && error.code !== '23505') { // Ignore unique constraint violations
-            console.error(`❌ Insert error for ${tableName}:`, error);
-            const errorDetails = `Failed to insert ${change.entity}: ${error.message}\n\nDEBUG INFO:\nTable: ${tableName}\nError Code: ${error.code}\nRow Data: ${JSON.stringify(row, null, 2).substring(0, 500)}...`;
-            throw new Error(errorDetails);
+            console.error(`Insert error for ${tableName}:`, error);
+            
+            // Provide more helpful error messages for common issues
+            if (error.code === '23503') { // Foreign key violation
+              console.warn(`Skipping ${change.entity} due to missing dependency:`, error.message);
+              // Skip this record instead of failing the entire sync
+              continue;
+            } else {
+              throw new Error(`Failed to insert ${change.entity}: ${error.message}`);
+            }
           }
         } else if (change.operation === 'update') {
           const { error } = await supabase
@@ -294,7 +409,8 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
             .eq('workspace_id', payload.workspaceId);
 
           if (error) {
-            // Error will be handled by sync status in UI
+            console.error(`Update error for ${tableName}:`, error);
+            throw new Error(`Failed to update ${change.entity}: ${error.message}`);
           }
         } else if (change.operation === 'delete') {
           // Soft delete by setting deleted_at
@@ -305,18 +421,20 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
             .eq('workspace_id', payload.workspaceId);
 
           if (error) {
-            // Error will be handled by sync status in UI
+            console.error(`Delete error for ${tableName}:`, error);
+            throw new Error(`Failed to delete ${change.entity}: ${error.message}`);
           }
         }
       } catch (entityError) {
-        // Continue with other changes - error will be reflected in sync status
-        continue;
+        // Re-throw the error so we can see what's failing
+        throw entityError;
       }
     }
 
+    console.log('✅ pushChanges completed successfully');
     return true;
   } catch (error) {
-    // Removed console.error to reduce development noise - sync status shown in UI instead: ('Error in pushChanges:', error);
+    console.error('❌ pushChanges failed:', error);
     return false;
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
@@ -249,7 +249,52 @@ const DashboardScreen = () => {
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-lg font-semibold text-gray-900">Sync Status</Text>
               <Pressable
-                onPress={handleSyncNow}
+                onPress={async () => {
+                  const pendingCount = currentUserId && outboxByUser && outboxByUser[currentUserId] ? outboxByUser[currentUserId].length : 0;
+                  
+                  // Get more detailed debug info
+                  const outboxData = currentUserId && outboxByUser && outboxByUser[currentUserId] ? outboxByUser[currentUserId] : [];
+                  const sampleChanges = outboxData.slice(0, 3).map(c => `${c.entity}:${c.operation}`).join(', ');
+                  
+                  Alert.alert(
+                    'Sync Debug Info',
+                    `syncNow function: ${!!syncNow ? 'Available' : 'Missing'}\n` +
+                    `isSyncing: ${isSyncing}\n` +
+                    `Pending changes: ${pendingCount}\n` +
+                    `currentUserId: ${currentUserId ? 'Set' : 'Missing'}\n` +
+                    `Sample changes: ${sampleChanges || 'None'}\n` +
+                    `Workspace ID: ${useJobStore.getState().workspaceId ? 'Set' : 'Missing'}`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { 
+                        text: 'Try Sync', 
+                        onPress: async () => {
+                          if (syncNow) {
+                            try {
+                              const beforeCount = currentUserId && outboxByUser && outboxByUser[currentUserId] ? outboxByUser[currentUserId].length : 0;
+                              await syncNow();
+                              
+                              // Check if changes actually synced
+                              setTimeout(() => {
+                                const afterCount = currentUserId && outboxByUser && outboxByUser[currentUserId] ? outboxByUser[currentUserId].length : 0;
+                                const synced = beforeCount - afterCount;
+                                
+                                Alert.alert(
+                                  'Sync Results', 
+                                  `Before: ${beforeCount} pending\nAfter: ${afterCount} pending\nSynced: ${synced} changes\n\n${synced === 0 ? 'No changes were synced - there may be a database error.' : 'Some changes synced successfully.'}`
+                                );
+                              }, 1000);
+                            } catch (error: any) {
+                              Alert.alert('Sync Error', `Sync failed: ${error.message || 'Unknown error'}`);
+                            }
+                          } else {
+                            Alert.alert('Error', 'syncNow function is not available');
+                          }
+                        }
+                      }
+                    ]
+                  );
+                }}
                 disabled={isSyncing}
                 className={`flex-row items-center px-3 py-2 rounded-lg ${
                   isSyncing ? 'bg-gray-100' : 'bg-blue-500'
