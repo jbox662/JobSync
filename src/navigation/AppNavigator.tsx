@@ -12,6 +12,7 @@ import { authService } from '../services/auth';
 import DashboardScreen from '../screens/DashboardScreen';
 import CreateBusinessScreen from '../screens/CreateBusinessScreen';
 import JoinBusinessScreen from '../screens/JoinBusinessScreen';
+import EditInvoiceScreen from '../screens/EditInvoiceScreen';
 import ManageTeamScreen from '../screens/ManageTeamScreen';
 import JobsScreen from '../screens/JobsScreen';
 import QuotesScreen from '../screens/QuotesScreen';
@@ -403,6 +404,11 @@ export const AppNavigator = () => {
         name="InvoiceDetail" 
         component={InvoiceDetailScreen}
         options={{ title: 'Invoice Details' }}
+      />
+      <Stack.Screen 
+        name="EditInvoice" 
+        component={EditInvoiceScreen}
+        options={{ title: 'Edit Invoice', presentation: 'modal' }}
       />
       <Stack.Screen 
         name="PartDetail" 

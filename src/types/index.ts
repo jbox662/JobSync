@@ -118,6 +118,11 @@ export interface Invoice {
   updatedAt: string;
   sentAt?: string;
   paidAt?: string;
+  reminderEnabled?: boolean;
+  reminderFrequency?: 'daily' | 'weekly' | 'biweekly' | 'monthly';
+  lastReminderSent?: string;
+  nextReminderDue?: string;
+  reminderCount?: number;
   paidAmount?: number;
 }
 
