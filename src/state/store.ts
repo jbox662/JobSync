@@ -809,9 +809,10 @@ export const useJobStore = create<JobStore>()(
           syncTopLevel(get, set, getCurrentUserId); 
         },
         updateQuote: (id, updates) => { 
+          const uid = getCurrentUserId(); 
+          if (!uid) return; 
           const state = get(); 
-          const uid = state.currentUserId!; 
-          const slice = state.dataByUser[uid]; 
+          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
           const updatedQuotes = (slice.quotes || []).map((quote) => {
             if (quote.id === id) {
               const updatedQuote = { ...quote, ...updates, updatedAt: new Date().toISOString() };
@@ -830,9 +831,10 @@ export const useJobStore = create<JobStore>()(
           syncTopLevel(get, set, getCurrentUserId); 
         },
         deleteQuote: (id) => { 
+          const uid = getCurrentUserId(); 
+          if (!uid) return; 
           const state = get(); 
-          const uid = state.currentUserId!; 
-          const slice = state.dataByUser[uid]; 
+          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
           const row = (slice.quotes || []).find((q) => q.id === id); 
           const updated = { ...slice, quotes: (slice.quotes || []).filter((q) => q.id !== id) }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
@@ -861,9 +863,10 @@ export const useJobStore = create<JobStore>()(
           syncTopLevel(get, set, getCurrentUserId); 
         },
         updateInvoice: (id, updates) => { 
+          const uid = getCurrentUserId(); 
+          if (!uid) return; 
           const state = get(); 
-          const uid = state.currentUserId!; 
-          const slice = state.dataByUser[uid]; 
+          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
           const updatedInvoices = (slice.invoices || []).map((invoice) => {
             if (invoice.id === id) {
               const updatedInvoice = { ...invoice, ...updates, updatedAt: new Date().toISOString() };
@@ -882,9 +885,10 @@ export const useJobStore = create<JobStore>()(
           syncTopLevel(get, set, getCurrentUserId); 
         },
         deleteInvoice: (id) => { 
+          const uid = getCurrentUserId(); 
+          if (!uid) return; 
           const state = get(); 
-          const uid = state.currentUserId!; 
-          const slice = state.dataByUser[uid]; 
+          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
           const row = (slice.invoices || []).find((i) => i.id === id); 
           const updated = { ...slice, invoices: (slice.invoices || []).filter((i) => i.id !== id) }; 
           set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
