@@ -291,6 +291,34 @@ const DashboardScreen = () => {
                             Alert.alert('Error', 'syncNow function is not available');
                           }
                         }
+                      },
+                      {
+                        text: 'Force Full Sync',
+                        onPress: async () => {
+                          if (syncNow) {
+                            try {
+                              // Clear lastSyncByUser to force full sync
+                              const state = get();
+                              const uid = getCurrentUserId();
+                              if (uid) {
+                                set({ 
+                                  lastSyncByUser: { 
+                                    ...state.lastSyncByUser, 
+                                    [uid]: null 
+                                  } 
+                                });
+                                
+                                // Now trigger sync
+                                await syncNow();
+                                Alert.alert('Success', 'Full sync completed! Check your invoices screen.');
+                              }
+                            } catch (error: any) {
+                              Alert.alert('Full Sync Error', `Failed: ${error.message || 'Unknown error'}`);
+                            }
+                          } else {
+                            Alert.alert('Error', 'syncNow function is not available');
+                          }
+                        }
                       }
                     ]
                   );
