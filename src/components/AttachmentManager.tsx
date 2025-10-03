@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { attachmentSyncService, AttachmentData } from '../services/attachmentSync';
 
 interface Attachment {
   id: string;
@@ -11,6 +12,8 @@ interface Attachment {
   uri: string;
   size: number;
   type: string;
+  supabaseUrl?: string;
+  localPath?: string;
 }
 
 interface AttachmentManagerProps {
@@ -18,13 +21,22 @@ interface AttachmentManagerProps {
   onAttachmentsChange: (attachments: Attachment[]) => void;
   maxAttachments?: number;
   readOnly?: boolean;
+  // Sync props
+  workspaceId?: string;
+  documentType?: 'invoice' | 'quote';
+  documentId?: string;
+  enableSync?: boolean;
 }
 
 const AttachmentManager: React.FC<AttachmentManagerProps> = ({
   attachments,
   onAttachmentsChange,
   maxAttachments = 5,
-  readOnly = false
+  readOnly = false,
+  workspaceId,
+  documentType,
+  documentId,
+  enableSync = false
 }) => {
   const [isPicking, setIsPicking] = useState(false);
 
@@ -93,6 +105,29 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
           type: file.mimeType || 'application/octet-stream'
         };
 
+        // Upload to Supabase if sync is enabled
+        if (enableSync && workspaceId && documentType && documentId) {
+          try {
+            const uploadResult = await attachmentSyncService.uploadAttachment(
+              newAttachment,
+              workspaceId,
+              documentType,
+              documentId
+            );
+
+            if (uploadResult.success && uploadResult.supabaseUrl) {
+              newAttachment.supabaseUrl = uploadResult.supabaseUrl;
+              newAttachment.localPath = permanentUri;
+            } else {
+              console.warn('Failed to upload attachment:', uploadResult.error);
+              // Continue with local-only attachment
+            }
+          } catch (error) {
+            console.error('Upload error:', error);
+            // Continue with local-only attachment
+          }
+        }
+
         onAttachmentsChange([...attachments, newAttachment]);
       }
     } catch (error) {
@@ -117,6 +152,12 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             // Delete the file from storage
             if (attachmentToRemove) {
               try {
+                // Delete from Supabase if synced
+                if (enableSync && attachmentToRemove.supabaseUrl) {
+                  await attachmentSyncService.deleteAttachment(attachmentToRemove.supabaseUrl);
+                }
+
+                // Delete local file
                 const fileInfo = await FileSystem.getInfoAsync(attachmentToRemove.uri);
                 if (fileInfo.exists) {
                   await FileSystem.deleteAsync(attachmentToRemove.uri);
@@ -139,8 +180,40 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
     try {
       console.log('Opening attachment:', attachment);
       
+      let fileUri = attachment.uri;
+      
+      // If this is a synced attachment and we don't have the local file, download it
+      if (attachment.supabaseUrl && !attachment.localPath) {
+        const localPath = attachmentSyncService.getLocalCachePath(attachment.id, attachment.name);
+        const isCached = await attachmentSyncService.isAttachmentCached(localPath);
+        
+        if (!isCached) {
+          // Download from Supabase
+          const downloadResult = await attachmentSyncService.downloadAttachment(
+            attachment.supabaseUrl,
+            localPath
+          );
+          
+          if (downloadResult.success && downloadResult.localPath) {
+            fileUri = downloadResult.localPath;
+            // Update the attachment with the local path
+            const updatedAttachments = attachments.map(att => 
+              att.id === attachment.id 
+                ? { ...att, localPath: downloadResult.localPath }
+                : att
+            );
+            onAttachmentsChange(updatedAttachments);
+          } else {
+            Alert.alert('Download Failed', 'Could not download the attachment. Please check your internet connection.');
+            return;
+          }
+        } else {
+          fileUri = localPath;
+        }
+      }
+      
       // Check if the file exists
-      const fileInfo = await FileSystem.getInfoAsync(attachment.uri);
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
       console.log('File info:', fileInfo);
       
       if (!fileInfo.exists) {
@@ -157,8 +230,8 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
       
       if (isAvailable) {
         try {
-          // Try sharing directly with the original URI first
-          await Sharing.shareAsync(attachment.uri, {
+          // Try sharing directly with the file URI
+          await Sharing.shareAsync(fileUri, {
             mimeType: attachment.type,
             dialogTitle: `Open ${attachment.name}`,
             UTI: getUTIForMimeType(attachment.type)
@@ -170,7 +243,7 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
           try {
             const newUri = `${FileSystem.documentDirectory}${attachment.name}`;
             await FileSystem.copyAsync({
-              from: attachment.uri,
+              from: fileUri,
               to: newUri
             });
             console.log('File copied to:', newUri);
