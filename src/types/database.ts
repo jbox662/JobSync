@@ -250,6 +250,14 @@ export interface Database {
           created_at: string
           updated_at: string
           deleted_at: string | null
+          // Enhanced quote fields for Smart AI import
+          scope_of_work: string | null
+          specifications: string | null
+          payment_terms: string | null
+          delivery_terms: string | null
+          warranty: string | null
+          additional_notes: string | null
+          company_info: Json | null
         }
         Insert: {
           id?: string
@@ -272,6 +280,14 @@ export interface Database {
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
+          // Enhanced quote fields for Smart AI import
+          scope_of_work?: string | null
+          specifications?: string | null
+          payment_terms?: string | null
+          delivery_terms?: string | null
+          warranty?: string | null
+          additional_notes?: string | null
+          company_info?: Json | null
         }
         Update: {
           id?: string
@@ -294,6 +310,14 @@ export interface Database {
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
+          // Enhanced quote fields for Smart AI import
+          scope_of_work?: string | null
+          specifications?: string | null
+          payment_terms?: string | null
+          delivery_terms?: string | null
+          warranty?: string | null
+          additional_notes?: string | null
+          company_info?: Json | null
         }
       }
       invoices: {
