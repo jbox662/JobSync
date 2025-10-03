@@ -70,6 +70,20 @@ const EmailButton: React.FC<EmailButtonProps> = ({
       return;
     }
 
+    // For invoices, show reminder settings first
+    if (type === 'invoice') {
+      setShowReminderSettings(true);
+      return;
+    }
+
+    // For quotes, send directly
+    await sendEmail();
+  };
+
+  const sendEmail = async () => {
+    const customer = getCustomerById(document.customerId);
+    if (!customer) return;
+
     setLoading(true);
     
     try {
@@ -202,11 +216,25 @@ const EmailButton: React.FC<EmailButtonProps> = ({
         <ReminderSettingsModal
           visible={showReminderSettings}
           onClose={() => setShowReminderSettings(false)}
-          onConfirm={(settings) => {
+          onConfirm={async (settings) => {
             setShowReminderSettings(false);
-            // For now, just proceed with normal email sending
-            // TODO: Integrate reminder settings properly
-            handleEmailDocument();
+            
+            // Save reminder settings to the invoice
+            if (type === 'invoice') {
+              const invoice = document as Invoice;
+              const nextReminderDate = settings.enabled 
+                ? reminderService.calculateNextReminderDate(settings.frequency)
+                : undefined;
+              
+              updateInvoice(invoice.id, {
+                reminderEnabled: settings.enabled,
+                reminderFrequency: settings.frequency,
+                nextReminderDue: nextReminderDate?.toISOString()
+              });
+            }
+            
+            // Now send the email
+            await sendEmail();
           }}
           initialSettings={{
             enabled: (document as Invoice).reminderEnabled || false,
