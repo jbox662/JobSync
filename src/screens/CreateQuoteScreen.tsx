@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { JobItem } from '../types';
+import AttachmentManager from '../components/AttachmentManager';
 
 const CreateQuoteScreen = () => {
   const navigation = useNavigation();
@@ -22,6 +23,13 @@ const CreateQuoteScreen = () => {
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [linkToExistingJob, setLinkToExistingJob] = useState(!!((route.params as any)?.jobId));
+  const [attachments, setAttachments] = useState<Array<{
+    id: string;
+    name: string;
+    uri: string;
+    size: number;
+    type: string;
+  }>>([]);
 
   // Get existing jobs for selection
   const availableJobs = jobs.filter(job => job.status !== 'completed' && job.status !== 'cancelled');
@@ -157,6 +165,7 @@ const CreateQuoteScreen = () => {
       taxRate: settings.enableTax ? parseFloat(taxRate) || 0 : 0,
       notes: validUntil ? `Valid until: ${validUntil}` : undefined,
       validUntil: validUntilDate,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     navigation.goBack();
@@ -340,6 +349,15 @@ const CreateQuoteScreen = () => {
               />
             </View>
           </View>
+        </View>
+
+        {/* Attachments Section */}
+        <View className="bg-gray-50 rounded-lg p-4 mb-6">
+          <AttachmentManager
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+            maxAttachments={5}
+          />
         </View>
 
         {/* Items Section */}

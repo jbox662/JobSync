@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { JobItem } from '../types';
+import AttachmentManager from '../components/AttachmentManager';
 
 const CreateInvoiceScreen = () => {
   const navigation = useNavigation();
@@ -24,6 +25,13 @@ const CreateInvoiceScreen = () => {
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [convertFromQuote, setConvertFromQuote] = useState(!!((route.params as any)?.quoteId));
+  const [attachments, setAttachments] = useState<Array<{
+    id: string;
+    name: string;
+    uri: string;
+    size: number;
+    type: string;
+  }>>([]);
 
   // Get approved quotes for selection
   const availableQuotes = quotes.filter(quote => quote.status === 'approved');
@@ -149,6 +157,7 @@ const CreateInvoiceScreen = () => {
       notes: notes || undefined,
       dueDate: dueDateISO,
       paymentTerms: paymentTerms || undefined,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     navigation.goBack();
@@ -381,6 +390,15 @@ const CreateInvoiceScreen = () => {
               />
             </View>
           </View>
+        </View>
+
+        {/* Attachments Section */}
+        <View className="bg-gray-50 rounded-lg p-4 mb-6">
+          <AttachmentManager
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+            maxAttachments={5}
+          />
         </View>
 
         {/* Items Section */}

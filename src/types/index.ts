@@ -94,6 +94,14 @@ export interface Quote {
     address?: string;
     contact?: string;
   };
+  // Attachments
+  attachments?: Array<{
+    id: string;
+    name: string;
+    uri: string;
+    size: number;
+    type: string;
+  }>;
 }
 
 // New Invoice interface
@@ -124,6 +132,14 @@ export interface Invoice {
   nextReminderDue?: string;
   reminderCount?: number;
   paidAmount?: number;
+  // Attachments
+  attachments?: Array<{
+    id: string;
+    name: string;
+    uri: string;
+    size: number;
+    type: string;
+  }>;
 }
 
 export interface User {
