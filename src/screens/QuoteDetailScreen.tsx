@@ -409,53 +409,92 @@ const QuoteDetailScreen = () => {
           )}
         </View>
 
-        {/* Enhanced Quote Details */}
-        {(quote.scopeOfWork || quote.specifications || quote.paymentTerms || quote.deliveryTerms || quote.warranty || quote.additionalNotes) && (
+        {/* Scope of Work */}
+        {quote.scopeOfWork && (
           <View className="px-4 pt-4">
             <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <Text className="text-lg font-bold text-gray-900 mb-4">Project Details</Text>
-              
-              {quote.scopeOfWork && (
-                <View className="mb-4">
-                  <Text className="text-sm text-gray-500 font-medium mb-2">Scope of Work</Text>
-                  <Text className="text-gray-700 leading-6">{quote.scopeOfWork}</Text>
+              <View className="flex-row items-center mb-3">
+                <View className="bg-blue-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="document-text-outline" size={18} color="#2563EB" />
                 </View>
-              )}
-              
-              {quote.specifications && (
-                <View className="mb-4">
-                  <Text className="text-sm text-gray-500 font-medium mb-2">Specifications</Text>
-                  <Text className="text-gray-700 leading-6">{quote.specifications}</Text>
+                <Text className="text-lg font-bold text-gray-900">Scope of Work</Text>
+              </View>
+              <Text className="text-gray-700 leading-6">{quote.scopeOfWork}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Specifications */}
+        {quote.specifications && (
+          <View className="px-4 pt-4">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <View className="flex-row items-center mb-3">
+                <View className="bg-purple-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="settings-outline" size={18} color="#7C3AED" />
                 </View>
-              )}
-              
-              {quote.paymentTerms && (
-                <View className="mb-4">
-                  <Text className="text-sm text-gray-500 font-medium mb-2">Payment Terms</Text>
-                  <Text className="text-gray-700 leading-6">{quote.paymentTerms}</Text>
+                <Text className="text-lg font-bold text-gray-900">Specifications</Text>
+              </View>
+              <Text className="text-gray-700 leading-6">{quote.specifications}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Payment Terms */}
+        {quote.paymentTerms && (
+          <View className="px-4 pt-4">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <View className="flex-row items-center mb-3">
+                <View className="bg-green-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="card-outline" size={18} color="#059669" />
                 </View>
-              )}
-              
-              {quote.deliveryTerms && (
-                <View className="mb-4">
-                  <Text className="text-sm text-gray-500 font-medium mb-2">Delivery Terms</Text>
-                  <Text className="text-gray-700 leading-6">{quote.deliveryTerms}</Text>
+                <Text className="text-lg font-bold text-gray-900">Payment Terms</Text>
+              </View>
+              <Text className="text-gray-700 leading-6">{quote.paymentTerms}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Delivery Terms */}
+        {quote.deliveryTerms && (
+          <View className="px-4 pt-4">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <View className="flex-row items-center mb-3">
+                <View className="bg-orange-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="time-outline" size={18} color="#EA580C" />
                 </View>
-              )}
-              
-              {quote.warranty && (
-                <View className="mb-4">
-                  <Text className="text-sm text-gray-500 font-medium mb-2">Warranty</Text>
-                  <Text className="text-gray-700 leading-6">{quote.warranty}</Text>
+                <Text className="text-lg font-bold text-gray-900">Delivery Terms</Text>
+              </View>
+              <Text className="text-gray-700 leading-6">{quote.deliveryTerms}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Warranty */}
+        {quote.warranty && (
+          <View className="px-4 pt-4">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <View className="flex-row items-center mb-3">
+                <View className="bg-indigo-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="shield-checkmark-outline" size={18} color="#4F46E5" />
                 </View>
-              )}
-              
-              {quote.additionalNotes && (
-                <View className="mb-0">
-                  <Text className="text-sm text-gray-500 font-medium mb-2">Additional Notes</Text>
-                  <Text className="text-gray-700 leading-6">{quote.additionalNotes}</Text>
+                <Text className="text-lg font-bold text-gray-900">Warranty</Text>
+              </View>
+              <Text className="text-gray-700 leading-6">{quote.warranty}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Additional Notes */}
+        {quote.additionalNotes && (
+          <View className="px-4 pt-4">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <View className="flex-row items-center mb-3">
+                <View className="bg-gray-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="chatbox-ellipses-outline" size={18} color="#6B7280" />
                 </View>
-              )}
+                <Text className="text-lg font-bold text-gray-900">Additional Notes</Text>
+              </View>
+              <Text className="text-gray-700 leading-6">{quote.additionalNotes}</Text>
             </View>
           </View>
         )}
@@ -464,7 +503,12 @@ const QuoteDetailScreen = () => {
         {quote.companyInfo && (quote.companyInfo.name || quote.companyInfo.address || quote.companyInfo.contact) && (
           <View className="px-4 pt-4">
             <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <Text className="text-lg font-bold text-gray-900 mb-4">Company Information</Text>
+              <View className="flex-row items-center mb-3">
+                <View className="bg-cyan-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="business-outline" size={18} color="#0891B2" />
+                </View>
+                <Text className="text-lg font-bold text-gray-900">Company Information</Text>
+              </View>
               
               {quote.companyInfo.name && (
                 <View className="mb-3">
@@ -494,7 +538,12 @@ const QuoteDetailScreen = () => {
         {quote.notes && (
           <View className="px-4 pt-4 pb-6">
             <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <Text className="text-lg font-bold text-gray-900 mb-4">Notes</Text>
+              <View className="flex-row items-center mb-3">
+                <View className="bg-yellow-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="document-outline" size={18} color="#D97706" />
+                </View>
+                <Text className="text-lg font-bold text-gray-900">Notes</Text>
+              </View>
               <Text className="text-gray-700 leading-6">{quote.notes}</Text>
             </View>
           </View>
