@@ -21,7 +21,22 @@
         "NSCalendarsUsageDescription": "JobSync accesses your calendar to help you schedule and manage events",
         "NSContactsUsageDescription": "JobSync accesses your contacts to help you connect and share with friends",
         "NSCameraUsageDescription": "JobSync uses the camera to capture photos and videos for your content",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "file",
+          "content",
+          "public.file-url",
+          "public.data",
+          "public.item",
+          "public.plain-text",
+          "public.rtf",
+          "public.html",
+          "public.xml",
+          "com.adobe.pdf",
+          "com.microsoft.word.doc",
+          "com.microsoft.excel.xls",
+          "com.microsoft.powerpoint.ppt"
+        ]
       }
     },
     "android": {
