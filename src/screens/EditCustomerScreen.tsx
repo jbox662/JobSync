@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useJobStore } from '../state/store';
 
@@ -73,8 +73,11 @@ const EditCustomerScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 p-4">
+    <KeyboardAvoidingView 
+      className="flex-1 bg-white"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView className="flex-1 p-4" keyboardShouldPersistTaps="handled">
         <View className="mb-4">
           <Text className="text-gray-700 font-medium mb-2">Name *</Text>
           <TextInput
@@ -193,7 +196,7 @@ const EditCustomerScreen = () => {
           <Text className="text-white font-semibold text-lg">Save Changes</Text>
         </Pressable>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
