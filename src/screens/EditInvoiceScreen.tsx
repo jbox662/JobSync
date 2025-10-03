@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useJobStore } from '../state/store';
 import { Invoice, JobItem, Customer } from '../types';
+import AttachmentManager from '../components/AttachmentManager';
 
 type EditInvoiceRouteProp = RouteProp<{ EditInvoice: { invoiceId: string } }, 'EditInvoice'>;
 
@@ -43,6 +44,13 @@ const EditInvoiceScreen = () => {
   const [paymentTerms, setPaymentTerms] = useState('');
   const [taxRate, setTaxRate] = useState(0);
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
+  const [attachments, setAttachments] = useState<Array<{
+    id: string;
+    name: string;
+    uri: string;
+    size: number;
+    type: string;
+  }>>([]);
 
   useEffect(() => {
     if (invoice) {
@@ -55,6 +63,7 @@ const EditInvoiceScreen = () => {
       setDueDate(invoice.dueDate);
       setPaymentTerms(invoice.paymentTerms || '');
       setTaxRate(invoice.taxRate || 0);
+      setAttachments(invoice.attachments || []);
     }
   }, [invoice]);
 
@@ -128,6 +137,7 @@ const EditInvoiceScreen = () => {
       notes: notes.trim(),
       dueDate,
       paymentTerms: paymentTerms.trim(),
+      attachments: attachments.length > 0 ? attachments : undefined,
       updatedAt: new Date().toISOString(),
     };
 
@@ -383,6 +393,15 @@ const EditInvoiceScreen = () => {
                 className="border border-gray-300 rounded-lg px-3 py-2 text-gray-900"
               />
             </View>
+          </View>
+
+          {/* Attachments */}
+          <View className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-100">
+            <AttachmentManager
+              attachments={attachments}
+              onAttachmentsChange={setAttachments}
+              maxAttachments={5}
+            />
           </View>
 
           {/* Totals */}

@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { JobItem } from '../types';
+import AttachmentManager from '../components/AttachmentManager';
 
 type RouteProps = {
   key: string;
@@ -29,6 +30,13 @@ const EditQuoteScreen = () => {
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [linkToExistingJob, setLinkToExistingJob] = useState(false);
+  const [attachments, setAttachments] = useState<Array<{
+    id: string;
+    name: string;
+    uri: string;
+    size: number;
+    type: string;
+  }>>([]);
   const [status, setStatus] = useState('draft');
 
   // Get existing jobs for selection
@@ -46,6 +54,7 @@ const EditQuoteScreen = () => {
       setItems(quote.items || []);
       setStatus(quote.status || 'draft');
       setLinkToExistingJob(!!quote.jobId);
+      setAttachments(quote.attachments || []);
       
       // Parse validUntil from notes or validUntil field
       if (quote.validUntil) {
@@ -147,6 +156,7 @@ const EditQuoteScreen = () => {
       taxRate: settings.enableTax ? parseFloat(taxRate) || 0 : 0,
       notes: validUntil ? `Valid until: ${validUntil}` : undefined,
       validUntil: validUntilDate,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     navigation.goBack();
@@ -527,6 +537,15 @@ const EditQuoteScreen = () => {
                 <Text className="text-lg font-bold text-blue-600">{formatCurrency(total)}</Text>
               </View>
             </View>
+          </View>
+
+          {/* Attachments */}
+          <View className="bg-white rounded-lg p-4 mb-6 border border-gray-200">
+            <AttachmentManager
+              attachments={attachments}
+              onAttachmentsChange={setAttachments}
+              maxAttachments={5}
+            />
           </View>
 
           {/* Action Buttons */}
