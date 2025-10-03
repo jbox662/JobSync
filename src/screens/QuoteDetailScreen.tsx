@@ -409,11 +409,92 @@ const QuoteDetailScreen = () => {
           )}
         </View>
 
+        {/* Enhanced Quote Details */}
+        {(quote.scopeOfWork || quote.specifications || quote.paymentTerms || quote.deliveryTerms || quote.warranty || quote.additionalNotes) && (
+          <View className="px-4 pt-4">
+            <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <Text className="text-lg font-bold text-gray-900 mb-4">Project Details</Text>
+              
+              {quote.scopeOfWork && (
+                <View className="mb-4">
+                  <Text className="text-sm text-gray-500 font-medium mb-2">Scope of Work</Text>
+                  <Text className="text-gray-700 leading-6">{quote.scopeOfWork}</Text>
+                </View>
+              )}
+              
+              {quote.specifications && (
+                <View className="mb-4">
+                  <Text className="text-sm text-gray-500 font-medium mb-2">Specifications</Text>
+                  <Text className="text-gray-700 leading-6">{quote.specifications}</Text>
+                </View>
+              )}
+              
+              {quote.paymentTerms && (
+                <View className="mb-4">
+                  <Text className="text-sm text-gray-500 font-medium mb-2">Payment Terms</Text>
+                  <Text className="text-gray-700 leading-6">{quote.paymentTerms}</Text>
+                </View>
+              )}
+              
+              {quote.deliveryTerms && (
+                <View className="mb-4">
+                  <Text className="text-sm text-gray-500 font-medium mb-2">Delivery Terms</Text>
+                  <Text className="text-gray-700 leading-6">{quote.deliveryTerms}</Text>
+                </View>
+              )}
+              
+              {quote.warranty && (
+                <View className="mb-4">
+                  <Text className="text-sm text-gray-500 font-medium mb-2">Warranty</Text>
+                  <Text className="text-gray-700 leading-6">{quote.warranty}</Text>
+                </View>
+              )}
+              
+              {quote.additionalNotes && (
+                <View className="mb-0">
+                  <Text className="text-sm text-gray-500 font-medium mb-2">Additional Notes</Text>
+                  <Text className="text-gray-700 leading-6">{quote.additionalNotes}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Company Information */}
+        {quote.companyInfo && (quote.companyInfo.name || quote.companyInfo.address || quote.companyInfo.contact) && (
+          <View className="px-4 pt-4">
+            <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <Text className="text-lg font-bold text-gray-900 mb-4">Company Information</Text>
+              
+              {quote.companyInfo.name && (
+                <View className="mb-3">
+                  <Text className="text-sm text-gray-500 font-medium mb-1">Company Name</Text>
+                  <Text className="text-gray-700">{quote.companyInfo.name}</Text>
+                </View>
+              )}
+              
+              {quote.companyInfo.address && (
+                <View className="mb-3">
+                  <Text className="text-sm text-gray-500 font-medium mb-1">Address</Text>
+                  <Text className="text-gray-700">{quote.companyInfo.address}</Text>
+                </View>
+              )}
+              
+              {quote.companyInfo.contact && (
+                <View className="mb-0">
+                  <Text className="text-sm text-gray-500 font-medium mb-1">Contact</Text>
+                  <Text className="text-gray-700">{quote.companyInfo.contact}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Notes */}
         {quote.notes && (
-          <View className="px-4 pb-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-4">Notes</Text>
-            <View className="bg-white rounded-xl p-4 border border-gray-100">
+          <View className="px-4 pt-4 pb-6">
+            <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <Text className="text-lg font-bold text-gray-900 mb-4">Notes</Text>
               <Text className="text-gray-700 leading-6">{quote.notes}</Text>
             </View>
           </View>
