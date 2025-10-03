@@ -32,6 +32,7 @@ const openai_api_key = Constants.expoConfig.extra.apikey;
 
 import React, { useEffect, useState } from "react";
 import { AppState, View, Text, ActivityIndicator } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useJobStore } from "./src/state/store";
 import { authService } from "./src/services/auth";
 
@@ -41,19 +42,74 @@ export default function App() {
   const isAuthenticated = useJobStore((s) => s.isAuthenticated);
   const setAuthenticatedUser = useJobStore((s) => s.setAuthenticatedUser);
   const clearAuthentication = useJobStore((s) => s.clearAuthentication);
-  const syncError = useJobStore((s) => s.syncError);
+  const syncError = useJobStore ((s) => s.syncError);
   
   const [isLoading, setIsLoading] = useState(true);
+  const [forceRender, setForceRender] = useState(0);
+
+  // Debug: Log when authentication state changes
+  useEffect(() => {
+    console.log('🔄 App state changed:', {
+      isAuthenticated,
+      workspaceId,
+      isLoading,
+      forceRender
+    });
+  }, [isAuthenticated, workspaceId, isLoading, forceRender]);
+
+  // Force re-render when authentication state changes (development mode fix)
+  useEffect(() => {
+    const unsubscribe = useJobStore.subscribe(
+      (state) => ({ isAuthenticated: state.isAuthenticated, workspaceId: state.workspaceId }),
+      (newState, prevState) => {
+        if (newState.isAuthenticated !== prevState.isAuthenticated || 
+            newState.workspaceId !== prevState.workspaceId) {
+          console.log('🔄 Zustand state changed, forcing re-render');
+          setForceRender(prev => prev + 1);
+        }
+      }
+    );
+    
+    return unsubscribe;
+  }, []);
+
+  // One-time migration to fix authentication state (runs only once)
+  useEffect(() => {
+    const migrate = async () => {
+      const migrationKey = '@jobsync_auth_fixed_v1';
+      const migrated = await AsyncStorage.getItem(migrationKey);
+      
+      if (!migrated) {
+        console.log('🔄 Running one-time authentication fix...');
+        // Clear any stale authentication state
+        clearAuthentication();
+        await AsyncStorage.setItem(migrationKey, 'true');
+        console.log('✅ Migration complete');
+      }
+    };
+    
+    migrate();
+  }, []);
 
   // Check for existing authentication on app start with robust error handling
   useEffect(() => {
     const checkAuth = async () => {
       try {
         console.log('🔍 Checking authentication state...');
+        console.log('Current store state:', { 
+          isAuthenticated: useJobStore.getState().isAuthenticated,
+          workspaceId: useJobStore.getState().workspaceId,
+          authenticatedUser: useJobStore.getState().authenticatedUser?.email
+        });
+        
         const user = await authService.getCurrentUser();
         
         if (user) {
-          console.log('✅ Valid user session found');
+          console.log('✅ Valid user session found:', user.email);
+          console.log('User workspace info:', { 
+            workspaceId: user.workspaceId, 
+            workspaceName: user.workspaceName 
+          });
           setAuthenticatedUser(user);
           // Sync is automatically triggered by setAuthenticatedUser
         } else {
@@ -149,6 +205,7 @@ export default function App() {
 
   // Show authentication screens if not authenticated
   if (!isAuthenticated) {
+    console.log('🔐 Showing authentication screens - not authenticated');
     return (
       <SafeAreaProvider>
         <NavigationContainer>
@@ -170,7 +227,15 @@ export default function App() {
 
   // Show onboarding if authenticated but no workspace
   const needsOnboarding = !workspaceId;
+  console.log('🔐 Authentication state:', { 
+    isAuthenticated, 
+    workspaceId, 
+    needsOnboarding,
+    authenticatedUser: useJobStore.getState().authenticatedUser?.email
+  });
+  
   if (needsOnboarding) {
+    console.log('🏢 Showing onboarding screens - authenticated but no workspace');
     return (
       <SafeAreaProvider>
         <NavigationContainer>

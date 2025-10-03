@@ -25,9 +25,20 @@ const InvoicesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { invoices, getCustomerById, getJobById } = useJobStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'import' | 'export'>('list');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+
+  const statusOptions = [
+    { key: null, label: 'All' },
+    { key: 'unpaid', label: 'Unpaid' },
+    { key: 'draft', label: 'Draft' },
+    { key: 'sent', label: 'Sent' },
+    { key: 'overdue', label: 'Overdue' },
+    { key: 'paid', label: 'Paid' },
+    { key: 'cancelled', label: 'Cancelled' },
+  ];
 
   // Export invoices to CSV
   const handleExportCSV = async () => {
@@ -156,7 +167,26 @@ const InvoicesScreen = () => {
         job?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
       
-      return matchesSearch;
+      // Handle status filtering
+      let matchesStatus = true;
+      if (selectedStatus) {
+        if (selectedStatus === 'unpaid') {
+          matchesStatus = !['paid'].includes(invoice.status);
+        } else if (selectedStatus === 'overdue') {
+          matchesStatus = invoice.status === 'sent' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
+        } else if (selectedStatus === 'sent') {
+          // Sent invoices that are NOT overdue
+          matchesStatus = invoice.status === 'sent' && (!invoice.dueDate || new Date(invoice.dueDate) >= new Date());
+        } else if (selectedStatus === 'paid') {
+          matchesStatus = invoice.status === 'paid';
+        } else if (selectedStatus === 'cancelled') {
+          matchesStatus = invoice.status === 'cancelled';
+        } else {
+          matchesStatus = invoice.status === selectedStatus;
+        }
+      }
+      
+      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
@@ -203,7 +233,7 @@ const InvoicesScreen = () => {
   const InvoiceCard = ({ invoice }: { invoice: any }) => {
     const customer = getCustomerById(invoice.customerId);
     const job = getJobById(invoice.jobId);
-    const isOverdue = invoice.status === 'sent' && new Date(invoice.dueDate) < new Date();
+    const isOverdue = invoice.status === 'sent' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
     
     return (
       <Pressable
@@ -387,17 +417,55 @@ const InvoicesScreen = () => {
             </View>
           </View>
 
+          {/* Status Filter */}
+          <View className="bg-white">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
+            >
+              {statusOptions.map((option) => (
+                <Pressable
+                  key={option.key || 'all'}
+                  onPress={() => setSelectedStatus(option.key)}
+                  className={`px-5 py-3 rounded-full mr-3 border ${
+                    selectedStatus === option.key
+                      ? 'bg-blue-600 border-blue-600'
+                      : 'bg-white border-gray-200'
+                  }`}
+                  style={{
+                    shadowColor: selectedStatus === option.key ? '#3B82F6' : '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: selectedStatus === option.key ? 0.2 : 0.1,
+                    shadowRadius: 4,
+                    elevation: selectedStatus === option.key ? 3 : 1,
+                  }}
+                >
+                  <Text
+                    className={`text-sm font-semibold ${
+                      selectedStatus === option.key
+                        ? 'text-white'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
           {/* Invoices List */}
           <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
             {filteredInvoices.length === 0 ? (
               <View className="flex-1 items-center justify-center py-16">
                 <Ionicons name="receipt-outline" size={64} color="#D1D5DB" />
                 <Text className="text-gray-500 text-lg font-medium mt-4">
-                  {searchQuery ? 'No invoices found' : 'No invoices yet'}
+                  {searchQuery || selectedStatus ? 'No invoices found' : 'No invoices yet'}
                 </Text>
                 <Text className="text-gray-400 text-sm mt-1 text-center">
-                  {searchQuery 
-                    ? 'Try adjusting your search query'
+                  {searchQuery || selectedStatus
+                    ? 'Try adjusting your search or filters to find what you\'re looking for'
                     : 'Create your first invoice to bill customers'
                   }
                 </Text>

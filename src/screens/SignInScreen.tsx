@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/auth';
 import { useJobStore } from '../state/store';
 
+type AuthStackParamList = {
+  SignIn: undefined;
+  SignUp: undefined;
+  CreateBusiness: undefined;
+  JoinBusiness: undefined;
+};
+
 const SignInScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const insets = useSafeAreaInsets();
   
   const [email, setEmail] = useState('');
@@ -172,7 +179,10 @@ const SignInScreen = () => {
         {/* Business Options */}
         <View className="space-y-3">
           <Pressable
-            onPress={() => navigation.navigate('CreateBusiness' as never)}
+            onPress={() => {
+              console.log('CreateBusiness button pressed');
+              navigation.navigate('CreateBusiness');
+            }}
             className="border border-gray-300 rounded-xl py-4 items-center"
           >
             <View className="flex-row items-center">
@@ -182,7 +192,10 @@ const SignInScreen = () => {
           </Pressable>
 
           <Pressable
-            onPress={() => navigation.navigate('JoinBusiness' as never)}
+            onPress={() => {
+              console.log('JoinBusiness button pressed');
+              navigation.navigate('JoinBusiness');
+            }}
             className="border border-gray-300 rounded-xl py-4 items-center"
           >
             <View className="flex-row items-center">

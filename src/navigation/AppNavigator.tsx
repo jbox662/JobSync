@@ -52,6 +52,8 @@ export type RootDrawerParamList = {
 
 export type RootStackParamList = {
   Main: undefined;
+  CreateBusiness: undefined;
+  JoinBusiness: undefined;
   JobDetail: { jobId: string };
   CustomerDetail: { customerId: string };
   QuoteDetail: { quoteId: string };
@@ -354,6 +356,16 @@ export const AppNavigator = () => {
         name="Main" 
         component={DrawerNavigator} 
         options={{ headerShown: false }} 
+      />
+      <Stack.Screen 
+        name="CreateBusiness" 
+        component={CreateBusinessScreen}
+        options={{ title: 'Create Business', presentation: 'modal' }}
+      />
+      <Stack.Screen 
+        name="JoinBusiness" 
+        component={JoinBusinessScreen}
+        options={{ title: 'Join Business', presentation: 'modal' }}
       />
       <Stack.Screen 
         name="JobDetail" 

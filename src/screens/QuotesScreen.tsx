@@ -25,9 +25,19 @@ const QuotesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { quotes, getCustomerById, getJobById } = useJobStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'import' | 'export'>('list');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+
+  const statusOptions = [
+    { key: null, label: 'All' },
+    { key: 'draft', label: 'Draft' },
+    { key: 'sent', label: 'Sent' },
+    { key: 'approved', label: 'Approved' },
+    { key: 'rejected', label: 'Rejected' },
+    { key: 'expired', label: 'Expired' },
+  ];
 
   // Export quotes to CSV
   const handleExportCSV = async () => {
@@ -136,7 +146,10 @@ const QuotesScreen = () => {
         job?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         quote.quoteNumber.toLowerCase().includes(searchQuery.toLowerCase());
       
-      return matchesSearch;
+      // Handle status filtering
+      const matchesStatus = !selectedStatus || quote.status === selectedStatus;
+      
+      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
@@ -323,16 +336,55 @@ const QuotesScreen = () => {
 
       {/* Content based on active tab */}
       {activeTab === 'list' && (
-        <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
+        <>
+          {/* Status Filter */}
+          <View className="bg-white">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
+            >
+              {statusOptions.map((option) => (
+                <Pressable
+                  key={option.key || 'all'}
+                  onPress={() => setSelectedStatus(option.key)}
+                  className={`px-5 py-3 rounded-full mr-3 border ${
+                    selectedStatus === option.key
+                      ? 'bg-blue-600 border-blue-600'
+                      : 'bg-white border-gray-200'
+                  }`}
+                  style={{
+                    shadowColor: selectedStatus === option.key ? '#3B82F6' : '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: selectedStatus === option.key ? 0.2 : 0.1,
+                    shadowRadius: 4,
+                    elevation: selectedStatus === option.key ? 3 : 1,
+                  }}
+                >
+                  <Text
+                    className={`text-sm font-semibold ${
+                      selectedStatus === option.key
+                        ? 'text-white'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
           {filteredQuotes.length === 0 ? (
             <View className="flex-1 items-center justify-center py-16">
               <Ionicons name="document-text-outline" size={64} color="#D1D5DB" />
               <Text className="text-gray-500 text-lg font-medium mt-4">
-                {searchQuery ? 'No quotes found' : 'No quotes yet'}
+                {searchQuery || selectedStatus ? 'No quotes found' : 'No quotes yet'}
               </Text>
               <Text className="text-gray-400 text-sm mt-1 text-center">
-                {searchQuery 
-                  ? 'Try adjusting your search query'
+                {searchQuery || selectedStatus
+                  ? 'Try adjusting your search or filters to find what you\'re looking for'
                   : 'Create your first quote to provide cost estimates'
                 }
               </Text>
@@ -354,6 +406,7 @@ const QuotesScreen = () => {
             </>
           )}
         </ScrollView>
+        </>
       )}
 
       {/* Export Tab */}
