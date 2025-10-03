@@ -56,6 +56,10 @@ const InvoiceDetailScreen = () => {
   const customer = invoice ? getCustomerById(invoice.customerId) : null;
   const job = invoice?.jobId ? getJobById(invoice.jobId) : null;
   const quote = invoice?.quoteId ? getQuoteById(invoice.quoteId) : null;
+  const isOverdue = invoice?.status === 'sent' && 
+                   invoice?.dueDate && 
+                   typeof invoice.dueDate === 'string' && 
+                   new Date(invoice.dueDate) < new Date();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

@@ -173,10 +173,16 @@ const InvoicesScreen = () => {
         if (selectedStatus === 'unpaid') {
           matchesStatus = !['paid'].includes(invoice.status);
         } else if (selectedStatus === 'overdue') {
-          matchesStatus = invoice.status === 'sent' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
+          matchesStatus = invoice.status === 'sent' && 
+                         invoice.dueDate && 
+                         typeof invoice.dueDate === 'string' && 
+                         new Date(invoice.dueDate) < new Date();
         } else if (selectedStatus === 'sent') {
           // Sent invoices that are NOT overdue
-          matchesStatus = invoice.status === 'sent' && (!invoice.dueDate || new Date(invoice.dueDate) >= new Date());
+          matchesStatus = invoice.status === 'sent' && 
+                         (!invoice.dueDate || 
+                          typeof invoice.dueDate !== 'string' || 
+                          new Date(invoice.dueDate) >= new Date());
         } else if (selectedStatus === 'paid') {
           matchesStatus = invoice.status === 'paid';
         } else if (selectedStatus === 'cancelled') {
@@ -233,7 +239,10 @@ const InvoicesScreen = () => {
   const InvoiceCard = ({ invoice }: { invoice: any }) => {
     const customer = getCustomerById(invoice.customerId);
     const job = getJobById(invoice.jobId);
-    const isOverdue = invoice.status === 'sent' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
+    const isOverdue = invoice.status === 'sent' && 
+                     invoice.dueDate && 
+                     typeof invoice.dueDate === 'string' && 
+                     new Date(invoice.dueDate) < new Date();
     
     return (
       <Pressable
