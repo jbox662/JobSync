@@ -69,10 +69,26 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
           return;
         }
 
+        // Copy file to permanent storage in app's document directory
+        const permanentUri = `${FileSystem.documentDirectory}attachments/${Date.now()}_${file.name || 'Unknown File'}`;
+        
+        // Ensure attachments directory exists
+        const attachmentsDir = `${FileSystem.documentDirectory}attachments/`;
+        const dirInfo = await FileSystem.getInfoAsync(attachmentsDir);
+        if (!dirInfo.exists) {
+          await FileSystem.makeDirectoryAsync(attachmentsDir, { intermediates: true });
+        }
+        
+        // Copy file to permanent location
+        await FileSystem.copyAsync({
+          from: file.uri,
+          to: permanentUri
+        });
+
         const newAttachment: Attachment = {
           id: Date.now().toString(),
           name: file.name || 'Unknown File',
-          uri: file.uri,
+          uri: permanentUri, // Use permanent URI
           size: fileInfo.size || 0,
           type: file.mimeType || 'application/octet-stream'
         };
@@ -86,7 +102,7 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
     }
   };
 
-  const removeAttachment = (id: string) => {
+  const removeAttachment = async (id: string) => {
     Alert.alert(
       'Remove Attachment',
       'Are you sure you want to remove this attachment?',
@@ -95,7 +111,23 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            const attachmentToRemove = attachments.find(att => att.id === id);
+            
+            // Delete the file from storage
+            if (attachmentToRemove) {
+              try {
+                const fileInfo = await FileSystem.getInfoAsync(attachmentToRemove.uri);
+                if (fileInfo.exists) {
+                  await FileSystem.deleteAsync(attachmentToRemove.uri);
+                }
+              } catch (error) {
+                console.log('Error deleting file:', error);
+                // Continue with removal even if file deletion fails
+              }
+            }
+            
+            // Remove from attachments list
             onAttachmentsChange(attachments.filter(att => att.id !== id));
           }
         }
