@@ -8,6 +8,7 @@ import { useJobStore } from '../state/store';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { format } from 'date-fns';
 import EmailButton from '../components/EmailButton';
+import AttachmentManager from '../components/AttachmentManager';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = {
@@ -545,6 +546,26 @@ const QuoteDetailScreen = () => {
                 <Text className="text-lg font-bold text-gray-900">Notes</Text>
               </View>
               <Text className="text-gray-700 leading-6">{quote.notes}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Attachments */}
+        {quote.attachments && quote.attachments.length > 0 && (
+          <View className="px-4 pt-4 pb-6">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <View className="flex-row items-center mb-3">
+                <View className="bg-blue-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="attach-outline" size={18} color="#3B82F6" />
+                </View>
+                <Text className="text-lg font-bold text-gray-900">Attachments</Text>
+              </View>
+              <AttachmentManager
+                attachments={quote.attachments}
+                onAttachmentsChange={() => {}} // Read-only in detail view
+                maxAttachments={5}
+                readOnly={true}
+              />
             </View>
           </View>
         )}

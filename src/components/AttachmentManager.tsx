@@ -16,12 +16,14 @@ interface AttachmentManagerProps {
   attachments: Attachment[];
   onAttachmentsChange: (attachments: Attachment[]) => void;
   maxAttachments?: number;
+  readOnly?: boolean;
 }
 
 const AttachmentManager: React.FC<AttachmentManagerProps> = ({
   attachments,
   onAttachmentsChange,
-  maxAttachments = 5
+  maxAttachments = 5,
+  readOnly = false
 }) => {
   const [isPicking, setIsPicking] = useState(false);
 
@@ -104,29 +106,31 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
     <View className="mb-4">
       <Text className="text-gray-700 font-medium mb-2">Attachments</Text>
       
-      {/* Add Attachment Button */}
-      <Pressable
-        onPress={pickDocument}
-        disabled={isPicking || attachments.length >= maxAttachments}
-        className={`flex-row items-center justify-center py-3 px-4 rounded-lg border-2 border-dashed ${
-          attachments.length >= maxAttachments 
-            ? 'border-gray-200 bg-gray-50' 
-            : 'border-blue-300 bg-blue-50'
-        }`}
-      >
-        <Ionicons 
-          name={isPicking ? 'hourglass-outline' : 'add-outline'} 
-          size={20} 
-          color={attachments.length >= maxAttachments ? '#9CA3AF' : '#3B82F6'} 
-        />
-        <Text className={`ml-2 font-medium ${
-          attachments.length >= maxAttachments ? 'text-gray-400' : 'text-blue-600'
-        }`}>
-          {isPicking ? 'Picking Document...' : 
-           attachments.length >= maxAttachments ? 'Max Attachments Reached' : 
-           'Add Attachment'}
-        </Text>
-      </Pressable>
+      {/* Add Attachment Button - Hidden in read-only mode */}
+      {!readOnly && (
+        <Pressable
+          onPress={pickDocument}
+          disabled={isPicking || attachments.length >= maxAttachments}
+          className={`flex-row items-center justify-center py-3 px-4 rounded-lg border-2 border-dashed ${
+            attachments.length >= maxAttachments 
+              ? 'border-gray-200 bg-gray-50' 
+              : 'border-blue-300 bg-blue-50'
+          }`}
+        >
+          <Ionicons 
+            name={isPicking ? 'hourglass-outline' : 'add-outline'} 
+            size={20} 
+            color={attachments.length >= maxAttachments ? '#9CA3AF' : '#3B82F6'} 
+          />
+          <Text className={`ml-2 font-medium ${
+            attachments.length >= maxAttachments ? 'text-gray-400' : 'text-blue-600'
+          }`}>
+            {isPicking ? 'Picking Document...' : 
+             attachments.length >= maxAttachments ? 'Max Attachments Reached' : 
+             'Add Attachment'}
+          </Text>
+        </Pressable>
+      )}
 
       {/* Attachments List */}
       {attachments.length > 0 && (
@@ -152,12 +156,14 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
                 </View>
               </View>
               
-              <Pressable
-                onPress={() => removeAttachment(attachment.id)}
-                className="p-1"
-              >
-                <Ionicons name="close-circle" size={20} color="#EF4444" />
-              </Pressable>
+              {!readOnly && (
+                <Pressable
+                  onPress={() => removeAttachment(attachment.id)}
+                  className="p-1"
+                >
+                  <Ionicons name="close-circle" size={20} color="#EF4444" />
+                </Pressable>
+              )}
             </View>
           ))}
         </ScrollView>

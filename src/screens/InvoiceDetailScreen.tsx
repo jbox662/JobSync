@@ -8,6 +8,7 @@ import { useJobStore } from '../state/store';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { format } from 'date-fns';
 import EmailButton from '../components/EmailButton';
+import AttachmentManager from '../components/AttachmentManager';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = {
@@ -484,6 +485,21 @@ const InvoiceDetailScreen = () => {
             <Text className="text-lg font-semibold text-gray-900 mb-4">Notes</Text>
             <View className="bg-white rounded-xl p-4 border border-gray-100">
               <Text className="text-gray-700 leading-6">{invoice.notes}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Attachments */}
+        {invoice.attachments && invoice.attachments.length > 0 && (
+          <View className="px-4 pb-6">
+            <Text className="text-lg font-semibold text-gray-900 mb-4">Attachments</Text>
+            <View className="bg-white rounded-xl p-4 border border-gray-100">
+              <AttachmentManager
+                attachments={invoice.attachments}
+                onAttachmentsChange={() => {}} // Read-only in detail view
+                maxAttachments={5}
+                readOnly={true}
+              />
             </View>
           </View>
         )}
