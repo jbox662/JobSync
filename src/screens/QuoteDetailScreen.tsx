@@ -565,6 +565,10 @@ const QuoteDetailScreen = () => {
                 onAttachmentsChange={() => {}} // Read-only in detail view
                 maxAttachments={5}
                 readOnly={true}
+                enableSync={true}
+                workspaceId={settings.workspaceId}
+                documentType="quote"
+                documentId={quote.quoteNumber}
               />
             </View>
           </View>

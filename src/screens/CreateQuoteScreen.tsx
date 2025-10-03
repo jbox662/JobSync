@@ -357,6 +357,10 @@ const CreateQuoteScreen = () => {
             attachments={attachments}
             onAttachmentsChange={setAttachments}
             maxAttachments={5}
+            enableSync={true}
+            workspaceId={settings.workspaceId}
+            documentType="quote"
+            documentId={title} // Use quote title as document ID
           />
         </View>
 

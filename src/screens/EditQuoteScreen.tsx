@@ -545,6 +545,10 @@ const EditQuoteScreen = () => {
               attachments={attachments}
               onAttachmentsChange={setAttachments}
               maxAttachments={5}
+              enableSync={true}
+              workspaceId={settings.workspaceId}
+              documentType="quote"
+              documentId={title}
             />
           </View>
 

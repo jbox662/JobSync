@@ -398,6 +398,10 @@ const CreateInvoiceScreen = () => {
             attachments={attachments}
             onAttachmentsChange={setAttachments}
             maxAttachments={5}
+            enableSync={true}
+            workspaceId={settings.workspaceId}
+            documentType="invoice"
+            documentId={invoiceNumber} // Use invoice number as document ID
           />
         </View>
 

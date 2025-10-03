@@ -499,6 +499,10 @@ const InvoiceDetailScreen = () => {
                 onAttachmentsChange={() => {}} // Read-only in detail view
                 maxAttachments={5}
                 readOnly={true}
+                enableSync={true}
+                workspaceId={settings.workspaceId}
+                documentType="invoice"
+                documentId={invoice.invoiceNumber}
               />
             </View>
           </View>
