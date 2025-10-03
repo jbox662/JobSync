@@ -239,7 +239,7 @@ const QuoteDetailScreen = () => {
       >
         {/* Quote Header */}
         <View className="px-4 pt-4">
-          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             {/* Quote Number and Status */}
             <View className="flex-row items-center justify-between mb-4">
               <View className="flex-row items-center">
@@ -268,16 +268,16 @@ const QuoteDetailScreen = () => {
             </View>
 
             {/* Total Amount */}
-            <View className="bg-gray-50 rounded-xl p-4">
+            <View className="bg-gray-50 rounded-lg p-3">
               <Text className="text-sm text-gray-500 font-medium mb-1">Total Amount</Text>
-              <Text className="text-3xl font-bold text-gray-900">{formatCurrency(quote.total)}</Text>
+              <Text className="text-2xl font-bold text-gray-900">{formatCurrency(quote.total)}</Text>
             </View>
           </View>
         </View>
 
         {/* Quote Summary */}
         <View className="px-4 pt-4">
-          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <Text className="text-lg font-bold text-gray-900 mb-4">Quote Summary</Text>
             
             {/* Items Count */}
@@ -320,7 +320,7 @@ const QuoteDetailScreen = () => {
 
         {/* Customer & Details */}
         <View className="px-4 pt-4">
-          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <Text className="text-lg font-bold text-gray-900 mb-4">Customer Information</Text>
             
             {/* Customer */}
@@ -412,7 +412,7 @@ const QuoteDetailScreen = () => {
         {/* Enhanced Quote Details */}
         {(quote.scopeOfWork || quote.specifications || quote.paymentTerms || quote.deliveryTerms || quote.warranty || quote.additionalNotes) && (
           <View className="px-4 pt-4">
-            <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
               <Text className="text-lg font-bold text-gray-900 mb-4">Project Details</Text>
               
               {quote.scopeOfWork && (
@@ -463,7 +463,7 @@ const QuoteDetailScreen = () => {
         {/* Company Information */}
         {quote.companyInfo && (quote.companyInfo.name || quote.companyInfo.address || quote.companyInfo.contact) && (
           <View className="px-4 pt-4">
-            <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
               <Text className="text-lg font-bold text-gray-900 mb-4">Company Information</Text>
               
               {quote.companyInfo.name && (
@@ -493,7 +493,7 @@ const QuoteDetailScreen = () => {
         {/* Notes */}
         {quote.notes && (
           <View className="px-4 pt-4 pb-6">
-            <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
               <Text className="text-lg font-bold text-gray-900 mb-4">Notes</Text>
               <Text className="text-gray-700 leading-6">{quote.notes}</Text>
             </View>
