@@ -237,113 +237,140 @@ const QuoteDetailScreen = () => {
         }
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
       >
-        {/* Quote Header Card */}
+        {/* Quote Header */}
         <View className="px-4 pt-4">
-          <View className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-            <View className="flex-row">
-              {/* Left: Icon + Info */}
-              <View className="flex-row flex-1">
-                <View className="bg-blue-50 rounded-xl p-3 mr-3">
-                  <Ionicons name="document-text-outline" size={26} color="#3B82F6" />
+          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            {/* Quote Number and Status */}
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-row items-center">
+                <View className="bg-blue-100 rounded-lg p-2 mr-3">
+                  <Ionicons name="document-text" size={20} color="#2563EB" />
                 </View>
-                <View className="flex-1">
-                  <Text className="text-xs text-gray-500 font-semibold mb-1">QUOTE</Text>
-                  <Text className="text-2xl font-bold text-gray-900">
-                    {quote.quoteNumber}
-                  </Text>
-                  <Text className="text-base text-gray-700 font-medium mt-1">
-                    {quote.title}
-                  </Text>
-                  {quote.description && (
-                    <Text className="text-gray-600 text-sm mt-1" numberOfLines={2}>
-                      {quote.description}
-                    </Text>
-                  )}
+                <View>
+                  <Text className="text-sm text-gray-500 font-medium">Quote Number</Text>
+                  <Text className="text-lg font-bold text-gray-900">{quote.quoteNumber}</Text>
                 </View>
               </View>
-              
-              {/* Right: Amount + Status */}
-              <View className="items-end ml-3">
-                <Text className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(quote.total)}
+              <View className={`px-3 py-2 rounded-lg ${getStatusColor(quote.status)}`}>
+                <Text className="text-sm font-semibold">{getStatusLabel(quote.status)}</Text>
+              </View>
+            </View>
+
+            {/* Quote Title */}
+            <View className="mb-4">
+              <Text className="text-sm text-gray-500 font-medium mb-1">Project</Text>
+              <Text className="text-xl font-bold text-gray-900">{quote.title}</Text>
+              {quote.description && (
+                <Text className="text-gray-600 mt-2" numberOfLines={3}>
+                  {quote.description}
                 </Text>
-                <View className={`px-3 py-1 rounded-full mt-2 ${getStatusColor(quote.status)}`}>
-                  <Text className="text-xs font-semibold">
-                    {getStatusLabel(quote.status)}
-                  </Text>
-                </View>
-              </View>
+              )}
+            </View>
+
+            {/* Total Amount */}
+            <View className="bg-gray-50 rounded-xl p-4">
+              <Text className="text-sm text-gray-500 font-medium mb-1">Total Amount</Text>
+              <Text className="text-3xl font-bold text-gray-900">{formatCurrency(quote.total)}</Text>
             </View>
           </View>
         </View>
 
-        {/* Items Card */}
+        {/* Quote Summary */}
         <View className="px-4 pt-4">
-          <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <Text className="text-gray-600 text-sm font-medium mb-2">Items</Text>
-            <View className="flex-row items-center justify-between">
-              <Text className="text-5xl font-bold text-gray-900">{quote.items.length}</Text>
-              <View className="bg-blue-500 rounded-full w-14 h-14 items-center justify-center">
-                <Ionicons name="list" size={26} color="white" />
+          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <Text className="text-lg font-bold text-gray-900 mb-4">Quote Summary</Text>
+            
+            {/* Items Count */}
+            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+              <View className="flex-row items-center">
+                <Ionicons name="list-outline" size={20} color="#6B7280" />
+                <Text className="text-gray-700 font-medium ml-3">Line Items</Text>
               </View>
+              <Text className="text-gray-900 font-semibold">{quote.items.length} items</Text>
             </View>
-            <Text className="text-gray-500 text-xs mt-1">{quote.items.length} line items</Text>
+
+            {/* Subtotal */}
+            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+              <View className="flex-row items-center">
+                <Ionicons name="calculator-outline" size={20} color="#6B7280" />
+                <Text className="text-gray-700 font-medium ml-3">Subtotal</Text>
+              </View>
+              <Text className="text-gray-900 font-semibold">{formatCurrency(quote.subtotal)}</Text>
+            </View>
+
+            {/* Tax */}
+            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+              <View className="flex-row items-center">
+                <Ionicons name="receipt-outline" size={20} color="#6B7280" />
+                <Text className="text-gray-700 font-medium ml-3">Tax ({quote.taxRate || 0}%)</Text>
+              </View>
+              <Text className="text-gray-900 font-semibold">{formatCurrency(quote.tax || 0)}</Text>
+            </View>
+
+            {/* Total */}
+            <View className="flex-row items-center justify-between py-4">
+              <View className="flex-row items-center">
+                <Ionicons name="card-outline" size={20} color="#2563EB" />
+                <Text className="text-blue-600 font-bold ml-3 text-lg">Total</Text>
+              </View>
+              <Text className="text-blue-600 font-bold text-xl">{formatCurrency(quote.total)}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Subtotal Card */}
+        {/* Customer & Details */}
         <View className="px-4 pt-4">
-          <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <Text className="text-gray-600 text-sm font-medium mb-2">Subtotal</Text>
-            <View className="flex-row items-center justify-between">
-              <Text className="text-2xl font-bold text-gray-900" numberOfLines={1} adjustsFontSizeToFit>
-                {formatCurrency(quote.subtotal)}
-              </Text>
-              <View className="bg-green-500 rounded-full w-14 h-14 items-center justify-center">
-                <Ionicons name="calculator" size={26} color="white" />
-              </View>
-            </View>
-            <Text className="text-gray-500 text-xs mt-1">{quote.tax > 0 ? `Tax: ${formatCurrency(quote.tax)}` : 'No tax'}</Text>
-          </View>
-        </View>
-
-        {/* Quote Details Card */}
-        <View className="px-4 pt-4">
-          <View className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-            <Text className="text-xl font-bold text-gray-900 mb-4">Quote Details</Text>
+          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <Text className="text-lg font-bold text-gray-900 mb-4">Customer Information</Text>
             
             {/* Customer */}
-            <Pressable onPress={handleViewCustomer} className="flex-row items-center justify-between mb-4">
+            <Pressable onPress={handleViewCustomer} className="flex-row items-center justify-between p-4 bg-gray-50 rounded-xl mb-4">
               <View className="flex-row items-center flex-1">
-                <View className="bg-blue-50 rounded-full w-12 h-12 items-center justify-center mr-3">
-                  <Ionicons name="person-outline" size={22} color="#3B82F6" />
+                <View className="bg-blue-100 rounded-lg p-3 mr-4">
+                  <Ionicons name="person" size={20} color="#2563EB" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-xs text-gray-500 font-medium">Customer</Text>
-                  <Text className="text-gray-900 font-semibold text-base">
+                  <Text className="text-gray-900 font-bold text-base">
                     {customer?.name || 'Unknown Customer'}
                   </Text>
                   {customer?.company && (
-                    <Text className="text-gray-500 text-sm">{customer.company}</Text>
+                    <Text className="text-gray-600 text-sm mt-1">{customer.company}</Text>
+                  )}
+                  {customer?.email && (
+                    <Text className="text-gray-500 text-sm mt-1">{customer.email}</Text>
                   )}
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
             </Pressable>
 
-            {/* Created Date */}
-            <View className="flex-row items-center justify-between pt-3 border-t border-gray-100">
-              <Text className="text-gray-600 text-sm">Created</Text>
-              <Text className="text-gray-900 font-semibold text-base">
-                {format(new Date(quote.createdAt), 'MMM d, yyyy')}
-              </Text>
+            {/* Quote Info */}
+            <View className="space-y-3">
+              <View className="flex-row items-center justify-between py-2">
+                <Text className="text-gray-600 font-medium">Created Date</Text>
+                <Text className="text-gray-900 font-semibold">
+                  {format(new Date(quote.createdAt), 'MMM d, yyyy')}
+                </Text>
+              </View>
+              
+              {quote.validUntil && (
+                <View className="flex-row items-center justify-between py-2">
+                  <Text className="text-gray-600 font-medium">Valid Until</Text>
+                  <Text className="text-gray-900 font-semibold">
+                    {format(new Date(quote.validUntil), 'MMM d, yyyy')}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
 
         {/* Quote Items */}
-        <View className="px-4 pb-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">Quote Items</Text>
+        <View className="px-4 pt-4 pb-6">
+          <View className="mb-4">
+            <Text className="text-lg font-bold text-gray-900">Detailed Line Items</Text>
+            <Text className="text-gray-600 text-sm mt-1">All items included in this quote</Text>
+          </View>
           
           {quote.items.length === 0 ? (
             <View className="bg-white rounded-xl p-8 items-center border border-gray-100">
