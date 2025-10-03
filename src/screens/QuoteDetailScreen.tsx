@@ -157,7 +157,7 @@ const QuoteDetailScreen = () => {
   );
 
   const ItemCard = ({ item, index }: { item: any; index: number }) => {
-    const itemData = item.type === 'part' ? getPartById(item.id) : getLaborItemById(item.id);
+    const itemData = item.type === 'part' ? getPartById(item.itemId) : getLaborItemById(item.itemId);
     
     return (
       <View className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100">
@@ -191,18 +191,18 @@ const QuoteDetailScreen = () => {
             
             <View className="flex-row items-center">
               <Text className="text-gray-500 text-sm">
-                Qty: {item.quantity}
+                Qty: {item.quantity || 0}
               </Text>
               <Text className="text-gray-300 mx-2">•</Text>
               <Text className="text-gray-500 text-sm">
-                {formatCurrency(item.rate)} each
+                {formatCurrency(item.rate || item.price || 0)} each
               </Text>
             </View>
           </View>
           
           <View className="items-end">
             <Text className="font-bold text-gray-900 text-lg">
-              {formatCurrency(item.quantity * item.rate)}
+              {formatCurrency((item.quantity || 0) * (item.rate || item.price || 0))}
             </Text>
           </View>
         </View>
@@ -296,14 +296,14 @@ const QuoteDetailScreen = () => {
             <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
               <Text className="text-gray-600 text-sm font-medium mb-2">Subtotal</Text>
               <View className="flex-row items-center justify-between">
-                <Text className="text-2xl font-bold text-gray-900" numberOfLines={1}>
-                  ${(quote.subtotal / 1000).toFixed(0)}...
+                <Text className="text-2xl font-bold text-gray-900" numberOfLines={1} adjustsFontSizeToFit>
+                  {formatCurrency(quote.subtotal)}
                 </Text>
                 <View className="bg-green-500 rounded-full w-14 h-14 items-center justify-center">
                   <Ionicons name="calculator" size={26} color="white" />
                 </View>
               </View>
-              <Text className="text-gray-500 text-xs mt-1">{quote.tax > 0 ? 'No tax' : 'No tax'}</Text>
+              <Text className="text-gray-500 text-xs mt-1">{quote.tax > 0 ? `Tax: ${formatCurrency(quote.tax)}` : 'No tax'}</Text>
             </View>
           </View>
         </View>

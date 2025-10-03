@@ -153,7 +153,7 @@ const InvoiceDetailScreen = () => {
   );
 
   const ItemCard = ({ item, index }: { item: any; index: number }) => {
-    const itemData = item.type === 'part' ? getPartById(item.id) : getLaborItemById(item.id);
+    const itemData = item.type === 'part' ? getPartById(item.itemId) : getLaborItemById(item.itemId);
     
     return (
       <View className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100">
@@ -187,18 +187,18 @@ const InvoiceDetailScreen = () => {
             
             <View className="flex-row items-center">
               <Text className="text-gray-500 text-sm">
-                Qty: {item.quantity}
+                Qty: {item.quantity || 0}
               </Text>
               <Text className="text-gray-300 mx-2">•</Text>
               <Text className="text-gray-500 text-sm">
-                {formatCurrency(item.rate)} each
+                {formatCurrency(item.rate || item.price || 0)} each
               </Text>
             </View>
           </View>
           
           <View className="items-end">
             <Text className="font-bold text-gray-900 text-lg">
-              {formatCurrency(item.quantity * item.rate)}
+              {formatCurrency((item.quantity || 0) * (item.rate || item.price || 0))}
             </Text>
           </View>
         </View>
