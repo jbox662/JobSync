@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 interface Attachment {
   id: string;
@@ -102,6 +103,55 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
     );
   };
 
+  const openAttachment = async (attachment: Attachment) => {
+    try {
+      // Check if the file exists
+      const fileInfo = await FileSystem.getInfoAsync(attachment.uri);
+      if (!fileInfo.exists) {
+        Alert.alert('File Not Found', 'The attachment file could not be found.');
+        return;
+      }
+
+      // Try to open with the system's default app
+      const canOpen = await Linking.canOpenURL(attachment.uri);
+      if (canOpen) {
+        await Linking.openURL(attachment.uri);
+      } else {
+        // If can't open directly, try sharing
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(attachment.uri, {
+            mimeType: attachment.type,
+            dialogTitle: `Open ${attachment.name}`
+          });
+        } else {
+          Alert.alert(
+            'Cannot Open File',
+            'No app is available to open this file type. You can try sharing it instead.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Share',
+                onPress: async () => {
+                  try {
+                    await Sharing.shareAsync(attachment.uri, {
+                      mimeType: attachment.type,
+                      dialogTitle: `Share ${attachment.name}`
+                    });
+                  } catch (error) {
+                    Alert.alert('Error', 'Failed to share the file.');
+                  }
+                }
+              }
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open the attachment. Please try again.');
+    }
+  };
+
   return (
     <View className="mb-4">
       <Text className="text-gray-700 font-medium mb-2">Attachments</Text>
@@ -140,26 +190,34 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
               key={attachment.id}
               className="flex-row items-center justify-between p-3 bg-gray-50 rounded-lg mb-2"
             >
-              <View className="flex-row items-center flex-1 mr-2">
+              <Pressable
+                onPress={() => openAttachment(attachment)}
+                className="flex-row items-center flex-1 mr-2"
+              >
                 <Ionicons 
                   name={getFileIcon(attachment.type)} 
                   size={20} 
-                  color="#6B7280" 
+                  color="#3B82F6" 
                 />
                 <View className="ml-3 flex-1">
-                  <Text className="text-gray-900 font-medium" numberOfLines={1}>
+                  <Text className="text-blue-600 font-medium" numberOfLines={1}>
                     {attachment.name}
                   </Text>
                   <Text className="text-gray-500 text-sm">
-                    {formatFileSize(attachment.size)}
+                    {formatFileSize(attachment.size)} • Tap to open
                   </Text>
                 </View>
-              </View>
+                <Ionicons 
+                  name="open-outline" 
+                  size={16} 
+                  color="#3B82F6" 
+                />
+              </Pressable>
               
               {!readOnly && (
                 <Pressable
                   onPress={() => removeAttachment(attachment.id)}
-                  className="p-1"
+                  className="p-1 ml-2"
                 >
                   <Ionicons name="close-circle" size={20} color="#EF4444" />
                 </Pressable>
