@@ -116,115 +116,88 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
         return;
       }
 
-      // Try to open with the system's default app
-      const canOpen = await Linking.canOpenURL(attachment.uri);
-      console.log('Can open URL:', canOpen);
+      // Skip the Linking.canOpenURL check for file:// URLs as it doesn't work reliably on iOS
+      // Go straight to sharing which is more reliable for file attachments
+      console.log('Using sharing to open file...');
       
-      if (canOpen) {
-        console.log('Opening with Linking...');
-        await Linking.openURL(attachment.uri);
-      } else {
-        console.log('Cannot open directly, trying sharing...');
-        
-        // Try to copy file to a more accessible location first
+      const isAvailable = await Sharing.isAvailableAsync();
+      console.log('Sharing available:', isAvailable);
+      
+      if (isAvailable) {
         try {
-          const newUri = `${FileSystem.documentDirectory}${attachment.name}`;
-          await FileSystem.copyAsync({
-            from: attachment.uri,
-            to: newUri
+          // Try sharing directly with the original URI first
+          await Sharing.shareAsync(attachment.uri, {
+            mimeType: attachment.type,
+            dialogTitle: `Open ${attachment.name}`,
+            UTI: getUTIForMimeType(attachment.type)
           });
-          console.log('File copied to:', newUri);
+        } catch (shareError) {
+          console.log('Direct sharing failed, trying copy method:', shareError);
           
-          // Try sharing the copied file
-          const isAvailable = await Sharing.isAvailableAsync();
-          console.log('Sharing available:', isAvailable);
-          
-          if (isAvailable) {
-            try {
-              await Sharing.shareAsync(newUri, {
-                mimeType: attachment.type,
-                dialogTitle: `Open ${attachment.name}`
-              });
-            } catch (shareError) {
-              console.log('Sharing error:', shareError);
-              // Try with original URI as fallback
-              try {
-                await Sharing.shareAsync(attachment.uri, {
-                  mimeType: attachment.type,
-                  dialogTitle: `Open ${attachment.name}`
-                });
-              } catch (fallbackError) {
-                console.log('Fallback sharing error:', fallbackError);
-                Alert.alert(
-                  'Cannot Open File',
-                  `Unable to open this file type (${attachment.type}). The file may be corrupted or in an unsupported format.`,
-                  [
-                    { text: 'OK', style: 'default' }
-                  ]
-                );
-              }
-            }
-          } else {
+          // If direct sharing fails, try copying to a more accessible location
+          try {
+            const newUri = `${FileSystem.documentDirectory}${attachment.name}`;
+            await FileSystem.copyAsync({
+              from: attachment.uri,
+              to: newUri
+            });
+            console.log('File copied to:', newUri);
+            
+            // Try sharing the copied file
+            await Sharing.shareAsync(newUri, {
+              mimeType: attachment.type,
+              dialogTitle: `Open ${attachment.name}`,
+              UTI: getUTIForMimeType(attachment.type)
+            });
+          } catch (copyError) {
+            console.log('Copy and share failed:', copyError);
             Alert.alert(
               'Cannot Open File',
-              'No app is available to open this file type. You can try sharing it instead.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Share',
-                  onPress: async () => {
-                    try {
-                      await Sharing.shareAsync(newUri, {
-                        mimeType: attachment.type,
-                        dialogTitle: `Share ${attachment.name}`
-                      });
-                    } catch (error) {
-                      console.log('Share error:', error);
-                      Alert.alert('Error', 'Failed to share the file.');
-                    }
-                  }
-                }
-              ]
-            );
-          }
-        } catch (copyError) {
-          console.log('Copy error, trying original URI:', copyError);
-          // If copying fails, try with original URI
-          const isAvailable = await Sharing.isAvailableAsync();
-          if (isAvailable) {
-            try {
-              await Sharing.shareAsync(attachment.uri, {
-                mimeType: attachment.type,
-                dialogTitle: `Open ${attachment.name}`
-              });
-            } catch (shareError) {
-              console.log('Sharing error:', shareError);
-              Alert.alert(
-                'Cannot Open File',
-                `Unable to open this file type (${attachment.type}). The file may be corrupted or in an unsupported format.`,
-                [
-                  { text: 'OK', style: 'default' }
-                ]
-              );
-            }
-          } else {
-            Alert.alert(
-              'Cannot Open File',
-              'No app is available to open this file type.',
+              `Unable to open this file type (${attachment.type}). Please make sure you have an app installed that can handle this file type.`,
               [
                 { text: 'OK', style: 'default' }
               ]
             );
           }
         }
+      } else {
+        Alert.alert(
+          'Sharing Not Available',
+          'File sharing is not available on this device. Please install an app that can handle this file type.',
+          [
+            { text: 'OK', style: 'default' }
+          ]
+        );
       }
     } catch (error) {
       console.log('Open attachment error:', error);
       Alert.alert(
         'Error Opening File', 
-        `Failed to open the attachment: ${error instanceof Error ? error.message : 'Unknown error'}. The file may be corrupted or in an unsupported format.`
+        `Failed to open the attachment: ${error instanceof Error ? error.message : 'Unknown error'}. Please make sure you have an app installed that can handle this file type.`
       );
     }
+  };
+
+  // Helper function to get UTI (Uniform Type Identifier) for better file type recognition
+  const getUTIForMimeType = (mimeType: string): string => {
+    const mimeToUTI: { [key: string]: string } = {
+      'application/pdf': 'com.adobe.pdf',
+      'application/msword': 'com.microsoft.word.doc',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'org.openxmlformats.wordprocessingml.document',
+      'application/vnd.ms-excel': 'com.microsoft.excel.xls',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'org.openxmlformats.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint': 'com.microsoft.powerpoint.ppt',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'org.openxmlformats.presentationml.presentation',
+      'text/plain': 'public.plain-text',
+      'text/html': 'public.html',
+      'text/rtf': 'public.rtf',
+      'image/jpeg': 'public.jpeg',
+      'image/png': 'public.png',
+      'image/gif': 'com.compuserve.gif',
+      'image/tiff': 'public.tiff'
+    };
+    
+    return mimeToUTI[mimeType] || 'public.data';
   };
 
   return (
