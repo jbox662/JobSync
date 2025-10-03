@@ -136,7 +136,7 @@ const InvoiceDetailScreen = () => {
     color: string;
     subtitle?: string;
   }) => (
-    <View className="bg-white rounded-xl p-4 flex-1 mx-1 shadow-sm border border-gray-100">
+    <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-gray-600 text-sm font-medium">{title}</Text>
@@ -377,13 +377,16 @@ const InvoiceDetailScreen = () => {
         <View className="px-4 py-6">
           <Text className="text-lg font-semibold text-gray-900 mb-4">Invoice Summary</Text>
           
-          <View className="flex-row mb-4">
+          <View className="mb-4">
             <StatCard
               title="Items"
               value={invoice.items.length}
               icon="list"
               color="bg-blue-500"
             />
+          </View>
+          
+          <View className="mb-4">
             <StatCard
               title="Subtotal"
               value={formatCurrency(invoice.subtotal)}
@@ -392,13 +395,16 @@ const InvoiceDetailScreen = () => {
             />
           </View>
           
-          <View className="flex-row mb-4">
+          <View className="mb-4">
             <StatCard
               title="Tax Rate"
               value={`${invoice.taxRate}%`}
               icon="receipt"
               color="bg-orange-500"
             />
+          </View>
+          
+          <View className="mb-4">
             <StatCard
               title="Tax Amount"
               value={formatCurrency(invoice.tax)}

@@ -277,34 +277,33 @@ const QuoteDetailScreen = () => {
           </View>
         </View>
 
-        {/* Items and Subtotal Cards Row */}
-        <View className="px-4 pt-4 flex-row">
-          <View className="flex-1 mr-2">
-            <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-              <Text className="text-gray-600 text-sm font-medium mb-2">Items</Text>
-              <View className="flex-row items-center justify-between">
-                <Text className="text-5xl font-bold text-gray-900">{quote.items.length}</Text>
-                <View className="bg-blue-500 rounded-full w-14 h-14 items-center justify-center">
-                  <Ionicons name="list" size={26} color="white" />
-                </View>
+        {/* Items Card */}
+        <View className="px-4 pt-4">
+          <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+            <Text className="text-gray-600 text-sm font-medium mb-2">Items</Text>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-5xl font-bold text-gray-900">{quote.items.length}</Text>
+              <View className="bg-blue-500 rounded-full w-14 h-14 items-center justify-center">
+                <Ionicons name="list" size={26} color="white" />
               </View>
-              <Text className="text-gray-500 text-xs mt-1">{quote.items.length} line items</Text>
             </View>
+            <Text className="text-gray-500 text-xs mt-1">{quote.items.length} line items</Text>
           </View>
-          
-          <View className="flex-1 ml-2">
-            <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-              <Text className="text-gray-600 text-sm font-medium mb-2">Subtotal</Text>
-              <View className="flex-row items-center justify-between">
-                <Text className="text-2xl font-bold text-gray-900" numberOfLines={1} adjustsFontSizeToFit>
-                  {formatCurrency(quote.subtotal)}
-                </Text>
-                <View className="bg-green-500 rounded-full w-14 h-14 items-center justify-center">
-                  <Ionicons name="calculator" size={26} color="white" />
-                </View>
+        </View>
+
+        {/* Subtotal Card */}
+        <View className="px-4 pt-4">
+          <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+            <Text className="text-gray-600 text-sm font-medium mb-2">Subtotal</Text>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-2xl font-bold text-gray-900" numberOfLines={1} adjustsFontSizeToFit>
+                {formatCurrency(quote.subtotal)}
+              </Text>
+              <View className="bg-green-500 rounded-full w-14 h-14 items-center justify-center">
+                <Ionicons name="calculator" size={26} color="white" />
               </View>
-              <Text className="text-gray-500 text-xs mt-1">{quote.tax > 0 ? `Tax: ${formatCurrency(quote.tax)}` : 'No tax'}</Text>
             </View>
+            <Text className="text-gray-500 text-xs mt-1">{quote.tax > 0 ? `Tax: ${formatCurrency(quote.tax)}` : 'No tax'}</Text>
           </View>
         </View>
 
