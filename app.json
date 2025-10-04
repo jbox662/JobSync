@@ -17,7 +17,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.vibecode.jobsync.yos9j3",
       "buildNumber": "18",
-      "infoPlist": {}
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "edgeToEdgeEnabled": true,
