@@ -504,6 +504,7 @@ const InvoiceDetailScreen = () => {
                 workspaceId={settings.workspaceId}
                 documentType="invoice"
                 documentId={invoice.invoiceNumber}
+                settings={settings}
               />
             </View>
           </View>

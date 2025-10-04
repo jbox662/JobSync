@@ -398,15 +398,16 @@ const EditInvoiceScreen = () => {
 
           {/* Attachments */}
           <View className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-100">
-            <AttachmentManager
-              attachments={attachments}
-              onAttachmentsChange={setAttachments}
-              maxAttachments={5}
-              enableSync={true}
-              workspaceId={settings.workspaceId}
-              documentType="invoice"
-              documentId={invoice?.invoiceNumber || ''}
-            />
+          <AttachmentManager
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+            maxAttachments={5}
+            enableSync={true}
+            workspaceId={settings.workspaceId}
+            documentType="invoice"
+            documentId={invoice?.invoiceNumber || ''}
+            settings={settings}
+          />
           </View>
 
           {/* Totals */}

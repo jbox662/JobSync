@@ -402,6 +402,7 @@ const CreateInvoiceScreen = () => {
             workspaceId={settings.workspaceId}
             documentType="invoice"
             documentId={invoiceNumber} // Use invoice number as document ID
+            settings={settings}
           />
         </View>
 

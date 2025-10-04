@@ -541,15 +541,16 @@ const EditQuoteScreen = () => {
 
           {/* Attachments */}
           <View className="bg-white rounded-lg p-4 mb-6 border border-gray-200">
-            <AttachmentManager
-              attachments={attachments}
-              onAttachmentsChange={setAttachments}
-              maxAttachments={5}
-              enableSync={true}
-              workspaceId={settings.workspaceId}
-              documentType="quote"
-              documentId={title}
-            />
+          <AttachmentManager
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+            maxAttachments={5}
+            enableSync={true}
+            workspaceId={settings.workspaceId}
+            documentType="quote"
+            documentId={title}
+            settings={settings}
+          />
           </View>
 
           {/* Action Buttons */}

@@ -361,6 +361,7 @@ const CreateQuoteScreen = () => {
             workspaceId={settings.workspaceId}
             documentType="quote"
             documentId={title} // Use quote title as document ID
+            settings={settings}
           />
         </View>
 

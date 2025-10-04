@@ -570,6 +570,7 @@ const QuoteDetailScreen = () => {
                 workspaceId={settings.workspaceId}
                 documentType="quote"
                 documentId={quote.quoteNumber}
+                settings={settings}
               />
             </View>
           </View>

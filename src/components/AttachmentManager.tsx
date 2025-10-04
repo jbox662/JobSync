@@ -26,6 +26,7 @@ interface AttachmentManagerProps {
   documentType?: 'invoice' | 'quote';
   documentId?: string;
   enableSync?: boolean;
+  settings?: any;
 }
 
 const AttachmentManager: React.FC<AttachmentManagerProps> = ({
@@ -36,7 +37,8 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
   workspaceId,
   documentType,
   documentId,
-  enableSync = false
+  enableSync = false,
+  settings
 }) => {
   const [isPicking, setIsPicking] = useState(false);
 
@@ -143,6 +145,7 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             documentType,
             documentId
           });
+          console.log('Settings object:', settings);
         }
 
         onAttachmentsChange([...attachments, newAttachment]);
