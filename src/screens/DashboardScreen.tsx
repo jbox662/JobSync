@@ -60,12 +60,12 @@ const DashboardScreen = () => {
     color: string;
     subtitle?: string;
   }) => (
-    <View className="bg-white rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-sm border border-gray-200">
+    <View className="bg-white rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-lg border-2 border-gray-300">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-2">
-          <Text className="text-gray-700 text-xs font-semibold" numberOfLines={1}>{title}</Text>
+          <Text className="text-gray-800 text-sm font-bold" numberOfLines={1}>{title}</Text>
           <Text 
-            className="text-2xl font-bold text-gray-900 mt-1" 
+            className="text-3xl font-black text-black mt-1" 
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.7}
@@ -73,12 +73,12 @@ const DashboardScreen = () => {
             {value}
           </Text>
           {subtitle && (
-            <Text className="text-gray-600 text-xs mt-1 font-medium" numberOfLines={1}>
+            <Text className="text-gray-700 text-xs mt-1 font-bold" numberOfLines={1}>
               {subtitle}
             </Text>
           )}
         </View>
-        <View className={`w-12 h-12 rounded-full items-center justify-center ${color} flex-shrink-0`}>
+        <View className={`w-12 h-12 rounded-full items-center justify-center ${color} flex-shrink-0 shadow-md`}>
           <Ionicons name={icon} size={24} color="white" />
         </View>
       </View>
@@ -167,50 +167,19 @@ const DashboardScreen = () => {
           </View>
         )}
 
-        {/* Quick Actions */}
-        <View className="mb-6">
-          <Text className="text-xl font-bold text-gray-900 mb-4">Quick Actions</Text>
-          <View className="flex-row flex-wrap -mx-1">
-            <QuickActionButton
-              title="New Job"
-              icon="add-circle"
-              color="bg-blue-500"
-              onPress={() => navigation.navigate('CreateJob' as never)}
-            />
-            <QuickActionButton
-              title="New Invoice"
-              icon="receipt"
-              color="bg-green-500"
-              onPress={() => navigation.navigate('CreateInvoice' as never)}
-            />
-            <QuickActionButton
-              title="New Quote"
-              icon="document-text"
-              color="bg-yellow-500"
-              onPress={() => navigation.navigate('CreateQuote' as never)}
-            />
-            <QuickActionButton
-              title="New Customer"
-              icon="person-add"
-              color="bg-purple-500"
-              onPress={() => navigation.navigate('CreateCustomer' as never)}
-            />
-          </View>
-        </View>
-
         {/* Revenue Overview */}
-        <View className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-6 mb-6 shadow-lg">
+        <View className="bg-gray-900 rounded-2xl p-6 mb-6 shadow-lg">
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
-              <Text className="text-green-100 text-sm font-medium mb-1">Total Revenue</Text>
+              <Text className="text-gray-300 text-sm font-medium mb-1">Total Revenue</Text>
               <Text className="text-white text-3xl font-bold mb-2">
                 {formatCurrency(totalRevenue)}
               </Text>
-              <Text className="text-green-100 text-sm">
+              <Text className="text-gray-300 text-sm">
                 {outstandingAmount > 0 ? `${formatCurrency(outstandingAmount)} outstanding` : 'All invoices paid'}
               </Text>
             </View>
-            <View className="w-16 h-16 bg-white/20 rounded-full items-center justify-center">
+            <View className="w-16 h-16 bg-green-500 rounded-full items-center justify-center">
               <Ionicons name="trending-up" size={32} color="white" />
             </View>
           </View>
@@ -331,6 +300,37 @@ const DashboardScreen = () => {
               })}
             </View>
           )}
+        </View>
+
+        {/* Quick Actions */}
+        <View className="mb-6">
+          <Text className="text-xl font-bold text-gray-900 mb-4">Quick Actions</Text>
+          <View className="flex-row flex-wrap -mx-1">
+            <QuickActionButton
+              title="New Job"
+              icon="add-circle"
+              color="bg-blue-500"
+              onPress={() => navigation.navigate('CreateJob' as never)}
+            />
+            <QuickActionButton
+              title="New Invoice"
+              icon="receipt"
+              color="bg-green-500"
+              onPress={() => navigation.navigate('CreateInvoice' as never)}
+            />
+            <QuickActionButton
+              title="New Quote"
+              icon="document-text"
+              color="bg-yellow-500"
+              onPress={() => navigation.navigate('CreateQuote' as never)}
+            />
+            <QuickActionButton
+              title="New Customer"
+              icon="person-add"
+              color="bg-purple-500"
+              onPress={() => navigation.navigate('CreateCustomer' as never)}
+            />
+          </View>
         </View>
       </View>
     </ScrollView>
