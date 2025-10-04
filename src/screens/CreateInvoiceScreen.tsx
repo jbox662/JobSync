@@ -9,7 +9,7 @@ import AttachmentManager from '../components/AttachmentManager';
 const CreateInvoiceScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { addInvoice, jobs, quotes, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, getQuoteById, settings } = useJobStore();
+  const { addInvoice, jobs, quotes, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, getQuoteById, settings, workspaceId } = useJobStore();
   
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
   const [title, setTitle] = useState('');
@@ -399,7 +399,7 @@ const CreateInvoiceScreen = () => {
             onAttachmentsChange={setAttachments}
             maxAttachments={5}
             enableSync={true}
-            workspaceId={settings.workspaceId}
+            workspaceId={workspaceId}
             documentType="invoice"
             documentId={invoiceNumber} // Use invoice number as document ID
             settings={settings}

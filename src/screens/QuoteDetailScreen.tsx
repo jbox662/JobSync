@@ -34,7 +34,8 @@ const QuoteDetailScreen = () => {
     updateQuote,
     deleteQuote,
     quotes,
-    settings
+    settings,
+    workspaceId
   } = useJobStore();
 
   const [quote, setQuote] = useState(() => getQuoteById(quoteId));
@@ -567,7 +568,7 @@ const QuoteDetailScreen = () => {
                 maxAttachments={5}
                 readOnly={true}
                 enableSync={true}
-                workspaceId={settings.workspaceId}
+                workspaceId={workspaceId}
                 documentType="quote"
                 documentId={quote.quoteNumber}
                 settings={settings}

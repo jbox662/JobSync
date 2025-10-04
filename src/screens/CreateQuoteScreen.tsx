@@ -9,7 +9,7 @@ import AttachmentManager from '../components/AttachmentManager';
 const CreateQuoteScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { addQuote, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, settings } = useJobStore();
+  const { addQuote, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, settings, workspaceId } = useJobStore();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -358,7 +358,7 @@ const CreateQuoteScreen = () => {
             onAttachmentsChange={setAttachments}
             maxAttachments={5}
             enableSync={true}
-            workspaceId={settings.workspaceId}
+            workspaceId={workspaceId}
             documentType="quote"
             documentId={title} // Use quote title as document ID
             settings={settings}

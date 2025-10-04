@@ -35,7 +35,8 @@ const InvoiceDetailScreen = () => {
     updateInvoice,
     deleteInvoice,
     invoices,
-    settings
+    settings,
+    workspaceId
   } = useJobStore();
 
   const [invoice, setInvoice] = useState(() => getInvoiceById(invoiceId));
@@ -501,7 +502,7 @@ const InvoiceDetailScreen = () => {
                 maxAttachments={5}
                 readOnly={true}
                 enableSync={true}
-                workspaceId={settings.workspaceId}
+                workspaceId={workspaceId}
                 documentType="invoice"
                 documentId={invoice.invoiceNumber}
                 settings={settings}

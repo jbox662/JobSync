@@ -16,7 +16,7 @@ const EditQuoteScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const { quoteId } = route.params;
-  const { updateQuote, getQuoteById, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, settings } = useJobStore();
+  const { updateQuote, getQuoteById, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, settings, workspaceId } = useJobStore();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -546,7 +546,7 @@ const EditQuoteScreen = () => {
             onAttachmentsChange={setAttachments}
             maxAttachments={5}
             enableSync={true}
-            workspaceId={settings.workspaceId}
+            workspaceId={workspaceId}
             documentType="quote"
             documentId={title}
             settings={settings}

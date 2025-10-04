@@ -30,7 +30,8 @@ const EditInvoiceScreen = () => {
     customers, 
     getCustomerById,
     deleteInvoice,
-    settings
+    settings,
+    workspaceId
   } = useJobStore();
 
   const invoice = getInvoiceById(invoiceId);
@@ -403,7 +404,7 @@ const EditInvoiceScreen = () => {
             onAttachmentsChange={setAttachments}
             maxAttachments={5}
             enableSync={true}
-            workspaceId={settings.workspaceId}
+            workspaceId={workspaceId}
             documentType="invoice"
             documentId={invoice?.invoiceNumber || ''}
             settings={settings}
