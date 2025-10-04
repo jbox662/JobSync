@@ -29,7 +29,8 @@ const EditInvoiceScreen = () => {
     updateInvoice, 
     customers, 
     getCustomerById,
-    deleteInvoice 
+    deleteInvoice,
+    settings
   } = useJobStore();
 
   const invoice = getInvoiceById(invoiceId);
