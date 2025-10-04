@@ -107,59 +107,59 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
           type: file.mimeType || 'application/octet-stream'
         };
 
-          // Upload to Supabase if sync is enabled
-          if (enableSync && workspaceId && documentType && documentId) {
-            console.log('Uploading attachment to Supabase...', {
+        // Upload to Supabase if sync is enabled
+        if (enableSync && workspaceId && documentType && documentId) {
+          console.log('Uploading attachment to Supabase...', {
+            workspaceId,
+            documentType,
+            documentId,
+            attachment: newAttachment
+          });
+          
+          // Show upload start alert on mobile
+          Alert.alert(
+            'Upload Starting',
+            `Uploading to Supabase...\nWorkspace: ${workspaceId}\nType: ${documentType}\nID: ${documentId}`,
+            [{ text: 'OK' }]
+          );
+        
+          try {
+            const uploadResult = await attachmentSyncService.uploadAttachment(
+              newAttachment,
               workspaceId,
               documentType,
-              documentId,
-              attachment: newAttachment
-            });
-            
-            // Show upload start alert on mobile
-            Alert.alert(
-              'Upload Starting',
-              `Uploading to Supabase...\nWorkspace: ${workspaceId}\nType: ${documentType}\nID: ${documentId}`,
-              [{ text: 'OK' }]
+              documentId
             );
-          
-            try {
-              const uploadResult = await attachmentSyncService.uploadAttachment(
-                newAttachment,
-                workspaceId,
-                documentType,
-                documentId
+
+            console.log('Upload result:', uploadResult);
+
+            if (uploadResult.success && uploadResult.supabaseUrl) {
+              newAttachment.supabaseUrl = uploadResult.supabaseUrl;
+              newAttachment.localPath = permanentUri;
+              console.log('Attachment uploaded successfully:', newAttachment.supabaseUrl);
+              
+              // Show success alert on mobile
+              Alert.alert(
+                'Upload Success',
+                `File uploaded to Supabase!\nURL: ${newAttachment.supabaseUrl}`,
+                [{ text: 'OK' }]
               );
-
-              console.log('Upload result:', uploadResult);
-
-              if (uploadResult.success && uploadResult.supabaseUrl) {
-                newAttachment.supabaseUrl = uploadResult.supabaseUrl;
-                newAttachment.localPath = permanentUri;
-                console.log('Attachment uploaded successfully:', newAttachment.supabaseUrl);
-                
-                // Show success alert on mobile
-                Alert.alert(
-                  'Upload Success',
-                  `File uploaded to Supabase!\nURL: ${newAttachment.supabaseUrl}`,
-                  [{ text: 'OK' }]
-                );
-              } else {
-                console.warn('Failed to upload attachment:', uploadResult.error);
-                // Continue with local-only attachment
-                
-                // Show failure alert on mobile
-                Alert.alert(
-                  'Upload Failed',
-                  `Failed to upload: ${uploadResult.error || 'Unknown error'}`,
-                  [{ text: 'OK' }]
-                );
-              }
-            } catch (error) {
-              console.error('Upload error:', error);
+            } else {
+              console.warn('Failed to upload attachment:', uploadResult.error);
               // Continue with local-only attachment
+              
+              // Show failure alert on mobile
+              Alert.alert(
+                'Upload Failed',
+                `Failed to upload: ${uploadResult.error || 'Unknown error'}`,
+                [{ text: 'OK' }]
+              );
             }
-          } else {
+          } catch (error) {
+            console.error('Upload error:', error);
+            // Continue with local-only attachment
+          }
+        } else {
           console.log('Sync disabled or missing props:', {
             enableSync,
             workspaceId,
