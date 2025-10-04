@@ -34,7 +34,8 @@ const InvoiceDetailScreen = () => {
     getLaborItemById,
     updateInvoice,
     deleteInvoice,
-    invoices
+    invoices,
+    settings
   } = useJobStore();
 
   const [invoice, setInvoice] = useState(() => getInvoiceById(invoiceId));

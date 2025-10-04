@@ -33,7 +33,8 @@ const QuoteDetailScreen = () => {
     getLaborItemById,
     updateQuote,
     deleteQuote,
-    quotes
+    quotes,
+    settings
   } = useJobStore();
 
   const [quote, setQuote] = useState(() => getQuoteById(quoteId));

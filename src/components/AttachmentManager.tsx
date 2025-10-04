@@ -107,6 +107,13 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
 
         // Upload to Supabase if sync is enabled
         if (enableSync && workspaceId && documentType && documentId) {
+          console.log('Uploading attachment to Supabase...', {
+            workspaceId,
+            documentType,
+            documentId,
+            attachment: newAttachment
+          });
+          
           try {
             const uploadResult = await attachmentSyncService.uploadAttachment(
               newAttachment,
@@ -115,9 +122,12 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
               documentId
             );
 
+            console.log('Upload result:', uploadResult);
+
             if (uploadResult.success && uploadResult.supabaseUrl) {
               newAttachment.supabaseUrl = uploadResult.supabaseUrl;
               newAttachment.localPath = permanentUri;
+              console.log('Attachment uploaded successfully:', newAttachment.supabaseUrl);
             } else {
               console.warn('Failed to upload attachment:', uploadResult.error);
               // Continue with local-only attachment
@@ -126,6 +136,13 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             console.error('Upload error:', error);
             // Continue with local-only attachment
           }
+        } else {
+          console.log('Sync disabled or missing props:', {
+            enableSync,
+            workspaceId,
+            documentType,
+            documentId
+          });
         }
 
         onAttachmentsChange([...attachments, newAttachment]);

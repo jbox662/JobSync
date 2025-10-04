@@ -32,6 +32,13 @@ export class AttachmentSyncService {
     documentId: string
   ): Promise<{ success: boolean; supabaseUrl?: string; error?: string }> {
     try {
+      console.log('AttachmentSyncService: Starting upload', {
+        attachment: attachment.name,
+        workspaceId,
+        documentType,
+        documentId
+      });
+
       // Ensure bucket exists
       await this.ensureBucketExists();
 
@@ -39,10 +46,14 @@ export class AttachmentSyncService {
       const fileExtension = attachment.name.split('.').pop() || '';
       const fileName = `${workspaceId}/${documentType}/${documentId}/${attachment.id}.${fileExtension}`;
       
+      console.log('AttachmentSyncService: File path:', fileName);
+
       // Read file as base64
       const fileData = await FileSystem.readAsStringAsync(attachment.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
+
+      console.log('AttachmentSyncService: File data length:', fileData.length);
 
       // Upload to Supabase storage
       const { data, error } = await supabase.storage
@@ -53,21 +64,25 @@ export class AttachmentSyncService {
         });
 
       if (error) {
-        console.error('Upload error:', error);
+        console.error('AttachmentSyncService: Upload error:', error);
         return { success: false, error: error.message };
       }
+
+      console.log('AttachmentSyncService: Upload successful:', data);
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from(this.bucketName)
         .getPublicUrl(fileName);
 
+      console.log('AttachmentSyncService: Public URL:', urlData.publicUrl);
+
       return { 
         success: true, 
         supabaseUrl: urlData.publicUrl 
       };
     } catch (error) {
-      console.error('Upload attachment error:', error);
+      console.error('AttachmentSyncService: Upload attachment error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
