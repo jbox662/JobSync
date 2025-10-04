@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Alert, Linking } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Linking, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
@@ -41,6 +41,7 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
   settings
 }) => {
   const [isPicking, setIsPicking] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -116,12 +117,7 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             attachment: newAttachment
           });
           
-          // Show upload start alert on mobile
-          Alert.alert(
-            'Upload Starting',
-            `Uploading to Supabase...\nWorkspace: ${workspaceId}\nType: ${documentType}\nID: ${documentId}`,
-            [{ text: 'OK' }]
-          );
+          setIsUploading(true);
         
           try {
             const uploadResult = await attachmentSyncService.uploadAttachment(
@@ -137,27 +133,15 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
               newAttachment.supabaseUrl = uploadResult.supabaseUrl;
               newAttachment.localPath = permanentUri;
               console.log('Attachment uploaded successfully:', newAttachment.supabaseUrl);
-              
-              // Show success alert on mobile
-              Alert.alert(
-                'Upload Success',
-                `File uploaded to Supabase!\nURL: ${newAttachment.supabaseUrl}`,
-                [{ text: 'OK' }]
-              );
             } else {
               console.warn('Failed to upload attachment:', uploadResult.error);
               // Continue with local-only attachment
-              
-              // Show failure alert on mobile
-              Alert.alert(
-                'Upload Failed',
-                `Failed to upload: ${uploadResult.error || 'Unknown error'}`,
-                [{ text: 'OK' }]
-              );
             }
           } catch (error) {
             console.error('Upload error:', error);
             // Continue with local-only attachment
+          } finally {
+            setIsUploading(false);
           }
         } else {
           console.log('Sync disabled or missing props:', {
@@ -166,23 +150,6 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             documentType,
             documentId
           });
-          console.log('Settings object:', settings);
-          
-          // Show detailed debug info on mobile
-          const debugInfo = `Sync: ${enableSync} (${typeof enableSync})
-Workspace: ${workspaceId} (${typeof workspaceId})
-Type: ${documentType} (${typeof documentType})
-ID: ${documentId} (${typeof documentId})
-
-Condition Check:
-- enableSync: ${enableSync} = ${!!enableSync}
-- workspaceId: ${workspaceId} = ${!!workspaceId}
-- documentType: ${documentType} = ${!!documentType}
-- documentId: ${documentId} = ${!!documentId}
-
-All conditions: ${!!(enableSync && workspaceId && documentType && documentId)}`;
-          
-          Alert.alert('Debug Info', debugInfo, [{ text: 'OK' }]);
         }
 
         onAttachmentsChange([...attachments, newAttachment]);
@@ -370,25 +337,34 @@ All conditions: ${!!(enableSync && workspaceId && documentType && documentId)}`;
       {!readOnly && (
         <Pressable
           onPress={pickDocument}
-          disabled={isPicking || attachments.length >= maxAttachments}
+          disabled={isPicking || isUploading || attachments.length >= maxAttachments}
           className={`flex-row items-center justify-center py-3 px-4 rounded-lg border-2 border-dashed ${
             attachments.length >= maxAttachments 
               ? 'border-gray-200 bg-gray-50' 
               : 'border-blue-300 bg-blue-50'
           }`}
         >
-          <Ionicons 
-            name={isPicking ? 'hourglass-outline' : 'add-outline'} 
-            size={20} 
-            color={attachments.length >= maxAttachments ? '#9CA3AF' : '#3B82F6'} 
-          />
-          <Text className={`ml-2 font-medium ${
-            attachments.length >= maxAttachments ? 'text-gray-400' : 'text-blue-600'
-          }`}>
-            {isPicking ? 'Picking Document...' : 
-             attachments.length >= maxAttachments ? 'Max Attachments Reached' : 
-             'Add Attachment'}
-          </Text>
+          {isUploading ? (
+            <>
+              <ActivityIndicator size="small" color="#3B82F6" />
+              <Text className="ml-2 font-medium text-blue-600">Uploading...</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons 
+                name={isPicking ? 'hourglass-outline' : 'add-outline'} 
+                size={20} 
+                color={attachments.length >= maxAttachments ? '#9CA3AF' : '#3B82F6'} 
+              />
+              <Text className={`ml-2 font-medium ${
+                attachments.length >= maxAttachments ? 'text-gray-400' : 'text-blue-600'
+              }`}>
+                {isPicking ? 'Picking Document...' : 
+                 attachments.length >= maxAttachments ? 'Max Attachments Reached' : 
+                 'Add Attachment'}
+              </Text>
+            </>
+          )}
         </Pressable>
       )}
 
