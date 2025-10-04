@@ -60,7 +60,7 @@ const DashboardScreen = () => {
     color: string;
     subtitle?: string;
   }) => (
-    <View className="bg-white rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-lg border border-gray-200">
+    <View className="bg-white rounded-2xl p-4 mb-3 shadow-lg border border-gray-200">
       <View className="items-center">
         <View className={`w-12 h-12 rounded-full items-center justify-center ${color} mb-3`}>
           <Ionicons name={icon} size={24} color="white" />
@@ -192,34 +192,42 @@ const DashboardScreen = () => {
         <View className="mb-6">
           <Text className="text-xl font-bold text-gray-900 mb-4">Overview</Text>
           <View className="flex-row flex-wrap -mx-1">
-            <StatCard
-              title="Active Jobs"
-              value={activeJobs}
-              icon="play-circle"
-              color="bg-orange-500"
-              subtitle={`${completedJobs} completed`}
-            />
-            <StatCard
-              title="Total Invoices"
-              value={totalInvoices}
-              icon="receipt"
-              color="bg-blue-500"
-              subtitle={`${paidInvoices} paid`}
-            />
-            <StatCard
-              title="Pending Quotes"
-              value={pendingQuotes}
-              icon="document-text"
-              color="bg-yellow-500"
-              subtitle={`${approvedQuotes} approved`}
-            />
-            <StatCard
-              title="Customers"
-              value={customers.length}
-              icon="people"
-              color="bg-purple-500"
-              subtitle={`${parts.length} parts`}
-            />
+            <View className="w-1/2 px-1">
+              <StatCard
+                title="Active Jobs"
+                value={activeJobs}
+                icon="play-circle"
+                color="bg-orange-500"
+                subtitle={`${completedJobs} completed`}
+              />
+            </View>
+            <View className="w-1/2 px-1">
+              <StatCard
+                title="Total Invoices"
+                value={totalInvoices}
+                icon="receipt"
+                color="bg-blue-500"
+                subtitle={`${paidInvoices} paid`}
+              />
+            </View>
+            <View className="w-1/2 px-1">
+              <StatCard
+                title="Pending Quotes"
+                value={pendingQuotes}
+                icon="document-text"
+                color="bg-yellow-500"
+                subtitle={`${approvedQuotes} approved`}
+              />
+            </View>
+            <View className="w-1/2 px-1">
+              <StatCard
+                title="Customers"
+                value={customers.length}
+                icon="people"
+                color="bg-purple-500"
+                subtitle={`${parts.length} parts`}
+              />
+            </View>
           </View>
         </View>
 
