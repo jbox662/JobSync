@@ -123,7 +123,7 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
               [{ text: 'OK' }]
             );
           
-          try {
+            try {
             const uploadResult = await attachmentSyncService.uploadAttachment(
               newAttachment,
               workspaceId,
@@ -155,11 +155,11 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
                   [{ text: 'OK' }]
                 );
               }
-          } catch (error) {
-            console.error('Upload error:', error);
-            // Continue with local-only attachment
-          }
-        } else {
+            } catch (error) {
+              console.error('Upload error:', error);
+              // Continue with local-only attachment
+            }
+          } else {
           console.log('Sync disabled or missing props:', {
             enableSync,
             workspaceId,
