@@ -60,25 +60,27 @@ const DashboardScreen = () => {
     color: string;
     subtitle?: string;
   }) => (
-    <View className="bg-white rounded-2xl p-4 mb-3 shadow-lg border border-gray-200">
-      <View className="items-center">
-        <View className={`w-12 h-12 rounded-full items-center justify-center ${color} mb-3`}>
-          <Ionicons name={icon} size={24} color="white" />
-        </View>
-        <Text className="text-gray-600 text-xs font-semibold text-center mb-1" numberOfLines={1}>{title}</Text>
-        <Text 
-          className="text-2xl font-bold text-gray-900 text-center mb-1" 
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.7}
-        >
-          {value}
-        </Text>
-        {subtitle && (
-          <Text className="text-gray-500 text-xs text-center font-medium" numberOfLines={1}>
-            {subtitle}
+    <View className="bg-white rounded-xl p-3 mb-3 shadow-sm border border-gray-100">
+      <View className="flex-row items-center justify-between">
+        <View className="flex-1 pr-2">
+          <Text className="text-gray-600 text-xs font-medium" numberOfLines={1}>{title}</Text>
+          <Text 
+            className="text-lg font-bold text-gray-900 mt-1" 
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {value}
           </Text>
-        )}
+          {subtitle && (
+            <Text className="text-gray-500 text-xs mt-1" numberOfLines={1}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+        <View className={`w-10 h-10 rounded-full items-center justify-center ${color} flex-shrink-0`}>
+          <Ionicons name={icon} size={20} color="white" />
+        </View>
       </View>
     </View>
   );
@@ -194,11 +196,26 @@ const DashboardScreen = () => {
           <View className="flex-row flex-wrap -mx-1">
             <View className="w-1/2 px-1">
               <StatCard
+                title="Total Jobs"
+                value={totalJobs}
+                icon="briefcase"
+                color="bg-blue-500"
+              />
+            </View>
+            <View className="w-1/2 px-1">
+              <StatCard
                 title="Active Jobs"
                 value={activeJobs}
                 icon="play-circle"
                 color="bg-orange-500"
-                subtitle={`${completedJobs} completed`}
+              />
+            </View>
+            <View className="w-1/2 px-1">
+              <StatCard
+                title="Total Quotes"
+                value={totalQuotes}
+                icon="document-text"
+                color="bg-yellow-500"
               />
             </View>
             <View className="w-1/2 px-1">
@@ -207,25 +224,38 @@ const DashboardScreen = () => {
                 value={totalInvoices}
                 icon="receipt"
                 color="bg-blue-500"
-                subtitle={`${paidInvoices} paid`}
               />
             </View>
             <View className="w-1/2 px-1">
               <StatCard
-                title="Pending Quotes"
-                value={pendingQuotes}
-                icon="document-text"
-                color="bg-yellow-500"
-                subtitle={`${approvedQuotes} approved`}
+                title="Paid Invoices"
+                value={paidInvoices}
+                icon="checkmark-circle"
+                color="bg-green-500"
               />
             </View>
             <View className="w-1/2 px-1">
               <StatCard
-                title="Customers"
-                value={customers.length}
-                icon="people"
-                color="bg-purple-500"
-                subtitle={`${parts.length} parts`}
+                title="Pending Invoices"
+                value={sentInvoices + overdueInvoices}
+                icon="time-outline"
+                color="bg-orange-500"
+              />
+            </View>
+            <View className="w-1/2 px-1">
+              <StatCard
+                title="Revenue"
+                value={formatCurrency(totalRevenue)}
+                icon="trending-up"
+                color="bg-green-500"
+              />
+            </View>
+            <View className="w-1/2 px-1">
+              <StatCard
+                title="Outstanding"
+                value={formatCurrency(outstandingAmount)}
+                icon="alert-circle"
+                color="bg-red-500"
               />
             </View>
           </View>
