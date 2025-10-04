@@ -39,8 +39,8 @@ export class AttachmentSyncService {
         documentId
       });
 
-      // Ensure bucket exists
-      await this.ensureBucketExists();
+      // Skip bucket creation - assume it exists and is properly configured
+      // await this.ensureBucketExists();
 
       // Create unique file path
       const fileExtension = attachment.name.split('.').pop() || '';
@@ -65,7 +65,12 @@ export class AttachmentSyncService {
 
       if (error) {
         console.error('AttachmentSyncService: Upload error:', error);
-        return { success: false, error: error.message };
+        console.error('AttachmentSyncService: Error details:', {
+          message: error.message,
+          statusCode: error.statusCode,
+          error: error.error
+        });
+        return { success: false, error: `${error.message} (${error.statusCode})` };
       }
 
       console.log('AttachmentSyncService: Upload successful:', data);
