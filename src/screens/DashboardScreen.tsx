@@ -60,12 +60,12 @@ const DashboardScreen = () => {
     color: string;
     subtitle?: string;
   }) => (
-    <View className="bg-white rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-sm border border-gray-100">
+    <View className="bg-white rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-sm border border-gray-200">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-2">
-          <Text className="text-gray-600 text-xs font-medium" numberOfLines={1}>{title}</Text>
+          <Text className="text-gray-700 text-xs font-semibold" numberOfLines={1}>{title}</Text>
           <Text 
-            className="text-xl font-bold text-gray-900 mt-1" 
+            className="text-2xl font-bold text-gray-900 mt-1" 
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.7}
@@ -73,7 +73,7 @@ const DashboardScreen = () => {
             {value}
           </Text>
           {subtitle && (
-            <Text className="text-gray-500 text-xs mt-1" numberOfLines={1}>
+            <Text className="text-gray-600 text-xs mt-1 font-medium" numberOfLines={1}>
               {subtitle}
             </Text>
           )}
@@ -125,10 +125,10 @@ const DashboardScreen = () => {
       className={`${color} rounded-2xl p-4 mx-1 mb-3 flex-1 min-w-[45%] shadow-sm`}
     >
       <View className="items-center">
-        <View className="w-12 h-12 bg-white/20 rounded-full items-center justify-center mb-2">
+        <View className="w-12 h-12 bg-white/30 rounded-full items-center justify-center mb-2">
           <Ionicons name={icon} size={24} color="white" />
         </View>
-        <Text className="text-white font-semibold text-sm text-center">{title}</Text>
+        <Text className="text-white font-bold text-sm text-center">{title}</Text>
       </View>
     </Pressable>
   );
@@ -199,7 +199,7 @@ const DashboardScreen = () => {
         </View>
 
         {/* Revenue Overview */}
-        <View className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 mb-6 shadow-lg">
+        <View className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-6 mb-6 shadow-lg">
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
               <Text className="text-green-100 text-sm font-medium mb-1">Total Revenue</Text>
