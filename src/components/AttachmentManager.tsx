@@ -124,14 +124,14 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
             );
           
             try {
-            const uploadResult = await attachmentSyncService.uploadAttachment(
-              newAttachment,
-              workspaceId,
-              documentType,
-              documentId
-            );
+              const uploadResult = await attachmentSyncService.uploadAttachment(
+                newAttachment,
+                workspaceId,
+                documentType,
+                documentId
+              );
 
-            console.log('Upload result:', uploadResult);
+              console.log('Upload result:', uploadResult);
 
               if (uploadResult.success && uploadResult.supabaseUrl) {
                 newAttachment.supabaseUrl = uploadResult.supabaseUrl;
