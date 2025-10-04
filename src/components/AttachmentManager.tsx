@@ -168,12 +168,21 @@ const AttachmentManager: React.FC<AttachmentManagerProps> = ({
           });
           console.log('Settings object:', settings);
           
-          // Show debug info on mobile
-          Alert.alert(
-            'Debug Info',
-            `Sync: ${enableSync}\nWorkspace: ${workspaceId}\nType: ${documentType}\nID: ${documentId}\nSettings: ${JSON.stringify(settings, null, 2)}`,
-            [{ text: 'OK' }]
-          );
+          // Show detailed debug info on mobile
+          const debugInfo = `Sync: ${enableSync} (${typeof enableSync})
+Workspace: ${workspaceId} (${typeof workspaceId})
+Type: ${documentType} (${typeof documentType})
+ID: ${documentId} (${typeof documentId})
+
+Condition Check:
+- enableSync: ${enableSync} = ${!!enableSync}
+- workspaceId: ${workspaceId} = ${!!workspaceId}
+- documentType: ${documentType} = ${!!documentType}
+- documentId: ${documentId} = ${!!documentId}
+
+All conditions: ${!!(enableSync && workspaceId && documentType && documentId)}`;
+          
+          Alert.alert('Debug Info', debugInfo, [{ text: 'OK' }]);
         }
 
         onAttachmentsChange([...attachments, newAttachment]);
