@@ -26,7 +26,6 @@
         "NSContactsUsageDescription": "This app needs access to contacts to help you network and share job opportunities.",
         "NSRemindersUsageDescription": "This app needs access to reminders to help you track job application deadlines and interviews.",
         "NSCalendarsUsageDescription": "This app needs access to calendar to schedule interviews and job-related events.",
-        "NSUserTrackingUsageDescription": "This app uses tracking to provide personalized job recommendations and improve your experience.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSExceptionDomains": {
@@ -36,15 +35,7 @@
               "NSIncludesSubdomains": true
             }
           }
-        },
-        "UIBackgroundModes": [
-          "background-fetch",
-          "background-processing"
-        ],
-        "BGTaskSchedulerPermittedIdentifiers": [
-          "com.vibecode.jobsync.background-sync",
-          "com.vibecode.jobsync.notification-check"
-        ]
+        }
       },
       "associatedDomains": [
         "applinks:vibecodeapp.com"
@@ -52,10 +43,6 @@
       "entitlements": {
         "com.apple.developer.associated-domains": [
           "applinks:vibecodeapp.com"
-        ],
-        "com.apple.developer.background-modes": [
-          "background-fetch",
-          "background-processing"
         ]
       }
     },
