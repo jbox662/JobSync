@@ -27,7 +27,10 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW1kc3Z4eWxjbmJlYWN3Z2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MTkyMjMsImV4cCI6MjA2OTQ5NTIyM30.BMRmivHeekCWKkaaXW2LN7cBfLYFezerEGSj9w2fHbI"
       },
       "ios": {
-        "distribution": "store"
+        "distribution": "store",
+        "autoIncrement": "buildNumber",
+        "buildConfiguration": "Release",
+        "scheme": "vibecode"
       },
       "android": {
         "distribution": "store"
@@ -35,6 +38,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "6753088412",
+        "ascAppId": "6753088412",
+        "appleTeamId": "YOUR_TEAM_ID"
+      }
+    }
   }
 }

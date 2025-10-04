@@ -18,7 +18,45 @@
       "bundleIdentifier": "com.vibecode.jobsync.yos9j3",
       "buildNumber": "18",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app needs access to camera to take photos for job applications and documents.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select images for job applications and documents.",
+        "NSMicrophoneUsageDescription": "This app may need access to microphone for video recordings or voice notes.",
+        "NSLocationWhenInUseUsageDescription": "This app needs location access to help you find nearby job opportunities.",
+        "NSContactsUsageDescription": "This app needs access to contacts to help you network and share job opportunities.",
+        "NSRemindersUsageDescription": "This app needs access to reminders to help you track job application deadlines and interviews.",
+        "NSCalendarsUsageDescription": "This app needs access to calendar to schedule interviews and job-related events.",
+        "NSUserTrackingUsageDescription": "This app uses tracking to provide personalized job recommendations and improve your experience.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "vibecodeapp.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSExceptionMinimumTLSVersion": "1.0",
+              "NSIncludesSubdomains": true
+            }
+          }
+        },
+        "UIBackgroundModes": [
+          "background-fetch",
+          "background-processing"
+        ],
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "com.vibecode.jobsync.background-sync",
+          "com.vibecode.jobsync.notification-check"
+        ]
+      },
+      "associatedDomains": [
+        "applinks:vibecodeapp.com"
+      ],
+      "entitlements": {
+        "com.apple.developer.associated-domains": [
+          "applinks:vibecodeapp.com"
+        ],
+        "com.apple.developer.background-modes": [
+          "background-fetch",
+          "background-processing"
+        ]
       }
     },
     "android": {
