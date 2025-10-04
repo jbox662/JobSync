@@ -47,6 +47,11 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "extra": {}
+    "extra": {
+      "eas": {
+        "projectId": "1a20e6d8-8967-49b2-a3ba-ea0fd65e26d6"
+      }
+    },
+    "owner": "johnnybox"
   }
 }
