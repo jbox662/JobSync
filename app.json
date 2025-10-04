@@ -51,9 +51,8 @@
     },
     "extra": {
       "eas": {
-        "projectId": "1a20e6d8-8967-49b2-a3ba-ea0fd65e26d6"
+        "projectId": ""
       }
-    },
-    "owner": "johnnybox"
+    }
   }
 }
