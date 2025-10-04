@@ -60,27 +60,25 @@ const DashboardScreen = () => {
     color: string;
     subtitle?: string;
   }) => (
-    <View className={`${color} rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-lg`}>
-      <View className="flex-row items-center justify-between">
-        <View className="flex-1 pr-2">
-          <Text className="text-white text-xs font-bold opacity-90" numberOfLines={1}>{title}</Text>
-          <Text 
-            className="text-2xl font-black text-white mt-1" 
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
-            {value}
+    <View className="bg-white rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-lg border border-gray-200">
+      <View className="items-center">
+        <View className={`w-12 h-12 rounded-full items-center justify-center ${color} mb-3`}>
+          <Ionicons name={icon} size={24} color="white" />
+        </View>
+        <Text className="text-gray-600 text-xs font-semibold text-center mb-1" numberOfLines={1}>{title}</Text>
+        <Text 
+          className="text-2xl font-bold text-gray-900 text-center mb-1" 
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+        >
+          {value}
+        </Text>
+        {subtitle && (
+          <Text className="text-gray-500 text-xs text-center font-medium" numberOfLines={1}>
+            {subtitle}
           </Text>
-          {subtitle && (
-            <Text className="text-white text-xs mt-1 font-bold opacity-80" numberOfLines={1}>
-              {subtitle}
-            </Text>
-          )}
-        </View>
-        <View className="w-10 h-10 bg-white/30 rounded-full items-center justify-center flex-shrink-0">
-          <Ionicons name={icon} size={20} color="white" />
-        </View>
+        )}
       </View>
     </View>
   );
