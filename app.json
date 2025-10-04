@@ -16,28 +16,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vibecode.jobsync.yos9j3",
-      "buildNumber": "9",
-      "infoPlist": {
-        "NSCalendarsUsageDescription": "JobSync accesses your calendar to help you schedule and manage events",
-        "NSContactsUsageDescription": "JobSync accesses your contacts to help you connect and share with friends",
-        "NSCameraUsageDescription": "JobSync uses the camera to capture photos and videos for your content",
-        "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": [
-          "file",
-          "content",
-          "public.file-url",
-          "public.data",
-          "public.item",
-          "public.plain-text",
-          "public.rtf",
-          "public.html",
-          "public.xml",
-          "com.adobe.pdf",
-          "com.microsoft.word.doc",
-          "com.microsoft.excel.xls",
-          "com.microsoft.powerpoint.ppt"
-        ]
-      }
+      "buildNumber": "18",
+      "infoPlist": {}
     },
     "android": {
       "edgeToEdgeEnabled": true,
@@ -67,10 +47,6 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "extra": {
-      "eas": {
-        "projectId": "1a20e6d8-8967-49b2-a3ba-ea0fd65e26d6"
-      }
-    }
+    "extra": {}
   }
 }
