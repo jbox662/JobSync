@@ -60,12 +60,12 @@ const DashboardScreen = () => {
     color: string;
     subtitle?: string;
   }) => (
-    <View className="bg-white rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-lg border-2 border-gray-300">
+    <View className={`${color} rounded-2xl p-4 flex-1 mx-1 mb-3 shadow-lg`}>
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-2">
-          <Text className="text-gray-800 text-sm font-bold" numberOfLines={1}>{title}</Text>
+          <Text className="text-white text-xs font-bold opacity-90" numberOfLines={1}>{title}</Text>
           <Text 
-            className="text-3xl font-black text-black mt-1" 
+            className="text-2xl font-black text-white mt-1" 
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.7}
@@ -73,13 +73,13 @@ const DashboardScreen = () => {
             {value}
           </Text>
           {subtitle && (
-            <Text className="text-gray-700 text-xs mt-1 font-bold" numberOfLines={1}>
+            <Text className="text-white text-xs mt-1 font-bold opacity-80" numberOfLines={1}>
               {subtitle}
             </Text>
           )}
         </View>
-        <View className={`w-12 h-12 rounded-full items-center justify-center ${color} flex-shrink-0 shadow-md`}>
-          <Ionicons name={icon} size={24} color="white" />
+        <View className="w-10 h-10 bg-white/30 rounded-full items-center justify-center flex-shrink-0">
+          <Ionicons name={icon} size={20} color="white" />
         </View>
       </View>
     </View>
@@ -170,9 +170,14 @@ const DashboardScreen = () => {
         {/* Revenue Overview */}
         <View className="bg-gray-900 rounded-2xl p-6 mb-6 shadow-lg">
           <View className="flex-row items-center justify-between">
-            <View className="flex-1">
+            <View className="flex-1 pr-4">
               <Text className="text-gray-300 text-sm font-medium mb-1">Total Revenue</Text>
-              <Text className="text-white text-3xl font-bold mb-2">
+              <Text 
+                className="text-white text-2xl font-bold mb-2" 
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.6}
+              >
                 {formatCurrency(totalRevenue)}
               </Text>
               <Text className="text-gray-300 text-sm">
