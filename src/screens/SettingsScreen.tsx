@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Switch, ActivityIndicator, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -40,6 +40,27 @@ const SettingsScreen = () => {
   const getCurrentUserId = () => {
     return authenticatedUser?.id || currentUserId || 'none';
   };
+
+  // Memoized handlers to prevent re-renders
+  const handleBusinessNameChange = useCallback((text: string) => {
+    setBusinessName(text);
+  }, []);
+
+  const handleBusinessEmailChange = useCallback((text: string) => {
+    setBusinessEmail(text);
+  }, []);
+
+  const handleBusinessPhoneChange = useCallback((text: string) => {
+    setBusinessPhone(text);
+  }, []);
+
+  const handleBusinessAddressChange = useCallback((text: string) => {
+    setBusinessAddress(text);
+  }, []);
+
+  const handleTaxRateChange = useCallback((text: string) => {
+    setDefaultTaxRate(text);
+  }, []);
   
   const handleFullSync = async () => {
     setShowSyncOptions(false);
@@ -154,6 +175,10 @@ const SettingsScreen = () => {
         textAlignVertical={multiline ? "top" : "center"}
         returnKeyType="next"
         blurOnSubmit={false}
+        onFocus={() => console.log('TextInput focused')}
+        onBlur={() => console.log('TextInput blurred')}
+        onSelectionChange={() => console.log('TextInput selection changed')}
+        onTextInput={() => console.log('TextInput text changed')}
       />
     </View>
   );
@@ -191,13 +216,13 @@ const SettingsScreen = () => {
   return (
     <View style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
       <ScrollView 
-        style={{ flex: 1, paddingHorizontal: 16 }}
-        contentContainerStyle={{ paddingTop: 20, paddingBottom: insets.bottom + 20 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: insets.bottom + 20 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="none"
-        automaticallyAdjustKeyboardInsets={true}
-        automaticallyAdjustContentInsets={false}
+        scrollEventThrottle={16}
+        removeClippedSubviews={false}
       >
         {/* Header */}
         <View className="mb-6">
@@ -218,7 +243,7 @@ const SettingsScreen = () => {
             <InputField
               label="Default Tax Rate (%)"
               value={defaultTaxRate}
-              onChangeText={setDefaultTaxRate}
+              onChangeText={handleTaxRateChange}
               placeholder="8.25"
               keyboardType="decimal-pad"
             />
@@ -230,14 +255,14 @@ const SettingsScreen = () => {
           <InputField
             label="Business Name"
             value={businessName}
-            onChangeText={setBusinessName}
+            onChangeText={handleBusinessNameChange}
             placeholder="Your Business Name"
           />
           
           <InputField
             label="Business Email"
             value={businessEmail}
-            onChangeText={setBusinessEmail}
+            onChangeText={handleBusinessEmailChange}
             placeholder="business@example.com"
             keyboardType="email-address"
           />
@@ -245,7 +270,7 @@ const SettingsScreen = () => {
           <InputField
             label="Business Phone"
             value={businessPhone}
-            onChangeText={setBusinessPhone}
+            onChangeText={handleBusinessPhoneChange}
             placeholder="(555) 123-4567"
             keyboardType="phone-pad"
           />
@@ -253,7 +278,7 @@ const SettingsScreen = () => {
           <InputField
             label="Business Address"
             value={businessAddress}
-            onChangeText={setBusinessAddress}
+            onChangeText={handleBusinessAddressChange}
             placeholder="123 Main Street, City, State 12345"
             multiline={true}
             numberOfLines={3}
