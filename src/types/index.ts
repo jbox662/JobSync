@@ -17,6 +17,7 @@ export interface Part {
   price: number; // Alias for unitPrice for compatibility
   stock: number;
   sku?: string;
+  brand?: string;
   category?: string;
   createdAt: string;
   updatedAt: string;

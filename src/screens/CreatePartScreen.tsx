@@ -7,28 +7,21 @@ const CreatePartScreen = () => {
   const navigation = useNavigation();
   const { addPart } = useJobStore();
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [brand, setBrand] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
-  const [stock, setStock] = useState('');
-  const [sku, setSku] = useState('');
   const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
 
   const handleSave = () => {
-    if (!name.trim() || !unitPrice.trim() || !stock.trim()) {
+    if (!name.trim() || !unitPrice.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
     const price = parseFloat(unitPrice);
-    const stockCount = parseInt(stock);
 
     if (isNaN(price) || price < 0) {
       Alert.alert('Error', 'Please enter a valid unit price');
-      return;
-    }
-
-    if (isNaN(stockCount) || stockCount < 0) {
-      Alert.alert('Error', 'Please enter a valid stock quantity');
       return;
     }
 
@@ -36,8 +29,9 @@ const CreatePartScreen = () => {
       name: name.trim(),
       description: description.trim() || undefined,
       unitPrice: price,
-      stock: stockCount,
-      sku: sku.trim() || undefined,
+      stock: 0, // Default stock to 0
+      sku: undefined, // No SKU field
+      brand: brand.trim() || undefined,
       category: category.trim() || undefined,
     });
 
@@ -62,35 +56,23 @@ const CreatePartScreen = () => {
         </View>
 
         <View className="mb-4">
+          <Text className="text-gray-700 font-medium mb-2">Brand</Text>
+          <TextInput
+            value={brand}
+            onChangeText={setBrand}
+            placeholder="Enter brand name"
+            className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+
+        <View className="mb-4">
           <Text className="text-gray-700 font-medium mb-2">Unit Price *</Text>
           <TextInput
             value={unitPrice}
             onChangeText={setUnitPrice}
             placeholder="0.00"
             keyboardType="decimal-pad"
-            className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
-            placeholderTextColor="#9CA3AF"
-          />
-        </View>
-
-        <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Stock Quantity *</Text>
-          <TextInput
-            value={stock}
-            onChangeText={setStock}
-            placeholder="0"
-            keyboardType="number-pad"
-            className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
-            placeholderTextColor="#9CA3AF"
-          />
-        </View>
-
-        <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">SKU</Text>
-          <TextInput
-            value={sku}
-            onChangeText={setSku}
-            placeholder="Enter SKU"
             className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
             placeholderTextColor="#9CA3AF"
           />
