@@ -143,6 +143,10 @@ const SettingsScreen = () => {
         className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
         placeholderTextColor="#9CA3AF"
         textAlignVertical={multiline ? "top" : "center"}
+        returnKeyType="done"
+        blurOnSubmit={false}
+        autoCorrect={false}
+        autoCapitalize="none"
       />
     </View>
   );
@@ -178,18 +182,19 @@ const SettingsScreen = () => {
   );
 
   return (
-    <KeyboardAvoidingView 
-      className="flex-1 bg-gray-50"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      <ScrollView 
-        className="flex-1 px-4" 
-        contentContainerStyle={{ paddingTop: 20, paddingBottom: insets.bottom + 20 }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+    <View className="flex-1 bg-gray-50">
+      <KeyboardAvoidingView 
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
+        <ScrollView 
+          className="flex-1 px-4" 
+          contentContainerStyle={{ paddingTop: 20, paddingBottom: insets.bottom + 20 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+        >
         {/* Header */}
         <View className="mb-6">
           <Text className="text-2xl font-bold text-gray-900 mb-2">Settings</Text>
@@ -457,7 +462,8 @@ const SettingsScreen = () => {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
