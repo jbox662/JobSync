@@ -35,6 +35,7 @@ import LaborDetailScreen from '../screens/LaborDetailScreen';
 import EditJobScreen from '../screens/EditJobScreen';
 import CreatePartScreen from '../screens/CreatePartScreen';
 import CreateLaborScreen from '../screens/CreateLaborScreen';
+import EditLaborScreen from '../screens/EditLaborScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import DebugScreen from '../screens/DebugScreen';
 
@@ -446,6 +447,11 @@ export const AppNavigator = () => {
         name="CreateLabor" 
         component={CreateLaborScreen}
         options={{ title: 'New Labor Item', presentation: 'modal' }}
+      />
+      <Stack.Screen 
+        name="EditLabor" 
+        component={EditLaborScreen}
+        options={{ title: 'Edit Labor Item', presentation: 'modal' }}
       />
       <Stack.Screen 
         name="ManageTeam" 
