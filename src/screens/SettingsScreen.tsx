@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Switch, ActivityIndicator, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Switch, ActivityIndicator, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -178,11 +178,17 @@ const SettingsScreen = () => {
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <KeyboardAvoidingView 
+      className="flex-1 bg-gray-50"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
       <ScrollView 
         className="flex-1 px-4" 
         contentContainerStyle={{ paddingTop: 20, paddingBottom: insets.bottom + 20 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {/* Header */}
         <View className="mb-6">
@@ -451,7 +457,7 @@ const SettingsScreen = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
