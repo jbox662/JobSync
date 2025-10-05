@@ -35,6 +35,7 @@ import { AppState, View, Text, ActivityIndicator } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useJobStore } from "./src/state/store";
 import { authService } from "./src/services/auth";
+import { appSyncService } from "./src/services/appSync";
 
 export default function App() {
   const syncNow = useJobStore((s) => s.syncNow);
@@ -160,25 +161,14 @@ export default function App() {
     }
   }, [syncError, clearAuthentication]);
 
+  // Initialize automatic sync service
   useEffect(() => {
-    const sub = AppState.addEventListener("change", (st) => {
-      if (st === "active") {
-        // Only sync if authenticated and workspace is linked
-        if (isAuthenticated && workspaceId) {
-          // Immediate sync when app becomes active (e.g., after refresh)
-          syncNow();
-        }
-      }
-    });
-    const int = setInterval(() => {
-      // Only sync if authenticated and workspace is linked
-      if (isAuthenticated && workspaceId) {
-        syncNow();
-      }
-    }, 10000); // Sync every 10 seconds for better responsiveness
+    if (isAuthenticated && workspaceId) {
+      appSyncService.initialize();
+    }
+    
     return () => {
-      sub.remove();
-      clearInterval(int);
+      appSyncService.cleanup();
     };
   }, [isAuthenticated, workspaceId]);
 

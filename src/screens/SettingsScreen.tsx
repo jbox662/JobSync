@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { authService } from '../services/auth';
+import { appSyncService } from '../services/appSync';
 
 const SettingsScreen = () => {
   const insets = useSafeAreaInsets();
@@ -40,58 +41,19 @@ const SettingsScreen = () => {
     return authenticatedUser?.id || currentUserId || 'none';
   };
   
-  const handleSyncNow = async () => {
-    setLastSyncResult(null);
-    try {
-      await syncNow();
-      setLastSyncResult('Sync completed successfully');
-    } catch (error) {
-      setLastSyncResult(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
-
-  const handleSyncOptions = () => {
-    setShowSyncOptions(true);
-  };
-
-  const handleForceSync = async () => {
+  const handleFullSync = async () => {
     setShowSyncOptions(false);
     setLastSyncResult(null);
     try {
-      // Force full sync by clearing lastSyncByUser
-      const state = useJobStore.getState();
-      state.lastSyncByUser = { 
-        ...state.lastSyncByUser, 
-        [getCurrentUserId()]: null 
-      };
-      await syncNow();
+      await appSyncService.manualFullSync();
       setLastSyncResult('Full sync completed successfully');
     } catch (error) {
       setLastSyncResult(`Full sync failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
-  const handleSyncDebug = () => {
-    setShowSyncOptions(false);
-    const pendingCount = outboxByUser?.[getCurrentUserId()]?.length || 0;
-    const lastSync = lastSyncByUser?.[getCurrentUserId()];
-    
-    Alert.alert(
-      'Sync Debug Info',
-      `Pending Changes: ${pendingCount}\n` +
-      `Last Sync: ${lastSync ? new Date(lastSync).toLocaleString() : 'Never'}\n` +
-      `Workspace: ${workspaceName || 'Unknown'}\n` +
-      `User ID: ${getCurrentUserId()}\n` +
-      `Is Syncing: ${isSyncing}\n` +
-      `Sync Error: ${syncError || 'None'}`,
-      [
-        { text: 'OK' },
-        { 
-          text: 'Force Sync', 
-          onPress: handleForceSync 
-        }
-      ]
-    );
+  const handleSyncOptions = () => {
+    setShowSyncOptions(true);
   };
 
   const handleSave = () => {
@@ -458,18 +420,18 @@ const SettingsScreen = () => {
             </View>
             
             <Text className="text-gray-600 text-sm mb-4">
-              Choose how you want to sync your data with {workspaceName || 'your workspace'}.
+              Sync all your data with {workspaceName || 'your workspace'}.
             </Text>
 
             <Pressable
-              onPress={handleSyncNow}
+              onPress={handleFullSync}
               disabled={isSyncing}
-              className={`flex-row items-center p-3 rounded-lg mb-3 ${
+              className={`flex-row items-center p-3 rounded-lg ${
                 isSyncing ? 'bg-gray-100' : 'bg-blue-50 border border-blue-200'
               }`}
             >
               <Ionicons 
-                name={isSyncing ? "hourglass-outline" : "sync-outline"} 
+                name={isSyncing ? "hourglass-outline" : "refresh-outline"} 
                 size={20} 
                 color={isSyncing ? "#6B7280" : "#3B82F6"} 
               />
@@ -477,64 +439,12 @@ const SettingsScreen = () => {
                 <Text className={`font-medium ${
                   isSyncing ? 'text-gray-500' : 'text-blue-800'
                 }`}>
-                  {isSyncing ? 'Syncing...' : 'Sync Now'}
+                  {isSyncing ? 'Syncing...' : 'Full Sync'}
                 </Text>
                 <Text className={`text-sm ${
                   isSyncing ? 'text-gray-400' : 'text-blue-600'
                 }`}>
-                  {isSyncing ? 'Please wait...' : 'Sync pending changes only'}
-                </Text>
-              </View>
-            </Pressable>
-
-            <Pressable
-              onPress={handleForceSync}
-              disabled={isSyncing}
-              className={`flex-row items-center p-3 rounded-lg mb-3 ${
-                isSyncing ? 'bg-gray-100' : 'bg-orange-50 border border-orange-200'
-              }`}
-            >
-              <Ionicons 
-                name={isSyncing ? "hourglass-outline" : "refresh-outline"} 
-                size={20} 
-                color={isSyncing ? "#6B7280" : "#EA580C"} 
-              />
-              <View className="ml-3 flex-1">
-                <Text className={`font-medium ${
-                  isSyncing ? 'text-gray-500' : 'text-orange-800'
-                }`}>
-                  {isSyncing ? 'Syncing...' : 'Force Full Sync'}
-                </Text>
-                <Text className={`text-sm ${
-                  isSyncing ? 'text-gray-400' : 'text-orange-600'
-                }`}>
                   {isSyncing ? 'Please wait...' : 'Download all data from server'}
-                </Text>
-              </View>
-            </Pressable>
-
-            <Pressable
-              onPress={handleSyncDebug}
-              disabled={isSyncing}
-              className={`flex-row items-center p-3 rounded-lg ${
-                isSyncing ? 'bg-gray-100' : 'bg-gray-50 border border-gray-200'
-              }`}
-            >
-              <Ionicons 
-                name={isSyncing ? "hourglass-outline" : "information-circle-outline"} 
-                size={20} 
-                color={isSyncing ? "#6B7280" : "#6B7280"} 
-              />
-              <View className="ml-3 flex-1">
-                <Text className={`font-medium ${
-                  isSyncing ? 'text-gray-500' : 'text-gray-800'
-                }`}>
-                  {isSyncing ? 'Syncing...' : 'Sync Debug Info'}
-                </Text>
-                <Text className={`text-sm ${
-                  isSyncing ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  {isSyncing ? 'Please wait...' : 'View detailed sync information'}
                 </Text>
               </View>
             </Pressable>
