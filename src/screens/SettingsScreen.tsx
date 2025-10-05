@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Switch, ActivityIndicator, Alert, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { authService } from '../services/auth';
 
 const SettingsScreen = () => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const { 
     settings, 
     updateSettings, 
@@ -392,6 +394,23 @@ const SettingsScreen = () => {
             </View>
           </Pressable>
           
+        </SettingCard>
+
+        {/* Data Management */}
+        <SettingCard title="Data Management">
+          <Pressable
+            onPress={() => navigation.navigate('ImportExport' as never)}
+            className="flex-row items-center p-4 bg-white rounded-lg border border-gray-200 mb-3"
+          >
+            <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center mr-3">
+              <Ionicons name="download-outline" size={20} color="#10B981" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-900 font-medium text-base">Import & Export</Text>
+              <Text className="text-gray-600 text-sm">Backup and restore your data</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          </Pressable>
         </SettingCard>
 
         {/* App Information */}

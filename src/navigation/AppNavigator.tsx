@@ -36,6 +36,7 @@ import EditJobScreen from '../screens/EditJobScreen';
 import CreatePartScreen from '../screens/CreatePartScreen';
 import CreateLaborScreen from '../screens/CreateLaborScreen';
 import EditLaborScreen from '../screens/EditLaborScreen';
+import ImportExportScreen from '../screens/ImportExportScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import DebugScreen from '../screens/DebugScreen';
 
@@ -73,6 +74,7 @@ export type RootStackParamList = {
   EditCustomer: { customerId: string };
   CreatePart: undefined;
   CreateLabor: undefined;
+  ImportExport: undefined;
   ManageTeam: undefined;
 };
 
@@ -452,6 +454,11 @@ export const AppNavigator = () => {
         name="EditLabor" 
         component={EditLaborScreen}
         options={{ title: 'Edit Labor Item', presentation: 'modal' }}
+      />
+      <Stack.Screen 
+        name="ImportExport" 
+        component={ImportExportScreen}
+        options={{ title: 'Import & Export' }}
       />
       <Stack.Screen 
         name="ManageTeam" 
