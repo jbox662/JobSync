@@ -831,62 +831,133 @@ export const useJobStore = create<JobStore>()(
 
         // CRUD
         addCustomer: (customerData) => { 
-          const uid = getCurrentUserId(); 
-          if (!uid) return; // No authenticated user
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          
           const customer: Customer = { ...customerData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; 
-          const state = get();
-          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
           const updated = { ...slice, customers: [...slice.customers, customer] }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-           appendChange('customers', 'create', customer, get, set, getCurrentUserId); 
+          setWorkspaceData(updated); 
+          appendChange('customers', 'create', customer, get, set, getCurrentUserId); 
           syncTopLevel(get, set, getCurrentUserId);
-          // Note: Manual sync can be triggered via syncNow() when needed 
+          triggerAutoSync();
         },
-        updateCustomer: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.customers.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)); const updated = { ...slice, customers: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((c) => c.id === id)!; appendChange('customers', 'update', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
-        deleteCustomer: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.customers.find((c) => c.id === id); const updated = { ...slice, customers: slice.customers.filter((c) => c.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('customers', 'delete', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
+        updateCustomer: (id, updates) => { 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          const updatedList = slice.customers.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)); 
+          const updated = { ...slice, customers: updatedList }; 
+          setWorkspaceData(updated); 
+          const row = updatedList.find((c) => c.id === id); 
+          if (row) appendChange('customers', 'update', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
+        },
+        deleteCustomer: (id) => { 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          const row = slice.customers.find((c) => c.id === id); 
+          const updated = { ...slice, customers: slice.customers.filter((c) => c.id !== id) }; 
+          setWorkspaceData(updated); 
+          if (row) appendChange('customers', 'delete', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
+        },
 
-        addPart: (partData) => { const uid = getCurrentUserId(); if (!uid) return; const part: Part = { ...partData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updated = { ...slice, parts: [...slice.parts, part] }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('parts', 'create', part, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
-        updatePart: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.parts.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p)); const updated = { ...slice, parts: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((p) => p.id === id)!; appendChange('parts', 'update', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
-        deletePart: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.parts.find((p) => p.id === id); const updated = { ...slice, parts: slice.parts.filter((p) => p.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('parts', 'delete', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
+        addPart: (partData) => { 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          const part: Part = { ...partData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; 
+          const updated = { ...slice, parts: [...slice.parts, part] }; 
+          setWorkspaceData(updated); 
+          appendChange('parts', 'create', part, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
+        },
+        updatePart: (id, updates) => { 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          const updatedList = slice.parts.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p)); 
+          const updated = { ...slice, parts: updatedList }; 
+          setWorkspaceData(updated); 
+          const row = updatedList.find((p) => p.id === id); 
+          if (row) appendChange('parts', 'update', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
+        },
+        deletePart: (id) => { 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          const row = slice.parts.find((p) => p.id === id); 
+          const updated = { ...slice, parts: slice.parts.filter((p) => p.id !== id) }; 
+          setWorkspaceData(updated); 
+          if (row) appendChange('parts', 'delete', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
+        },
 
-        addLaborItem: (itemData) => { const uid = getCurrentUserId(); if (!uid) return; const item: LaborItem = { ...itemData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updated = { ...slice, laborItems: [...slice.laborItems, item] }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); appendChange('laborItems', 'create', item, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
-        updateLaborItem: (id, updates) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const updatedList = slice.laborItems.map((it) => (it.id === id ? { ...it, ...updates, updatedAt: new Date().toISOString() } : it)); const updated = { ...slice, laborItems: updatedList }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); const row = updatedList.find((it) => it.id === id)!; appendChange('laborItems', 'update', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
-        deleteLaborItem: (id) => { const uid = getCurrentUserId(); if (!uid) return; const state = get(); const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; const row = slice.laborItems.find((it) => it.id === id); const updated = { ...slice, laborItems: slice.laborItems.filter((it) => it.id !== id) }; set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); if (row) appendChange('laborItems', 'delete', row, get, set, getCurrentUserId); syncTopLevel(get, set, getCurrentUserId); },
+        addLaborItem: (itemData) => { 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          const item: LaborItem = { ...itemData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; 
+          const updated = { ...slice, laborItems: [...slice.laborItems, item] }; 
+          setWorkspaceData(updated); 
+          appendChange('laborItems', 'create', item, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
+        },
+        updateLaborItem: (id, updates) => { 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          const updatedList = slice.laborItems.map((it) => (it.id === id ? { ...it, ...updates, updatedAt: new Date().toISOString() } : it)); 
+          const updated = { ...slice, laborItems: updatedList }; 
+          setWorkspaceData(updated); 
+          const row = updatedList.find((it) => it.id === id); 
+          if (row) appendChange('laborItems', 'update', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
+        },
+        deleteLaborItem: (id) => { 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          const row = slice.laborItems.find((it) => it.id === id); 
+          const updated = { ...slice, laborItems: slice.laborItems.filter((it) => it.id !== id) }; 
+          setWorkspaceData(updated); 
+          if (row) appendChange('laborItems', 'delete', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
+        },
 
         // Job CRUD (simplified - no pricing)
         addJob: (jobData) => { 
-          const uid = getCurrentUserId(); 
-          if (!uid) return; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
           const job: Job = { ...jobData, id: uuidv4(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; 
-          const state = get(); 
-          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
           const updated = { ...slice, jobs: [...slice.jobs, job] }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          setWorkspaceData(updated); 
           appendChange('jobs', 'create', job, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
         },
         updateJob: (id, updates) => { 
-          const uid = getCurrentUserId(); 
-          if (!uid) return; 
-          const state = get(); 
-          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
           const updatedJobs = slice.jobs.map((job) => (job.id === id ? { ...job, ...updates, updatedAt: new Date().toISOString() } : job)); 
           const updated = { ...slice, jobs: updatedJobs }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          const row = updatedJobs.find((j) => j.id === id)!; 
-          appendChange('jobs', 'update', row, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          setWorkspaceData(updated); 
+          const row = updatedJobs.find((j) => j.id === id); 
+          if (row) appendChange('jobs', 'update', row, get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
         },
         deleteJob: (id) => { 
-          const uid = getCurrentUserId(); 
-          if (!uid) return; 
-          const state = get(); 
-          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
           const row = slice.jobs.find((j) => j.id === id); 
           const updated = { ...slice, jobs: slice.jobs.filter((j) => j.id !== id) }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          setWorkspaceData(updated); 
           if (row) appendChange('jobs', 'delete', row, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
         },
 
         // Quote CRUD
@@ -950,8 +1021,9 @@ export const useJobStore = create<JobStore>()(
 
         // Invoice CRUD
         addInvoice: (invoiceData) => { 
-          const state = get(); 
-          const uid = state.currentUserId!; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          
           const invoiceNumber = get().generateInvoiceNumber();
           const totals = get().calculateInvoiceTotal(invoiceData.items, invoiceData.taxRate);
           const invoice: Invoice = { 
@@ -962,17 +1034,16 @@ export const useJobStore = create<JobStore>()(
             createdAt: new Date().toISOString(), 
             updatedAt: new Date().toISOString() 
           }; 
-          const slice = state.dataByUser[uid]; 
           const updated = { ...slice, invoices: [...(slice.invoices || []), invoice] }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          setWorkspaceData(updated); 
           appendChange('invoices', 'create', invoice, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
         },
         updateInvoice: (id, updates) => { 
-          const uid = getCurrentUserId(); 
-          if (!uid) return; 
-          const state = get(); 
-          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          
           const updatedInvoices = (slice.invoices || []).map((invoice) => {
             if (invoice.id === id) {
               const updatedInvoice = { ...invoice, ...updates, updatedAt: new Date().toISOString() };
@@ -985,21 +1056,26 @@ export const useJobStore = create<JobStore>()(
             return invoice;
           }); 
           const updated = { ...slice, invoices: updatedInvoices }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          const row = updatedInvoices.find((i) => i.id === id)!; 
-          appendChange('invoices', 'update', row, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          setWorkspaceData(updated); 
+          const row = updatedInvoices.find((i) => i.id === id); 
+          if (row) {
+            appendChange('invoices', 'update', row, get, set, getCurrentUserId); 
+          }
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
         },
         deleteInvoice: (id) => { 
-          const uid = getCurrentUserId(); 
-          if (!uid) return; 
-          const state = get(); 
-          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          
           const row = (slice.invoices || []).find((i) => i.id === id); 
           const updated = { ...slice, invoices: (slice.invoices || []).filter((i) => i.id !== id) }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          if (row) appendChange('invoices', 'delete', row, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          setWorkspaceData(updated); 
+          if (row) {
+            appendChange('invoices', 'delete', row, get, set, getCurrentUserId); 
+          }
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync();
         },
 
         // Utility functions
