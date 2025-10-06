@@ -32,6 +32,10 @@ const SettingsScreen = () => {
   const [businessEmail, setBusinessEmail] = useState(settings.businessEmail || '');
   const [businessPhone, setBusinessPhone] = useState(settings.businessPhone || '');
   const [businessAddress, setBusinessAddress] = useState(settings.businessAddress || '');
+  const [businessStreet, setBusinessStreet] = useState(settings.businessStreet || '');
+  const [businessCity, setBusinessCity] = useState(settings.businessCity || '');
+  const [businessState, setBusinessState] = useState(settings.businessState || '');
+  const [businessZip, setBusinessZip] = useState(settings.businessZip || '');
   const [defaultPaymentTerms, setDefaultPaymentTerms] = useState(settings.defaultPaymentTerms || 'Net 30 days');
   const [defaultValidityDays, setDefaultValidityDays] = useState(settings.defaultValidityDays?.toString() || '30');
   const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
@@ -82,27 +86,35 @@ const SettingsScreen = () => {
     const validityDays = parseInt(defaultValidityDays);
     
     if (enableTax && (isNaN(taxRate) || taxRate < 0 || taxRate > 100)) {
-      console.log('Error: Please enter a valid tax rate between 0 and 100');
+      Alert.alert('Error', 'Please enter a valid tax rate between 0 and 100');
       return;
     }
     
     if (isNaN(validityDays) || validityDays < 1) {
-      console.log('Error: Please enter a valid number of days for quote validity');
+      Alert.alert('Error', 'Please enter a valid number of days for quote validity');
       return;
     }
 
-    updateSettings({
-      enableTax,
-      defaultTaxRate: enableTax ? taxRate : 0,
-      businessName: businessName.trim() || undefined,
-      businessEmail: businessEmail.trim() || undefined,
-      businessPhone: businessPhone.trim() || undefined,
-      businessAddress: businessAddress.trim() || undefined,
-      defaultPaymentTerms: defaultPaymentTerms.trim(),
-      defaultValidityDays: validityDays
-    });
+    try {
+      updateSettings({
+        enableTax,
+        defaultTaxRate: enableTax ? taxRate : 0,
+        businessName: businessName.trim() || undefined,
+        businessEmail: businessEmail.trim() || undefined,
+        businessPhone: businessPhone.trim() || undefined,
+        businessAddress: businessAddress.trim() || undefined,
+        businessStreet: businessStreet.trim() || undefined,
+        businessCity: businessCity.trim() || undefined,
+        businessState: businessState.trim() || undefined,
+        businessZip: businessZip.trim() || undefined,
+        defaultPaymentTerms: defaultPaymentTerms.trim(),
+        defaultValidityDays: validityDays
+      });
 
-    console.log('Settings saved successfully!');
+      Alert.alert('Success', 'Settings saved successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save settings');
+    }
   };
 
   const handleReset = () => {
@@ -115,9 +127,13 @@ const SettingsScreen = () => {
     setBusinessEmail(newSettings.businessEmail || '');
     setBusinessPhone(newSettings.businessPhone || '');
     setBusinessAddress(newSettings.businessAddress || '');
+    setBusinessStreet(newSettings.businessStreet || '');
+    setBusinessCity(newSettings.businessCity || '');
+    setBusinessState(newSettings.businessState || '');
+    setBusinessZip(newSettings.businessZip || '');
     setDefaultPaymentTerms(newSettings.defaultPaymentTerms || 'Net 30 days');
     setDefaultValidityDays(newSettings.defaultValidityDays?.toString() || '30');
-    console.log('Settings Reset: All settings have been reset to defaults.');
+    Alert.alert('Success', 'All settings have been reset to defaults');
   };
 
   const handleLogout = async () => {
@@ -276,13 +292,39 @@ const SettingsScreen = () => {
           />
           
           <InputField
-            label="Business Address"
-            value={businessAddress}
-            onChangeText={handleBusinessAddressChange}
-            placeholder="123 Main Street, City, State 12345"
-            multiline={true}
-            numberOfLines={3}
+            label="Street Address"
+            value={businessStreet}
+            onChangeText={setBusinessStreet}
+            placeholder="123 Main Street"
           />
+          
+          <View className="flex-row">
+            <View className="flex-1 mr-2">
+              <InputField
+                label="City"
+                value={businessCity}
+                onChangeText={setBusinessCity}
+                placeholder="City"
+              />
+            </View>
+            <View className="w-20 mr-2">
+              <InputField
+                label="State"
+                value={businessState}
+                onChangeText={setBusinessState}
+                placeholder="ST"
+              />
+            </View>
+            <View className="w-24">
+              <InputField
+                label="ZIP"
+                value={businessZip}
+                onChangeText={setBusinessZip}
+                placeholder="12345"
+                keyboardType="number-pad"
+              />
+            </View>
+          </View>
         </SettingCard>
 
         {/* Invoice & Quote Defaults */}
