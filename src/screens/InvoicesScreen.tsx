@@ -164,6 +164,7 @@ const InvoicesScreen = () => {
       const matchesSearch = !searchQuery || 
         invoice.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer?.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
       

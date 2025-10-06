@@ -143,6 +143,7 @@ const QuotesScreen = () => {
       const matchesSearch = !searchQuery || 
         quote.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer?.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         quote.quoteNumber.toLowerCase().includes(searchQuery.toLowerCase());
       
@@ -213,7 +214,7 @@ const QuotesScreen = () => {
             <View className="flex-row items-center mb-1">
               <Ionicons name="person-outline" size={14} color="#6B7280" />
               <Text className="text-gray-600 text-sm ml-1" numberOfLines={1}>
-                {customer?.name || 'Unknown Customer'}
+                {customer?.company || customer?.name || 'Unknown Customer'}
               </Text>
             </View>
             
