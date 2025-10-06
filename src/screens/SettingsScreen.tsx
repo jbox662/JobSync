@@ -372,21 +372,8 @@ const SettingsScreen = () => {
           </SettingCard>
         )}
 
-        {/* Data Management */}
-        <SettingCard title="Data Management">
-          <Pressable
-            onPress={handleReset}
-            className="flex-row items-center p-3 rounded-lg bg-red-50 border border-red-200 mb-3"
-          >
-            <Ionicons name="refresh-outline" size={20} color="#DC2626" />
-            <View className="ml-3 flex-1">
-              <Text className="text-red-800 font-medium">Reset to Defaults</Text>
-              <Text className="text-red-600 text-sm mt-1">
-                Reset all settings to their default values
-              </Text>
-            </View>
-          </Pressable>
-
+        {/* Account */}
+        <SettingCard title="Account">
           <Pressable
             onPress={handleLogout}
             className="flex-row items-center p-3 rounded-lg bg-gray-50 border border-gray-200"
@@ -399,38 +386,6 @@ const SettingsScreen = () => {
               </Text>
             </View>
           </Pressable>
-          
-        </SettingCard>
-
-        {/* Data Management */}
-        <SettingCard title="Data Management">
-          <Pressable
-            onPress={() => navigation.navigate('ImportExport' as never)}
-            className="flex-row items-center p-4 bg-white rounded-lg border border-gray-200 mb-3"
-          >
-            <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center mr-3">
-              <Ionicons name="download-outline" size={20} color="#10B981" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-gray-900 font-medium text-base">Import & Export</Text>
-              <Text className="text-gray-600 text-sm">Backup and restore your data</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </Pressable>
-        </SettingCard>
-
-        {/* App Information */}
-        <SettingCard title="About">
-          <View className="items-center py-4">
-            <View className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center mb-3">
-              <Ionicons name="briefcase" size={32} color="#3B82F6" />
-            </View>
-            <Text className="text-gray-900 font-semibold text-lg">Job Manager</Text>
-            <Text className="text-gray-600 text-sm">Professional Edition v1.0</Text>
-            <Text className="text-gray-500 text-xs mt-2">
-              Last updated: {new Date(settings.updatedAt).toLocaleDateString()}
-            </Text>
-          </View>
         </SettingCard>
       </ScrollView>
 
