@@ -160,7 +160,15 @@ const QuoteDetailScreen = () => {
   );
 
   const ItemCard = ({ item, index }: { item: any; index: number }) => {
-    const itemData = item.type === 'part' ? getPartById(item.itemId) : getLaborItemById(item.itemId);
+    const itemData = item.type === 'part' ? getPartById(item.itemId || item.id) : 
+                     item.type === 'labor' ? getLaborItemById(item.itemId || item.id) : null;
+    
+    // For imported/custom items, use item.description. For parts/labor, use itemData.name
+    const itemName = item.description || itemData?.name || itemData?.description || 'Service Item';
+    const itemDescription = !item.description && itemData?.description ? itemData.description : null;
+    
+    // Support custom item type
+    const isCustom = item.type === 'custom' || (!item.itemId && !itemData);
     
     return (
       <View className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100">
@@ -168,17 +176,17 @@ const QuoteDetailScreen = () => {
           <View className="flex-1 mr-3">
             <View className="flex-row items-center mb-2">
               <View className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-                item.type === 'part' ? 'bg-blue-100' : 'bg-green-100'
+                item.type === 'part' ? 'bg-blue-100' : item.type === 'labor' ? 'bg-green-100' : 'bg-purple-100'
               }`}>
                 <Ionicons 
-                  name={item.type === 'part' ? 'hardware-chip-outline' : 'person-outline'} 
+                  name={item.type === 'part' ? 'hardware-chip-outline' : item.type === 'labor' ? 'person-outline' : 'star-outline'} 
                   size={16} 
-                  color={item.type === 'part' ? '#3B82F6' : '#10B981'} 
+                  color={item.type === 'part' ? '#3B82F6' : item.type === 'labor' ? '#10B981' : '#8B5CF6'} 
                 />
               </View>
               <View className="flex-1">
-                <Text className="font-semibold text-gray-900" numberOfLines={1}>
-                  {itemData?.name || 'Unknown Item'}
+                <Text className="font-semibold text-gray-900" numberOfLines={2}>
+                  {itemName}
                 </Text>
                 <Text className="text-gray-500 text-sm capitalize">
                   {item.type}
@@ -186,9 +194,9 @@ const QuoteDetailScreen = () => {
               </View>
             </View>
             
-            {itemData?.description && (
+            {itemDescription && (
               <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
-                {itemData.description}
+                {itemDescription}
               </Text>
             )}
             
@@ -198,14 +206,14 @@ const QuoteDetailScreen = () => {
               </Text>
               <Text className="text-gray-300 mx-2">•</Text>
               <Text className="text-gray-500 text-sm">
-                {formatCurrency(item.rate || item.price || 0)} each
+                {formatCurrency(item.unitPrice || item.rate || 0)} each
               </Text>
             </View>
           </View>
           
           <View className="items-end">
             <Text className="font-bold text-gray-900 text-lg">
-              {formatCurrency((item.quantity || 0) * (item.rate || item.price || 0))}
+              {formatCurrency(item.total || ((item.quantity || 0) * (item.unitPrice || item.rate || 0)))}
             </Text>
           </View>
         </View>
