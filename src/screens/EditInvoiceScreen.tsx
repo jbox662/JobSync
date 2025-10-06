@@ -79,7 +79,10 @@ const EditInvoiceScreen = () => {
 
   const selectedCustomer = getCustomerById(customerId);
 
-  const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+  const subtotal = items.reduce((sum, item) => {
+    const itemPrice = item.unitPrice || item.rate || item.price || 0;
+    return sum + ((item.quantity || 0) * itemPrice);
+  }, 0);
   const tax = subtotal * (taxRate / 100);
   const total = subtotal + tax;
 
