@@ -223,7 +223,7 @@ const LaborDetailScreen = () => {
               
               <View className="flex-row items-center">
                 <Text className="text-3xl font-bold text-green-600">
-                  {formatCurrency(laborItem.price)}
+                  {formatCurrency(laborItem.hourlyRate || laborItem.price || 0)}
                 </Text>
                 <Text className="text-gray-500 text-sm ml-2">per hour</Text>
               </View>
@@ -239,7 +239,7 @@ const LaborDetailScreen = () => {
             <Ionicons name="pricetag-outline" size={18} color="#6B7280" />
             <View className="ml-3 flex-1">
               <Text className="text-gray-700 font-medium">Hourly Rate</Text>
-              <Text className="text-gray-600 text-sm">{formatCurrency(laborItem.price)}</Text>
+              <Text className="text-gray-600 text-sm">{formatCurrency(laborItem.hourlyRate || laborItem.price || 0)}</Text>
             </View>
           </View>
 
