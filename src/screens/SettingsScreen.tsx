@@ -39,7 +39,6 @@ const SettingsScreen = () => {
   const [defaultPaymentTerms, setDefaultPaymentTerms] = useState(settings.defaultPaymentTerms || 'Net 30 days');
   const [defaultValidityDays, setDefaultValidityDays] = useState(settings.defaultValidityDays?.toString() || '30');
   const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
-  const [showSyncOptions, setShowSyncOptions] = useState(false);
   
   const getCurrentUserId = () => {
     return authenticatedUser?.id || currentUserId || 'none';
@@ -67,18 +66,13 @@ const SettingsScreen = () => {
   }, []);
   
   const handleFullSync = async () => {
-    setShowSyncOptions(false);
     setLastSyncResult(null);
     try {
       await appSyncService.manualFullSync();
-      setLastSyncResult('Full sync completed successfully');
+      Alert.alert('Success', 'Full sync completed successfully');
     } catch (error) {
-      setLastSyncResult(`Full sync failed: ${error instanceof Error ? error.message : String(error)}`);
+      Alert.alert('Error', `Full sync failed: ${error instanceof Error ? error.message : String(error)}`);
     }
-  };
-
-  const handleSyncOptions = () => {
-    setShowSyncOptions(true);
   };
 
   const handleSave = () => {
@@ -292,39 +286,13 @@ const SettingsScreen = () => {
           />
           
           <InputField
-            label="Street Address"
-            value={businessStreet}
-            onChangeText={setBusinessStreet}
-            placeholder="123 Main Street"
+            label="Business Address"
+            value={businessAddress}
+            onChangeText={handleBusinessAddressChange}
+            placeholder="123 Main St, City, State 12345"
+            multiline={true}
+            numberOfLines={3}
           />
-          
-          <View className="flex-row">
-            <View className="flex-1 mr-2">
-              <InputField
-                label="City"
-                value={businessCity}
-                onChangeText={setBusinessCity}
-                placeholder="City"
-              />
-            </View>
-            <View className="w-20 mr-2">
-              <InputField
-                label="State"
-                value={businessState}
-                onChangeText={setBusinessState}
-                placeholder="ST"
-              />
-            </View>
-            <View className="w-24">
-              <InputField
-                label="ZIP"
-                value={businessZip}
-                onChangeText={setBusinessZip}
-                placeholder="12345"
-                keyboardType="number-pad"
-              />
-            </View>
-          </View>
         </SettingCard>
 
         {/* Invoice & Quote Defaults */}
@@ -349,62 +317,56 @@ const SettingsScreen = () => {
         {isAuthenticated && workspaceId && (
           <SettingCard title="Sync & Backup">
             <View className="mb-4">
+              {/* Sync Status */}
               <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-1">
-                  <Text className="text-gray-900 font-medium text-base">Workspace Sync</Text>
-                  <Text className="text-gray-600 text-sm mt-1">
-                    Sync your data with {workspaceName || 'your workspace'}
-                  </Text>
+                <Text className="text-gray-900 font-semibold text-base">Sync Status</Text>
+                <View className="bg-green-100 px-3 py-1 rounded-full">
+                  <Text className="text-green-700 font-medium text-sm">Up to date</Text>
                 </View>
-                <Pressable
-                  onPress={handleSyncOptions}
-                  disabled={isSyncing}
-                  className={`flex-row items-center px-3 py-2 rounded-lg ${
-                    isSyncing ? 'bg-gray-100' : 'bg-blue-500'
-                  }`}
-                >
-                  {isSyncing ? (
-                    <ActivityIndicator size="small" color="#6B7280" />
-                  ) : (
-                    <Ionicons name="options-outline" size={16} color="white" />
-                  )}
-                  <Text className={`ml-2 font-medium text-sm ${
-                    isSyncing ? 'text-gray-500' : 'text-white'
-                  }`}>
-                    {isSyncing ? 'Syncing...' : 'Sync Options'}
-                  </Text>
-                </Pressable>
               </View>
-              
-              <View className="bg-gray-50 rounded-lg p-3 space-y-2">
-                <View className="flex-row justify-between">
-                  <Text className="text-gray-600 text-sm">Last Sync:</Text>
-                  <Text className="text-gray-900 text-sm">
-                    {lastSyncByUser?.[getCurrentUserId()] 
-                      ? new Date(lastSyncByUser[getCurrentUserId()]!).toLocaleString()
-                      : 'Never'
-                    }
-                  </Text>
-                </View>
-                
-                <View className="flex-row justify-between">
-                  <Text className="text-gray-600 text-sm">Pending Changes:</Text>
-                  <Text className="text-gray-900 text-sm font-medium">
-                    {outboxByUser?.[getCurrentUserId()]?.length || 0}
-                  </Text>
-                </View>
-                
-                {(syncError || lastSyncResult) && (
-                  <View className={`mt-2 p-2 rounded-lg ${
-                    syncError ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'
-                  }`}>
-                    <Text className={`text-sm ${
-                      syncError ? 'text-red-700' : 'text-green-700'
-                    }`}>
-                      {syncError || lastSyncResult}
-                    </Text>
-                  </View>
+
+              {/* Sync Now Button */}
+              <Pressable
+                onPress={syncNow}
+                disabled={isSyncing}
+                className={`flex-row items-center justify-center py-3 rounded-xl mb-3 ${
+                  isSyncing ? 'bg-gray-400' : 'bg-blue-600'
+                }`}
+              >
+                {isSyncing ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Ionicons name="sync-outline" size={20} color="white" />
                 )}
+                <Text className="text-white font-semibold text-base ml-2">
+                  {isSyncing ? 'Syncing...' : 'Sync Now'}
+                </Text>
+              </Pressable>
+
+              {/* Force Full Sync Button */}
+              <Pressable
+                onPress={handleFullSync}
+                disabled={isSyncing}
+                className={`flex-row items-center justify-center py-3 rounded-xl border-2 mb-3 ${
+                  isSyncing ? 'bg-gray-100 border-gray-300' : 'bg-white border-orange-500'
+                }`}
+              >
+                <Ionicons name="refresh-circle-outline" size={20} color={isSyncing ? '#9CA3AF' : '#F97316'} />
+                <Text className={`font-semibold text-base ml-2 ${
+                  isSyncing ? 'text-gray-500' : 'text-orange-600'
+                }`}>
+                  Force Full Sync
+                </Text>
+              </Pressable>
+
+              {/* Info Box */}
+              <View className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <View className="flex-row items-start">
+                  <Ionicons name="information-circle-outline" size={20} color="#3B82F6" className="mr-2" />
+                  <Text className="text-blue-700 text-sm flex-1 ml-2">
+                    Use "Force Full Sync" if you're seeing missing or outdated data. This clears local storage and downloads everything fresh from the server.
+                  </Text>
+                </View>
               </View>
             </View>
           </SettingCard>
@@ -481,58 +443,6 @@ const SettingsScreen = () => {
           <Text className="text-white font-semibold text-base">Save Settings</Text>
         </Pressable>
       </View>
-
-      {/* Sync Options Modal */}
-      <Modal
-        visible={showSyncOptions}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowSyncOptions(false)}
-      >
-        <View className="flex-1 bg-black/50 items-center justify-center px-4">
-          <View className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-lg font-semibold text-gray-900">Sync Options</Text>
-              <Pressable
-                onPress={() => setShowSyncOptions(false)}
-                className="p-1"
-              >
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </Pressable>
-            </View>
-            
-            <Text className="text-gray-600 text-sm mb-4">
-              Sync all your data with {workspaceName || 'your workspace'}.
-            </Text>
-
-            <Pressable
-              onPress={handleFullSync}
-              disabled={isSyncing}
-              className={`flex-row items-center p-3 rounded-lg ${
-                isSyncing ? 'bg-gray-100' : 'bg-blue-50 border border-blue-200'
-              }`}
-            >
-              <Ionicons 
-                name={isSyncing ? "hourglass-outline" : "refresh-outline"} 
-                size={20} 
-                color={isSyncing ? "#6B7280" : "#3B82F6"} 
-              />
-              <View className="ml-3 flex-1">
-                <Text className={`font-medium ${
-                  isSyncing ? 'text-gray-500' : 'text-blue-800'
-                }`}>
-                  {isSyncing ? 'Syncing...' : 'Full Sync'}
-                </Text>
-                <Text className={`text-sm ${
-                  isSyncing ? 'text-gray-400' : 'text-blue-600'
-                }`}>
-                  {isSyncing ? 'Please wait...' : 'Download all data from server'}
-                </Text>
-              </View>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
