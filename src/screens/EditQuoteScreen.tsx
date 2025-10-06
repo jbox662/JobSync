@@ -86,7 +86,10 @@ const EditQuoteScreen = () => {
   }, [selectedJob, jobs, linkToExistingJob]);
 
   const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+    const subtotal = items.reduce((sum, item) => {
+      const itemPrice = item.unitPrice || item.rate || 0;
+      return sum + ((item.quantity || 0) * itemPrice);
+    }, 0);
     const tax = settings.enableTax ? subtotal * (parseFloat(taxRate) / 100) : 0;
     const total = subtotal + tax;
     return { subtotal, tax, total };
@@ -146,19 +149,32 @@ const EditQuoteScreen = () => {
       validUntilDate = date.toISOString();
     }
 
+    // Ensure all items have proper structure with calculated totals
+    const normalizedItems = items.map(item => ({
+      ...item,
+      unitPrice: item.unitPrice || item.rate || 0,
+      rate: item.unitPrice || item.rate || 0,
+      total: (item.quantity || 0) * (item.unitPrice || item.rate || 0),
+      itemId: item.itemId || item.id, // Ensure itemId exists
+    }));
+
     updateQuote(quoteId, {
       jobId: (linkToExistingJob && selectedJob) ? selectedJob : undefined,
       customerId: selectedCustomer,
       title: title.trim(),
       description: description.trim() || undefined,
       status,
-      items,
+      items: normalizedItems,
+      subtotal: subtotal,
+      tax: tax,
+      total: total,
       taxRate: settings.enableTax ? parseFloat(taxRate) || 0 : 0,
       notes: validUntil ? `Valid until: ${validUntil}` : undefined,
       validUntil: validUntilDate,
       attachments: attachments.length > 0 ? attachments : undefined,
     });
-
+    
+    Alert.alert('Success', 'Quote updated successfully!');
     navigation.goBack();
   };
 
@@ -179,11 +195,18 @@ const EditQuoteScreen = () => {
       return;
     }
 
+    // Get price - handle both price and hourly_rate
+    const itemPrice = itemData.price || itemData.hourly_rate || 0;
+    const itemQuantity = parseInt(quantity);
+
     const newItem: JobItem = {
-      id: selectedItemId,
+      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Unique item ID
+      itemId: selectedItemId, // Reference to part/labor
       type: selectedItemType,
-      quantity: parseInt(quantity),
-      rate: itemData.price,
+      quantity: itemQuantity,
+      unitPrice: itemPrice,
+      rate: itemPrice, // Keep for compatibility
+      total: itemQuantity * itemPrice,
     };
 
     setItems([...items, newItem]);
@@ -482,15 +505,19 @@ const EditQuoteScreen = () => {
 
             {/* Items List */}
             {items.map((item, index) => {
-              const itemData = item.type === 'part' ? getPartById(item.id) : getLaborItemById(item.id);
+              const itemData = item.type === 'part' ? getPartById(item.itemId || item.id) : getLaborItemById(item.itemId || item.id);
+              const itemName = item.description || itemData?.name || itemData?.description || 'Unknown Item';
+              const itemPrice = item.unitPrice || item.rate || 0;
+              const itemTotal = (item.quantity || 0) * itemPrice;
+              
               return (
                 <View key={index} className="bg-white rounded-lg p-4 mb-3 border border-gray-200">
                   <View className="flex-row items-center justify-between">
                     <View className="flex-1">
-                      <Text className="font-semibold text-gray-900">{itemData?.name}</Text>
+                      <Text className="font-semibold text-gray-900">{itemName}</Text>
                       <Text className="text-gray-500 text-sm capitalize">{item.type}</Text>
                       <Text className="text-gray-600 text-sm">
-                        Qty: {item.quantity} × {formatCurrency(item.rate)} = {formatCurrency(item.quantity * item.rate)}
+                        Qty: {item.quantity || 0} × {formatCurrency(itemPrice)} = {formatCurrency(itemTotal)}
                       </Text>
                     </View>
                     <Pressable
