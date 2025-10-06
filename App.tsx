@@ -112,7 +112,21 @@ export default function App() {
             workspaceName: user.workspaceName 
           });
           setAuthenticatedUser(user);
-          // Sync is automatically triggered by setAuthenticatedUser
+          
+          // Force full sync on app start
+          if (user.id && user.workspaceId) {
+            const currentState = useJobStore.getState();
+            useJobStore.setState({
+              lastSyncByUser: {
+                ...currentState.lastSyncByUser,
+                [user.id]: null  // Force full sync
+              }
+            });
+            // Trigger sync after a small delay to ensure store is ready
+            setTimeout(() => {
+              syncNow();
+            }, 100);
+          }
         } else {
           console.log('❌ No valid user session, clearing authentication state');
           // No user found, ensure we're in unauthenticated state
@@ -171,6 +185,30 @@ export default function App() {
       appSyncService.cleanup();
     };
   }, [isAuthenticated, workspaceId]);
+
+  // Force full sync when app comes to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active' && isAuthenticated && workspaceId) {
+        console.log('📱 App became active - triggering full sync');
+        const currentUserId = useJobStore.getState().authenticatedUser?.id || useJobStore.getState().currentUserId;
+        if (currentUserId) {
+          const currentState = useJobStore.getState();
+          useJobStore.setState({
+            lastSyncByUser: {
+              ...currentState.lastSyncByUser,
+              [currentUserId]: null  // Force full sync
+            }
+          });
+          syncNow();
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isAuthenticated, workspaceId, syncNow]);
 
   const AuthStack = createNativeStackNavigator();
   const OnbStack = createNativeStackNavigator();
