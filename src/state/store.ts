@@ -356,14 +356,26 @@ export const useJobStore = create<JobStore>()(
           console.log('🔐 Setting authenticated user:', user.email);
           
           const currentSettings = get().settings;
-          const existingData = get().dataByUser[user.id];
+          const currentState = get();
+          const workspaceId = user.workspaceId;
+          
+          // Initialize workspace storage if it doesn't exist
+          const existingWorkspaceData = workspaceId ? currentState.dataByWorkspace?.[workspaceId] : null;
+          const defaultWorkspaceData = { 
+            customers: [], 
+            parts: [], 
+            laborItems: [], 
+            jobs: [], 
+            quotes: [], 
+            invoices: [] 
+          };
           
           set({ 
             authenticatedUser: user, 
             isAuthenticated: true,
             isSupabaseConfigured: true, // If authenticated, Supabase is definitely working
             userEmail: user.email,
-            workspaceId: user.workspaceId || null,
+            workspaceId: workspaceId || null,
             workspaceName: user.workspaceName || null,
             role: user.role || null,
             // Clear any authentication errors
@@ -375,7 +387,12 @@ export const useJobStore = create<JobStore>()(
               businessEmail: user.email || currentSettings.businessEmail,
               updatedAt: new Date().toISOString()
             },
-            // Initialize user-specific data (preserve existing data if it exists)
+            // Initialize workspace storage (shared across all users in workspace)
+            dataByWorkspace: {
+              ...currentState.dataByWorkspace,
+              ...(workspaceId ? { [workspaceId]: existingWorkspaceData || defaultWorkspaceData } : {})
+            },
+            // Initialize user-specific sync tracking
             outboxByUser: { ...get().outboxByUser, [user.id]: get().outboxByUser[user.id] || [] },
             lastSyncByUser: { ...get().lastSyncByUser, [user.id]: get().lastSyncByUser[user.id] || null },
             currentUserId: user.id,
@@ -600,11 +617,22 @@ export const useJobStore = create<JobStore>()(
                   throw new Error('latestState is null or undefined');
                 }
                 
-                if (!latestState.dataByUser || !latestState.dataByUser[capturedUid]) {
-                  throw new Error(`User data slice not found for uid: ${capturedUid}`);
+                // USE WORKSPACE STORAGE (shared across all users in workspace)
+                const ws = latestState.workspaceId;
+                if (!ws) {
+                  throw new Error('No workspace ID available');
                 }
                 
-                const slice = latestState.dataByUser[capturedUid];
+                // Get workspace data (or fallback to user data for migration)
+                let slice = latestState.dataByWorkspace?.[ws];
+                if (!slice && latestState.dataByUser?.[capturedUid]) {
+                  // Migrate from old user storage
+                  slice = latestState.dataByUser[capturedUid];
+                }
+                if (!slice) {
+                  slice = { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] };
+                }
+                
                 let { customers, parts, laborItems, jobs, quotes, invoices } = slice;
                 
                 // Ensure arrays exist
@@ -648,10 +676,11 @@ export const useJobStore = create<JobStore>()(
                   throw new Error('finalState is null or undefined');
                 }
                 
+                // Store in WORKSPACE (shared across all users/devices)
                 setState({ 
-                  dataByUser: { 
-                    ...finalState.dataByUser, 
-                    [capturedUid]: { customers, parts, laborItems, jobs, quotes, invoices } 
+                  dataByWorkspace: { 
+                    ...finalState.dataByWorkspace, 
+                    [ws]: { customers, parts, laborItems, jobs, quotes, invoices } 
                   }, 
                   lastSyncByUser: { ...finalState.lastSyncByUser, [capturedUid]: pull.serverTime } 
                 });
@@ -862,8 +891,9 @@ export const useJobStore = create<JobStore>()(
 
         // Quote CRUD
         addQuote: (quoteData) => { 
-          const state = get(); 
-          const uid = state.currentUserId!; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          
           const quoteNumber = get().generateQuoteNumber();
           const totals = get().calculateQuoteTotal(quoteData.items, quoteData.taxRate);
           const quote: Quote = { 
@@ -874,17 +904,16 @@ export const useJobStore = create<JobStore>()(
             createdAt: new Date().toISOString(), 
             updatedAt: new Date().toISOString() 
           }; 
-          const slice = state.dataByUser[uid]; 
           const updated = { ...slice, quotes: [...(slice.quotes || []), quote] }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
+          setWorkspaceData(updated); 
           appendChange('quotes', 'create', quote, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync(); // Automatic background sync
         },
         updateQuote: (id, updates) => { 
-          const uid = getCurrentUserId(); 
-          if (!uid) return; 
-          const state = get(); 
-          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          
           const updatedQuotes = (slice.quotes || []).map((quote) => {
             if (quote.id === id) {
               const updatedQuote = { ...quote, ...updates, updatedAt: new Date().toISOString() };
@@ -897,21 +926,26 @@ export const useJobStore = create<JobStore>()(
             return quote;
           }); 
           const updated = { ...slice, quotes: updatedQuotes }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          const row = updatedQuotes.find((q) => q.id === id)!; 
-          appendChange('quotes', 'update', row, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          setWorkspaceData(updated); 
+          const row = updatedQuotes.find((q) => q.id === id); 
+          if (row) {
+            appendChange('quotes', 'update', row, get, set, getCurrentUserId); 
+          }
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync(); // Automatic background sync
         },
         deleteQuote: (id) => { 
-          const uid = getCurrentUserId(); 
-          if (!uid) return; 
-          const state = get(); 
-          const slice = state.dataByUser[uid] || { customers: [], parts: [], laborItems: [], jobs: [], quotes: [], invoices: [] }; 
+          const slice = getWorkspaceData();
+          if (!slice) return;
+          
           const row = (slice.quotes || []).find((q) => q.id === id); 
           const updated = { ...slice, quotes: (slice.quotes || []).filter((q) => q.id !== id) }; 
-          set({ dataByUser: { ...state.dataByUser, [uid]: updated } }); 
-          if (row) appendChange('quotes', 'delete', row, get, set, getCurrentUserId); 
-          syncTopLevel(get, set, getCurrentUserId); 
+          setWorkspaceData(updated); 
+          if (row) {
+            appendChange('quotes', 'delete', row, get, set, getCurrentUserId); 
+          }
+          syncTopLevel(get, set, getCurrentUserId);
+          triggerAutoSync(); // Automatic background sync
         },
 
         // Invoice CRUD
