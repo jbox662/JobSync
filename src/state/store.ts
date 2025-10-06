@@ -31,7 +31,10 @@ interface JobStore extends AppState {
   // Multi-profile local slices (deprecated - kept for data structure compatibility)
   users: User[];
   currentUserId: string | null;
-  dataByUser: Record<string, AppState>;
+  dataByUser: Record<string, AppState>; // Legacy - being migrated to dataByWorkspace
+  
+  // NEW: Workspace-based storage (shared across all users in same workspace)
+  dataByWorkspace: Record<string, AppState>;
 
   // Sync
   deviceId: string;
@@ -113,6 +116,36 @@ export const useJobStore = create<JobStore>()(
           return null;
         }
       };
+      
+      // Helper function to get/set workspace data (shared across all users in workspace)
+      const getWorkspaceData = () => {
+        const state = get();
+        const ws = state.workspaceId;
+        if (!ws) return null;
+        return state.dataByWorkspace?.[ws] || { 
+          customers: [], 
+          parts: [], 
+          laborItems: [], 
+          jobs: [], 
+          quotes: [], 
+          invoices: [] 
+        };
+      };
+      
+      const setWorkspaceData = (data: AppState) => {
+        const state = get();
+        const ws = state.workspaceId;
+        if (!ws) {
+          console.error('Cannot set workspace data: No workspace ID');
+          return;
+        }
+        set({
+          dataByWorkspace: {
+            ...state.dataByWorkspace,
+            [ws]: data
+          }
+        });
+      };
 
       const appendChange = (
         entity: ChangeEvent['entity'], 
@@ -151,9 +184,27 @@ export const useJobStore = create<JobStore>()(
         }
       };
 
+      // Auto-sync helper - triggers background sync after changes
+      let autoSyncTimeout: NodeJS.Timeout | null = null;
+      const triggerAutoSync = () => {
+        // Clear any pending sync
+        if (autoSyncTimeout) {
+          clearTimeout(autoSyncTimeout);
+        }
+        
+        // Schedule sync after 2 seconds of inactivity
+        autoSyncTimeout = setTimeout(() => {
+          const state = get();
+          if (state.isAuthenticated && state.workspaceId && !state.isSyncing) {
+            state.syncNow().catch(() => {
+              // Silent failure - user can manually sync if needed
+            });
+          }
+        }, 2000); // Wait 2 seconds after last change before syncing
+      };
+
       const syncTopLevel = (getStore?: () => any, setState?: (state: any) => void, getUserId?: (() => string | null) | string) => {
         try {
-          // Enhanced null checking and store validation
           if (!getStore && !get) {
             console.error('[syncTopLevel] No store getter available');
             return;
@@ -163,39 +214,10 @@ export const useJobStore = create<JobStore>()(
             return;
           }
           
-          // Use provided store references or fallback to original get/set
           const getRef = getStore || get;
           const setRef = setState || set;
           
-          // Handle uid parameter - can be a function or direct string value
-          let uid: string | null = null;
-          if (typeof getUserId === 'string') {
-            // Direct string value passed
-            uid = getUserId;
-          } else if (typeof getUserId === 'function') {
-            // Function that returns uid
-            try {
-              uid = getUserId();
-            } catch (uidError) {
-              console.warn('[syncTopLevel] Error getting uid from function:', uidError);
-              uid = null;
-            }
-          } else {
-            // Fallback to getCurrentUserId
-            try {
-              uid = getCurrentUserId();
-            } catch (uidError) {
-              console.warn('[syncTopLevel] Error getting uid from getCurrentUserId:', uidError);
-              uid = null;
-            }
-          }
-          
-          if (!uid) {
-            console.warn('[syncTopLevel] No user ID available');
-            return;
-          }
-          
-          // Safely get state
+          // Safely get state first
           let state: any;
           try {
             state = getRef();
@@ -204,12 +226,61 @@ export const useJobStore = create<JobStore>()(
             return;
           }
           
-          if (!state?.dataByUser?.[uid]) {
-            console.warn('[syncTopLevel] No user data slice available for uid:', uid);
+          // USE WORKSPACE-BASED STORAGE (shared across all users/devices in same workspace)
+          const workspaceId = state.workspaceId;
+          if (!workspaceId) {
+            console.warn('[syncTopLevel] No workspace ID available');
             return;
           }
           
-          const slice = state.dataByUser[uid];
+          // Try workspace storage first, fallback to legacy user storage for migration
+          let slice;
+          if (state.dataByWorkspace?.[workspaceId]) {
+            slice = state.dataByWorkspace[workspaceId];
+          } else {
+            // Migration path: try to get from old user-based storage
+            let uid: string | null = null;
+            if (typeof getUserId === 'string') {
+              uid = getUserId;
+            } else if (typeof getUserId === 'function') {
+              try {
+                uid = getUserId();
+              } catch (uidError) {
+                console.warn('[syncTopLevel] Error getting uid:', uidError);
+              }
+            } else {
+              try {
+                uid = getCurrentUserId();
+              } catch (uidError) {
+                console.warn('[syncTopLevel] Error getting getCurrentUserId:', uidError);
+              }
+            }
+            
+            if (uid && state.dataByUser?.[uid]) {
+              slice = state.dataByUser[uid];
+              // Automatically migrate to workspace storage
+              try {
+                setRef({
+                  dataByWorkspace: {
+                    ...state.dataByWorkspace,
+                    [workspaceId]: slice
+                  }
+                } as Partial<JobStore>);
+              } catch (migrationError) {
+                console.error('[syncTopLevel] Failed to migrate data:', migrationError);
+              }
+            } else {
+              // Initialize empty workspace storage
+              slice = {
+                customers: [],
+                parts: [],
+                laborItems: [],
+                jobs: [],
+                quotes: [],
+                invoices: []
+              };
+            }
+          }
           
           // Safely update state
           try {
@@ -261,7 +332,8 @@ export const useJobStore = create<JobStore>()(
         // Profiles (deprecated in favor of authentication)
         users: [],
         currentUserId: null,
-        dataByUser: {},
+        dataByUser: {}, // Legacy - being migrated to dataByWorkspace
+        dataByWorkspace: {}, // NEW: Workspace-based storage
 
         // Sync
         deviceId: uuidv4(),
