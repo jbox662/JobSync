@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 import CreateBusinessScreen from "./src/screens/CreateBusinessScreen";
 import JoinBusinessScreen from "./src/screens/JoinBusinessScreen";
+import OnboardingChoiceScreen from "./src/screens/OnboardingChoiceScreen";
 // import AccountSwitchScreen from "./src/screens/AccountSwitchScreen";
 import SignInScreen from "./src/screens/SignInScreen";
 import SignUpScreen from "./src/screens/SignUpScreen";
@@ -37,16 +38,41 @@ import { useJobStore } from "./src/state/store";
 import { authService } from "./src/services/auth";
 import { appSyncService } from "./src/services/appSync";
 
+// Global function to force app remount
+let forceAppRemount: (() => void) | null = null;
+
+export const triggerAppRemount = () => {
+  if (forceAppRemount) {
+    forceAppRemount();
+  } else {
+    console.warn('App remount function not available');
+  }
+};
+
 export default function App() {
   const syncNow = useJobStore((s) => s.syncNow);
   const workspaceId = useJobStore((s) => s.workspaceId);
   const isAuthenticated = useJobStore((s) => s.isAuthenticated);
+  const authenticatedUser = useJobStore((s) => s.authenticatedUser);
   const setAuthenticatedUser = useJobStore((s) => s.setAuthenticatedUser);
   const clearAuthentication = useJobStore((s) => s.clearAuthentication);
   const syncError = useJobStore ((s) => s.syncError);
   
   const [isLoading, setIsLoading] = useState(true);
   const [forceRender, setForceRender] = useState(0);
+  const [appKey, setAppKey] = useState(0);
+
+  // Set up global remount function
+  useEffect(() => {
+    forceAppRemount = () => {
+      console.log('🔄 Forcing complete app remount');
+      setAppKey(prev => prev + 1);
+    };
+    
+    return () => {
+      forceAppRemount = null;
+    };
+  }, []);
 
   // Debug: Log when authentication state changes
   useEffect(() => {
@@ -58,14 +84,49 @@ export default function App() {
     });
   }, [isAuthenticated, workspaceId, isLoading, forceRender]);
 
+  // Additional effect to handle authentication state changes
+  useEffect(() => {
+    console.log('🔄 Authentication effect triggered:', {
+      isAuthenticated,
+      workspaceId,
+      authenticatedUserWorkspaceId: authenticatedUser?.workspaceId,
+      hasWorkspace: workspaceId || authenticatedUser?.workspaceId
+    });
+  }, [isAuthenticated, workspaceId, authenticatedUser?.workspaceId]);
+
+  // Polling mechanism to ensure we catch state changes (fallback)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentState = useJobStore.getState();
+      const currentHasWorkspace = currentState.workspaceId || currentState.authenticatedUser?.workspaceId;
+      const currentIsAuthenticated = currentState.isAuthenticated;
+      
+      // Check if state has changed from what React thinks it is
+      if (currentIsAuthenticated !== isAuthenticated || 
+          currentHasWorkspace !== (workspaceId || authenticatedUser?.workspaceId)) {
+        console.log('🔄 Polling detected state change, forcing re-render');
+        setForceRender(prev => prev + 1);
+      }
+    }, 500); // Check every 500ms
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated, workspaceId, authenticatedUser?.workspaceId]);
+
   // Force re-render when authentication state changes (development mode fix)
   useEffect(() => {
     const unsubscribe = useJobStore.subscribe(
-      (state) => ({ isAuthenticated: state.isAuthenticated, workspaceId: state.workspaceId }),
+      (state) => ({ 
+        isAuthenticated: state.isAuthenticated, 
+        workspaceId: state.workspaceId,
+        authenticatedUser: state.authenticatedUser 
+      }),
       (newState, prevState) => {
+        console.log('🔄 Zustand state change detected:', { newState, prevState });
+        
         if (newState.isAuthenticated !== prevState.isAuthenticated || 
-            newState.workspaceId !== prevState.workspaceId) {
-          console.log('🔄 Zustand state changed, forcing re-render');
+            newState.workspaceId !== prevState.workspaceId ||
+            newState.authenticatedUser?.workspaceId !== prevState.authenticatedUser?.workspaceId) {
+          console.log('🔄 Authentication state changed, forcing re-render');
           setForceRender(prev => prev + 1);
         }
       }
@@ -74,23 +135,7 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  // One-time migration to fix authentication state (runs only once)
-  useEffect(() => {
-    const migrate = async () => {
-      const migrationKey = '@jobsync_auth_fixed_v1';
-      const migrated = await AsyncStorage.getItem(migrationKey);
-      
-      if (!migrated) {
-        console.log('🔄 Running one-time authentication fix...');
-        // Clear any stale authentication state
-        clearAuthentication();
-        await AsyncStorage.setItem(migrationKey, 'true');
-        console.log('✅ Migration complete');
-      }
-    };
-    
-    migrate();
-  }, []);
+  // Removed problematic migration that was interfering with authentication flow
 
   // Check for existing authentication on app start with robust error handling
   useEffect(() => {
@@ -243,8 +288,6 @@ export default function App() {
             {/* @ts-ignore */}
             <AuthStack.Screen name="SignUp" component={SignUpScreen} />
             {/* @ts-ignore */}
-            <AuthStack.Screen name="CreateBusiness" component={CreateBusinessScreen} />
-            {/* @ts-ignore */}
             <AuthStack.Screen name="JoinBusiness" component={JoinBusinessScreen} />
           </AuthStack.Navigator>
           <StatusBar style="auto" />
@@ -254,12 +297,16 @@ export default function App() {
   }
 
   // Show onboarding if authenticated but no workspace
-  const needsOnboarding = !workspaceId;
+  const hasWorkspace = workspaceId || authenticatedUser?.workspaceId;
+  const needsOnboarding = isAuthenticated && !hasWorkspace;
   console.log('🔐 Authentication state:', { 
     isAuthenticated, 
     workspaceId, 
+    authenticatedUserWorkspaceId: authenticatedUser?.workspaceId,
+    hasWorkspace,
     needsOnboarding,
-    authenticatedUser: useJobStore.getState().authenticatedUser?.email
+    authenticatedUser: authenticatedUser?.email,
+    forceRender
   });
   
   if (needsOnboarding) {
@@ -268,6 +315,8 @@ export default function App() {
       <SafeAreaProvider>
         <NavigationContainer>
           <OnbStack.Navigator screenOptions={{ headerShown: false }}>
+            {/* @ts-ignore */}
+            <OnbStack.Screen name="OnboardingChoice" component={OnboardingChoiceScreen} />
             {/* @ts-ignore */}
             <OnbStack.Screen name="CreateBusiness" component={CreateBusinessScreen} />
             {/* @ts-ignore */}
@@ -281,7 +330,7 @@ export default function App() {
 
   // Show main app if authenticated and has workspace
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider key={`app-${appKey}`}>
       <NavigationContainer>
         <AppNavigator />
         <StatusBar style="auto" />

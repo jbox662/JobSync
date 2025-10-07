@@ -39,6 +39,7 @@ import EditLaborScreen from '../screens/EditLaborScreen';
 import ImportExportScreen from '../screens/ImportExportScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import DebugScreen from '../screens/DebugScreen';
+import ImportPreviewScreen from '../screens/ImportPreviewScreen';
 
 export type RootDrawerParamList = {
   Dashboard: undefined;
@@ -76,6 +77,7 @@ export type RootStackParamList = {
   CreateLabor: undefined;
   ImportExport: undefined;
   ManageTeam: undefined;
+  ImportPreview: { quote: any; customer: any };
 };
 
 const Drawer = createDrawerNavigator<RootDrawerParamList>();
@@ -464,6 +466,11 @@ export const AppNavigator = () => {
         name="ManageTeam" 
         component={ManageTeamScreen}
         options={{ title: 'Manage Team', presentation: 'modal' }}
+      />
+      <Stack.Screen 
+        name="ImportPreview" 
+        component={ImportPreviewScreen}
+        options={{ title: 'Review Import', presentation: 'modal' }}
       />
     </Stack.Navigator>
   );

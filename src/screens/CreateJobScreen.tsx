@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 
 const CreateJobScreen = () => {
@@ -11,6 +12,7 @@ const CreateJobScreen = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState((route.params as any)?.customerId || '');
+  const [selectedStatus, setSelectedStatus] = useState<'not-started' | 'waiting-quote' | 'quote-sent' | 'quote-approved' | 'active' | 'on-hold' | 'completed' | 'cancelled'>('not-started');
   const [estimatedHours, setEstimatedHours] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -25,7 +27,7 @@ const CreateJobScreen = () => {
       title: title.trim(),
       description: description.trim() || undefined,
       customerId: selectedCustomer,
-      status: 'active',
+      status: selectedStatus,
       notes: notes.trim() || undefined,
     };
 
@@ -91,6 +93,34 @@ const CreateJobScreen = () => {
                 ))}
               </ScrollView>
             )}
+          </View>
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-gray-700 font-medium mb-2">Job Status *</Text>
+          <View className="border border-gray-300 rounded-lg bg-white">
+            {[
+              { value: 'not-started', label: 'Not Started', icon: 'pause-circle-outline', color: '#6B7280' },
+              { value: 'waiting-quote', label: 'Waiting on Quote', icon: 'time-outline', color: '#F59E0B' },
+              { value: 'quote-sent', label: 'Quote Sent', icon: 'mail-outline', color: '#3B82F6' },
+              { value: 'quote-approved', label: 'Quote Approved', icon: 'checkmark-circle-outline', color: '#10B981' },
+              { value: 'active', label: 'Active', icon: 'play-circle-outline', color: '#059669' },
+              { value: 'on-hold', label: 'On Hold', icon: 'pause-outline', color: '#EF4444' },
+            ].map((status, index) => (
+              <Pressable
+                key={status.value}
+                onPress={() => setSelectedStatus(status.value as any)}
+                className={`p-3 flex-row items-center ${index < 5 ? 'border-b border-gray-100' : ''} ${selectedStatus === status.value ? 'bg-blue-50' : ''}`}
+              >
+                <View className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                  selectedStatus === status.value ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
+                }`} />
+                <Ionicons name={status.icon as any} size={20} color={status.color} style={{ marginRight: 8 }} />
+                <Text className={`font-medium ${selectedStatus === status.value ? 'text-blue-900' : 'text-gray-900'}`}>
+                  {status.label}
+                </Text>
+              </Pressable>
+            ))}
           </View>
         </View>
 

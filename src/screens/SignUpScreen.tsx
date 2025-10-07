@@ -14,6 +14,12 @@ const SignUpScreen = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [businessEmail, setBusinessEmail] = useState('');
+  const [businessPhone, setBusinessPhone] = useState('');
+  const [businessStreet, setBusinessStreet] = useState('');
+  const [businessCity, setBusinessCity] = useState('');
+  const [businessState, setBusinessState] = useState('');
+  const [businessZip, setBusinessZip] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -40,9 +46,39 @@ const SignUpScreen = () => {
       Alert.alert('Error', 'Passwords do not match');
       return false;
     }
-    if (createBusiness && !businessName.trim()) {
-      Alert.alert('Error', 'Please enter your business name');
-      return false;
+    if (createBusiness) {
+      if (!businessName.trim()) {
+        Alert.alert('Error', 'Please enter your business name');
+        return false;
+      }
+      if (!businessEmail.trim()) {
+        Alert.alert('Error', 'Please enter your business email');
+        return false;
+      }
+      if (!businessEmail.includes('@')) {
+        Alert.alert('Error', 'Please enter a valid business email address');
+        return false;
+      }
+      if (!businessPhone.trim()) {
+        Alert.alert('Error', 'Please enter your business phone number');
+        return false;
+      }
+      if (!businessStreet.trim()) {
+        Alert.alert('Error', 'Please enter your business street address');
+        return false;
+      }
+      if (!businessCity.trim()) {
+        Alert.alert('Error', 'Please enter your business city');
+        return false;
+      }
+      if (!businessState.trim()) {
+        Alert.alert('Error', 'Please enter your business state');
+        return false;
+      }
+      if (!businessZip.trim()) {
+        Alert.alert('Error', 'Please enter your business ZIP code');
+        return false;
+      }
     }
     return true;
   };
@@ -56,27 +92,47 @@ const SignUpScreen = () => {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password: password,
-        businessName: createBusiness ? businessName.trim() : undefined
+        businessName: createBusiness ? businessName.trim() : undefined,
+        businessEmail: createBusiness ? businessEmail.trim() : undefined,
+        businessPhone: createBusiness ? businessPhone.trim() : undefined,
+        businessStreet: createBusiness ? businessStreet.trim() : undefined,
+        businessCity: createBusiness ? businessCity.trim() : undefined,
+        businessState: createBusiness ? businessState.trim() : undefined,
+        businessZip: createBusiness ? businessZip.trim() : undefined
       });
 
       if (result.error) {
         Alert.alert('Sign Up Failed', result.error);
       } else {
-        Alert.alert(
-          'Account Created!',
-          createBusiness 
-            ? 'Your account and business workspace have been created successfully.'
-            : 'Your account has been created. You can now join a business workspace.',
-          [
-            {
-              text: 'Continue',
-              onPress: () => {
-                // Navigation will be handled by App.tsx based on authentication state
-                console.log('Sign up successful');
+        if (createBusiness && result.inviteCode) {
+          // Show invite code for business owners
+          Alert.alert(
+            'Business Created!',
+            `Your account and business workspace have been created successfully!\n\nYour invite code is: ${result.inviteCode}\n\nShare this code with team members so they can join your workspace.`,
+            [
+              {
+                text: 'Continue',
+                onPress: () => {
+                  console.log('Sign up successful with business created');
+                }
               }
-            }
-          ]
-        );
+            ]
+          );
+        } else {
+          // Regular signup without business
+          Alert.alert(
+            'Account Created!',
+            'Your account has been created. You can now join a business workspace.',
+            [
+              {
+                text: 'Continue',
+                onPress: () => {
+                  console.log('Sign up successful');
+                }
+              }
+            ]
+          );
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
@@ -196,16 +252,103 @@ const SignUpScreen = () => {
           </View>
 
           {createBusiness && (
-            <View>
-              <Text className="text-gray-700 font-medium mb-2">Business Name *</Text>
-              <TextInput
-                value={businessName}
-                onChangeText={setBusinessName}
-                placeholder="Enter your business name"
-                autoCapitalize="words"
-                className="border border-gray-300 rounded-xl px-4 py-4 text-gray-900 text-lg"
-                placeholderTextColor="#9CA3AF"
-              />
+            <View className="space-y-4">
+              {/* Business Name */}
+              <View>
+                <Text className="text-gray-700 font-medium mb-2">Business Name *</Text>
+                <TextInput
+                  value={businessName}
+                  onChangeText={setBusinessName}
+                  placeholder="Enter your business name"
+                  autoCapitalize="words"
+                  className="border border-gray-300 rounded-xl px-4 py-4 text-gray-900 text-lg"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* Business Email */}
+              <View>
+                <Text className="text-gray-700 font-medium mb-2">Business Email *</Text>
+                <TextInput
+                  value={businessEmail}
+                  onChangeText={setBusinessEmail}
+                  placeholder="business@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  className="border border-gray-300 rounded-xl px-4 py-4 text-gray-900 text-lg"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* Business Phone */}
+              <View>
+                <Text className="text-gray-700 font-medium mb-2">Business Phone *</Text>
+                <TextInput
+                  value={businessPhone}
+                  onChangeText={setBusinessPhone}
+                  placeholder="(555) 123-4567"
+                  keyboardType="phone-pad"
+                  className="border border-gray-300 rounded-xl px-4 py-4 text-gray-900 text-lg"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* Business Address Header */}
+              <View className="pt-2">
+                <Text className="text-gray-800 font-semibold text-lg mb-3">Business Address</Text>
+              </View>
+
+              {/* Street Address */}
+              <View>
+                <Text className="text-gray-700 font-medium mb-2">Street Address *</Text>
+                <TextInput
+                  value={businessStreet}
+                  onChangeText={setBusinessStreet}
+                  placeholder="123 Main Street"
+                  autoCapitalize="words"
+                  className="border border-gray-300 rounded-xl px-4 py-4 text-gray-900 text-lg"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              {/* City, State, ZIP Row */}
+              <View className="flex-row space-x-3">
+                <View className="flex-1">
+                  <Text className="text-gray-700 font-medium mb-2">City *</Text>
+                  <TextInput
+                    value={businessCity}
+                    onChangeText={setBusinessCity}
+                    placeholder="City"
+                    autoCapitalize="words"
+                    className="border border-gray-300 rounded-xl px-4 py-4 text-gray-900 text-lg"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+                <View className="w-20">
+                  <Text className="text-gray-700 font-medium mb-2">State *</Text>
+                  <TextInput
+                    value={businessState}
+                    onChangeText={setBusinessState}
+                    placeholder="CA"
+                    autoCapitalize="characters"
+                    maxLength={2}
+                    className="border border-gray-300 rounded-xl px-4 py-4 text-gray-900 text-lg text-center"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+                <View className="w-24">
+                  <Text className="text-gray-700 font-medium mb-2">ZIP *</Text>
+                  <TextInput
+                    value={businessZip}
+                    onChangeText={setBusinessZip}
+                    placeholder="12345"
+                    keyboardType="numeric"
+                    maxLength={5}
+                    className="border border-gray-300 rounded-xl px-4 py-4 text-gray-900 text-lg text-center"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+              </View>
             </View>
           )}
         </View>

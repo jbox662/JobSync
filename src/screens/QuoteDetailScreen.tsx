@@ -248,22 +248,40 @@ const QuoteDetailScreen = () => {
         }
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
       >
-        {/* Quote Header */}
-        <View className="px-4 pt-4">
-          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        {/* Professional Quote Header */}
+        <View className="px-6 pt-6">
+          <View className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 4
+          }}>
             {/* Quote Number and Status */}
-            <View className="flex-row items-center justify-between mb-4">
+            <View className="flex-row items-center justify-between mb-6">
               <View className="flex-row items-center">
-                <View className="bg-blue-100 rounded-lg p-2 mr-3">
-                  <Ionicons name="document-text" size={20} color="#2563EB" />
+                <View className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-3 mr-4" style={{
+                  shadowColor: '#3B82F6',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 3
+                }}>
+                  <Ionicons name="document-text" size={24} color="white" />
                 </View>
                 <View>
-                  <Text className="text-sm text-gray-500 font-medium">Quote Number</Text>
-                  <Text className="text-lg font-bold text-gray-900">{quote.quoteNumber}</Text>
+                  <Text className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Quote Number</Text>
+                  <Text className="text-2xl font-bold text-gray-900 mt-1">{quote.quoteNumber}</Text>
                 </View>
               </View>
-              <View className={`px-3 py-2 rounded-lg ${getStatusColor(quote.status)}`}>
-                <Text className="text-sm font-semibold">{getStatusLabel(quote.status)}</Text>
+              <View className={`px-4 py-2 rounded-xl border-2 ${getStatusColor(quote.status)}`} style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                elevation: 1
+              }}>
+                <Text className="text-sm font-bold">{getStatusLabel(quote.status)}</Text>
               </View>
             </View>
 
@@ -286,53 +304,95 @@ const QuoteDetailScreen = () => {
           </View>
         </View>
 
-        {/* Quote Summary */}
-        <View className="px-4 pt-4">
-          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <Text className="text-lg font-bold text-gray-900 mb-4">Quote Summary</Text>
+        {/* Professional Quote Summary */}
+        <View className="px-6 pt-6">
+          <View className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 4
+          }}>
+            <View className="flex-row items-center mb-6">
+              <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="calculator" size={20} color="#10B981" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900">Quote Summary</Text>
+            </View>
             
             {/* Items Count */}
-            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
               <View className="flex-row items-center">
-                <Ionicons name="list-outline" size={20} color="#6B7280" />
-                <Text className="text-gray-700 font-medium ml-3">Line Items</Text>
+                <View className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center mr-3">
+                  <Ionicons name="list" size={16} color="#3B82F6" />
+                </View>
+                <Text className="text-gray-700 font-semibold">Line Items</Text>
               </View>
-              <Text className="text-gray-900 font-semibold">{quote.items.length} items</Text>
+              <View className="bg-blue-100 px-3 py-1 rounded-full">
+                <Text className="text-blue-700 font-bold text-sm">{quote.items.length} items</Text>
+              </View>
             </View>
 
             {/* Subtotal */}
-            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
               <View className="flex-row items-center">
-                <Ionicons name="calculator-outline" size={20} color="#6B7280" />
-                <Text className="text-gray-700 font-medium ml-3">Subtotal</Text>
+                <View className="w-8 h-8 bg-gray-100 rounded-lg items-center justify-center mr-3">
+                  <Ionicons name="calculator" size={16} color="#6B7280" />
+                </View>
+                <Text className="text-gray-700 font-semibold">Subtotal</Text>
               </View>
-              <Text className="text-gray-900 font-semibold">{formatCurrency(quote.subtotal)}</Text>
+              <Text className="text-gray-900 font-bold text-lg">{formatCurrency(quote.subtotal)}</Text>
             </View>
 
             {/* Tax */}
-            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
               <View className="flex-row items-center">
-                <Ionicons name="receipt-outline" size={20} color="#6B7280" />
-                <Text className="text-gray-700 font-medium ml-3">Tax ({quote.taxRate || 0}%)</Text>
+                <View className="w-8 h-8 bg-orange-100 rounded-lg items-center justify-center mr-3">
+                  <Ionicons name="receipt" size={16} color="#F59E0B" />
+                </View>
+                <Text className="text-gray-700 font-semibold">Tax ({quote.taxRate || 0}%)</Text>
               </View>
-              <Text className="text-gray-900 font-semibold">{formatCurrency(quote.tax || 0)}</Text>
+              <Text className="text-gray-900 font-bold text-lg">{formatCurrency(quote.tax || 0)}</Text>
             </View>
 
             {/* Total */}
-            <View className="flex-row items-center justify-between py-4">
+            <View className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mt-4 border border-blue-100">
               <View className="flex-row items-center">
-                <Ionicons name="card-outline" size={20} color="#2563EB" />
-                <Text className="text-blue-600 font-bold ml-3 text-lg">Total</Text>
+                <View className="w-10 h-10 bg-blue-600 rounded-xl items-center justify-center mr-3" style={{
+                  shadowColor: '#3B82F6',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 2
+                }}>
+                  <Ionicons name="card" size={20} color="white" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-blue-900 font-bold text-lg mb-1">Total</Text>
+                  <Text className="text-blue-600 font-bold text-2xl" numberOfLines={1}>
+                    {formatCurrency(quote.total)}
+                  </Text>
+                </View>
               </View>
-              <Text className="text-blue-600 font-bold text-xl">{formatCurrency(quote.total)}</Text>
             </View>
           </View>
         </View>
 
         {/* Customer & Details */}
-        <View className="px-4 pt-4">
-          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <Text className="text-lg font-bold text-gray-900 mb-4">Customer Information</Text>
+        <View className="px-6 pt-6">
+          <View className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 4
+          }}>
+            <View className="flex-row items-center mb-6">
+              <View className="w-10 h-10 bg-purple-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="person" size={20} color="#8B5CF6" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900">Customer Information</Text>
+            </View>
             
             {/* Customer */}
             <Pressable onPress={handleViewCustomer} className="flex-row items-center justify-between p-4 bg-gray-50 rounded-xl mb-4">
@@ -586,38 +646,161 @@ const QuoteDetailScreen = () => {
         )}
       </ScrollView>
 
-      {/* Quick Actions */}
+      {/* Professional Action Bar */}
       <View 
-        className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 flex-row"
-        style={{ paddingBottom: insets.bottom + 16 }}
+        className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
+        style={{ 
+          paddingBottom: insets.bottom + 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          elevation: 8
+        }}
       >
-        {customer?.email && (
-          <View className="mr-3">
-            <EmailButton
-              type="quote"
-              document={quote}
-              variant="icon"
-              size="medium"
-              onEmailSent={() => {
-                console.log('Quote emailed successfully');
+        <View className="px-6 py-5">
+          <View className="flex-row items-center space-x-3">
+            {/* Email Button */}
+            {customer?.email && (
+              <EmailButton
+                type="quote"
+                document={quote}
+                variant="icon"
+                size="medium"
+                onEmailSent={() => {
+                  console.log('Quote emailed successfully');
+                }}
+              />
+            )}
+            
+            {/* Edit Button */}
+            <Pressable
+              onPress={handleEdit}
+              className="flex-1 bg-blue-600 py-3 px-4 rounded-xl"
+              style={{
+                shadowColor: '#3B82F6',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3
               }}
-            />
+            >
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="create-outline" size={18} color="white" />
+                <Text className="text-white font-semibold ml-2 text-sm">Edit Quote</Text>
+              </View>
+            </Pressable>
+
+            {/* Secondary Actions */}
+            {job && (
+              <Pressable
+                onPress={handleViewJob}
+                className="w-11 h-11 bg-gray-100 rounded-xl items-center justify-center"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 2,
+                  elevation: 1
+                }}
+              >
+                <Ionicons name="briefcase-outline" size={18} color="#6B7280" />
+              </Pressable>
+            )}
+            
+            {customer && (
+              <Pressable
+                onPress={handleViewCustomer}
+                className="w-11 h-11 bg-gray-100 rounded-xl items-center justify-center"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 2,
+                  elevation: 1
+                }}
+              >
+                <Ionicons name="person-outline" size={18} color="#6B7280" />
+              </Pressable>
+            )}
+            
+            <Pressable
+              onPress={handleDelete}
+              className="w-11 h-11 bg-red-100 rounded-xl items-center justify-center"
+              style={{
+                shadowColor: '#EF4444',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.1,
+                shadowRadius: 2,
+                elevation: 1
+              }}
+            >
+              <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            </Pressable>
           </View>
-        )}
-        
-        <Pressable
-          onPress={handleEdit}
-          className="px-4 py-4 bg-gray-100 rounded-xl mr-3"
-        >
-          <Ionicons name="create-outline" size={24} color="#6B7280" />
-        </Pressable>
-        
-        <Pressable
-          onPress={handleDelete}
-          className="px-4 py-4 bg-red-100 rounded-xl"
-        >
-          <Ionicons name="trash-outline" size={24} color="#EF4444" />
-        </Pressable>
+
+          {/* Status Actions Row */}
+          {quote.status === 'draft' && (
+            <View className="mt-3 pt-3 border-t border-gray-100">
+              <View className="flex-row items-center space-x-3">
+                <Pressable
+                  onPress={() => updateQuote(quote.id, { status: 'sent', sentAt: new Date().toISOString() })}
+                  className="flex-1 bg-green-600 py-2.5 px-3 rounded-lg"
+                  style={{
+                    shadowColor: '#10B981',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 2,
+                    elevation: 2
+                  }}
+                >
+                  <View className="flex-row items-center justify-center">
+                    <Ionicons name="send-outline" size={16} color="white" />
+                    <Text className="text-white font-semibold ml-1.5 text-xs">Mark as Sent</Text>
+                  </View>
+                </Pressable>
+                
+                <Pressable
+                  onPress={() => updateQuote(quote.id, { status: 'approved', approvedAt: new Date().toISOString() })}
+                  className="flex-1 bg-emerald-600 py-2.5 px-3 rounded-lg"
+                  style={{
+                    shadowColor: '#059669',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 2,
+                    elevation: 2
+                  }}
+                >
+                  <View className="flex-row items-center justify-center">
+                    <Ionicons name="checkmark-circle-outline" size={16} color="white" />
+                    <Text className="text-white font-semibold ml-1.5 text-xs">Approve</Text>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+          )}
+
+          {quote.status === 'sent' && (
+            <View className="mt-3 pt-3 border-t border-gray-100">
+              <Pressable
+                onPress={() => updateQuote(quote.id, { status: 'approved', approvedAt: new Date().toISOString() })}
+                className="bg-emerald-600 py-2.5 px-3 rounded-lg"
+                style={{
+                  shadowColor: '#059669',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 2,
+                  elevation: 2
+                }}
+              >
+                <View className="flex-row items-center justify-center">
+                  <Ionicons name="checkmark-circle-outline" size={16} color="white" />
+                  <Text className="text-white font-semibold ml-1.5 text-xs">Mark as Approved</Text>
+                </View>
+              </Pressable>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );

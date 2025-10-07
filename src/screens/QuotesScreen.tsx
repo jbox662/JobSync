@@ -115,16 +115,20 @@ const QuotesScreen = () => {
       
       if (parseResult.quote) {
         try {
-          const importResult = await smartInvoiceParser.importParsedQuote(parseResult.quote);
+          const previewResult = await smartInvoiceParser.previewParsedQuote(parseResult.quote);
           
-          if (importResult.success) {
-            Alert.alert('Success', importResult.message);
+          if (previewResult.success && previewResult.quote && previewResult.customer) {
+            // Navigate to preview screen for editing
+            navigation.navigate('ImportPreview', {
+              quote: previewResult.quote,
+              customer: previewResult.customer
+            });
           } else {
-            Alert.alert('Import Failed', importResult.message);
+            Alert.alert('Parse Failed', previewResult.message);
           }
         } catch (importError) {
-          console.error('Import error:', importError);
-          Alert.alert('Import Failed', 'Failed to save the parsed quote to your account.');
+          console.error('Preview error:', importError);
+          Alert.alert('Parse Failed', 'Failed to parse the quote.');
         }
       }
     } catch (error) {

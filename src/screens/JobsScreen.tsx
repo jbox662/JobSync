@@ -17,11 +17,21 @@ const JobsScreen = () => {
 
   const statusOptions = [
     { key: null, label: 'All' },
+    { key: 'not-started', label: 'Not Started' },
+    { key: 'waiting-quote', label: 'Waiting Quote' },
+    { key: 'quote-sent', label: 'Quote Sent' },
+    { key: 'quote-approved', label: 'Quote Approved' },
     { key: 'active', label: 'Active' },
     { key: 'on-hold', label: 'On Hold' },
     { key: 'completed', label: 'Completed' },
     { key: 'cancelled', label: 'Cancelled' },
   ];
+
+  // Get job counts for each status
+  const getJobCountForStatus = (status: string | null) => {
+    if (status === null) return jobs.length;
+    return jobs.filter(job => job.status === status).length;
+  };
 
   const filteredJobs = jobs
     .filter(job => {
@@ -38,7 +48,11 @@ const JobsScreen = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'not-started': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'waiting-quote': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'quote-sent': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'quote-approved': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'active': return 'bg-green-100 text-green-800 border-green-200';
       case 'on-hold': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
@@ -48,9 +62,13 @@ const JobsScreen = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'not-started': return 'pause-circle';
+      case 'waiting-quote': return 'time';
+      case 'quote-sent': return 'mail';
+      case 'quote-approved': return 'checkmark-circle';
       case 'active': return 'play-circle';
-      case 'on-hold': return 'pause-circle';
-      case 'completed': return 'checkmark-circle';
+      case 'on-hold': return 'pause';
+      case 'completed': return 'checkmark-done-circle';
       case 'cancelled': return 'close-circle';
       default: return 'help-circle';
     }
@@ -222,7 +240,7 @@ const JobsScreen = () => {
                     : 'text-gray-700'
                 }`}
               >
-                {option.label}
+                {option.label} ({getJobCountForStatus(option.key)})
               </Text>
             </Pressable>
           ))}

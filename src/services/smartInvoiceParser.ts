@@ -556,6 +556,18 @@ Return ONLY the JSON object, no other text.`;
    * Check if two names are similar (handles variations and typos)
    */
   private isNameSimilar(name1: string, name2: string): boolean {
+    // Quick exact match check
+    if (name1 === name2) return true;
+    
+    // Calculate similarity score using multiple methods
+    const similarity = this.calculateNameSimilarity(name1, name2);
+    
+    // If similarity is high enough, consider it a match
+    if (similarity >= 0.8) {
+      console.log(`🎯 High similarity match (${Math.round(similarity * 100)}%): "${name1}" ≈ "${name2}"`);
+      return true;
+    }
+    
     // Special case for Hamilton Water variations
     if ((name1.includes('hamilton') && name1.includes('water')) || 
         (name2.includes('hamilton') && name2.includes('water'))) {
@@ -593,13 +605,167 @@ Return ONLY the JSON object, no other text.`;
     const allWords2InName1 = words2.every(word => name1.includes(word));
     
     if (allWords1InName2 || allWords2InName1) {
+      console.log('🎯 Word containment match detected');
       return true;
     }
     
     // Check for exact word matches (at least 2 matching words for longer names)
     const matchingWords = words1.filter(word => words2.includes(word));
     if (matchingWords.length >= 2 && matchingWords.length >= Math.min(words1.length, words2.length) * 0.7) {
+      console.log('🎯 Multiple word match detected');
       return true;
+    }
+    
+    // Check for abbreviations and initials
+    if (this.checkAbbreviationMatch(words1, words2)) {
+      console.log('🎯 Abbreviation match detected');
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Calculate comprehensive similarity score between two names
+   */
+  private calculateNameSimilarity(name1: string, name2: string): number {
+    // Levenshtein distance similarity
+    const levenshteinSim = 1 - (this.levenshteinDistance(name1, name2) / Math.max(name1.length, name2.length));
+    
+    // Jaro-Winkler similarity for better handling of transpositions
+    const jaroSim = this.jaroWinklerSimilarity(name1, name2);
+    
+    // Word-based similarity
+    const wordSim = this.wordSimilarity(name1, name2);
+    
+    // Weighted average (Jaro-Winkler is best for names)
+    return (jaroSim * 0.5) + (levenshteinSim * 0.3) + (wordSim * 0.2);
+  }
+
+  /**
+   * Levenshtein distance calculation
+   */
+  private levenshteinDistance(str1: string, str2: string): number {
+    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    
+    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+    
+    for (let j = 1; j <= str2.length; j++) {
+      for (let i = 1; i <= str1.length; i++) {
+        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,     // deletion
+          matrix[j - 1][i] + 1,     // insertion
+          matrix[j - 1][i - 1] + cost // substitution
+        );
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  }
+
+  /**
+   * Jaro-Winkler similarity (excellent for names)
+   */
+  private jaroWinklerSimilarity(s1: string, s2: string): number {
+    if (s1 === s2) return 1;
+    
+    const len1 = s1.length;
+    const len2 = s2.length;
+    const matchWindow = Math.floor(Math.max(len1, len2) / 2) - 1;
+    
+    const s1Matches = new Array(len1).fill(false);
+    const s2Matches = new Array(len2).fill(false);
+    
+    let matches = 0;
+    let transpositions = 0;
+    
+    // Find matches
+    for (let i = 0; i < len1; i++) {
+      const start = Math.max(0, i - matchWindow);
+      const end = Math.min(i + matchWindow + 1, len2);
+      
+      for (let j = start; j < end; j++) {
+        if (s2Matches[j] || s1[i] !== s2[j]) continue;
+        s1Matches[i] = s2Matches[j] = true;
+        matches++;
+        break;
+      }
+    }
+    
+    if (matches === 0) return 0;
+    
+    // Find transpositions
+    let k = 0;
+    for (let i = 0; i < len1; i++) {
+      if (!s1Matches[i]) continue;
+      while (!s2Matches[k]) k++;
+      if (s1[i] !== s2[k]) transpositions++;
+      k++;
+    }
+    
+    const jaro = (matches / len1 + matches / len2 + (matches - transpositions / 2) / matches) / 3;
+    
+    // Winkler prefix bonus
+    let prefix = 0;
+    for (let i = 0; i < Math.min(len1, len2, 4); i++) {
+      if (s1[i] === s2[i]) prefix++;
+      else break;
+    }
+    
+    return jaro + (0.1 * prefix * (1 - jaro));
+  }
+
+  /**
+   * Word-based similarity
+   */
+  private wordSimilarity(name1: string, name2: string): number {
+    const words1 = name1.split(/\s+/).filter(w => w.length > 1);
+    const words2 = name2.split(/\s+/).filter(w => w.length > 1);
+    
+    if (words1.length === 0 || words2.length === 0) return 0;
+    
+    const matchingWords = words1.filter(word => words2.includes(word));
+    return matchingWords.length / Math.max(words1.length, words2.length);
+  }
+
+  /**
+   * Check for abbreviation matches (e.g., "John Smith Co" vs "J Smith Company")
+   */
+  private checkAbbreviationMatch(words1: string[], words2: string[]): boolean {
+    // Check if one set contains abbreviations of the other
+    for (let i = 0; i < words1.length; i++) {
+      for (let j = 0; j < words2.length; j++) {
+        const word1 = words1[i];
+        const word2 = words2[j];
+        
+        // Check if one is an abbreviation of the other
+        if ((word1.length === 1 && word2.startsWith(word1.toLowerCase())) ||
+            (word2.length === 1 && word1.startsWith(word2.toLowerCase()))) {
+          return true;
+        }
+        
+        // Check common abbreviations
+        const abbreviations: { [key: string]: string[] } = {
+          'company': ['co', 'corp', 'corporation'],
+          'incorporated': ['inc'],
+          'limited': ['ltd'],
+          'and': ['&'],
+          'brothers': ['bros'],
+          'international': ['intl'],
+          'manufacturing': ['mfg'],
+          'services': ['svc'],
+          'systems': ['sys']
+        };
+        
+        for (const [full, abbrevs] of Object.entries(abbreviations)) {
+          if ((word1 === full && abbrevs.includes(word2)) ||
+              (word2 === full && abbrevs.includes(word1))) {
+            return true;
+          }
+        }
+      }
     }
     
     return false;
@@ -929,6 +1095,48 @@ Return ONLY the JSON object, no other text.`;
   }
 
   /**
+   * Preview parsed quote before importing (for editing)
+   */
+  async previewParsedQuote(parsedQuote: ParsedQuote): Promise<{ success: boolean; message: string; quote?: ParsedQuote; customer?: any }> {
+    try {
+      const store = useJobStore.getState();
+
+      // 1. Find or create customer with enhanced matching
+      console.log('🐛 DEBUG: Parsed customer name:', parsedQuote.customer.name);
+      console.log('🐛 DEBUG: Existing customers:', store.customers.map(c => c.name));
+      let customer = this.findExistingCustomer(parsedQuote.customer, store.customers);
+
+      if (!customer) {
+        // Prepare new customer data (don't create yet)
+        customer = {
+          id: this.generateId(),
+          name: parsedQuote.customer.name,
+          email: parsedQuote.customer.email || '',
+          phone: parsedQuote.customer.phone || '',
+          address: parsedQuote.customer.address || '',
+          company: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isNew: true // Flag to indicate this is a new customer
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Quote parsed successfully',
+        quote: parsedQuote,
+        customer: customer
+      };
+    } catch (error) {
+      console.error('Quote preview error:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to parse quote'
+      };
+    }
+  }
+
+  /**
    * Import parsed quote into the app
    */
   async importParsedQuote(parsedQuote: ParsedQuote): Promise<{ success: boolean; message: string }> {
@@ -1027,7 +1235,7 @@ Return ONLY the JSON object, no other text.`;
 
       return {
         success: true,
-        message: `Quote ${parsedQuote.quoteNumber} imported successfully! Customer: ${customer.name}, Total: $${parsedQuote.total.toFixed(2)}\n\n🐛 DEBUG - Extracted text: "${parsedQuote.debugText || 'No debug text'}..."`
+        message: `Quote ${parsedQuote.quoteNumber} imported successfully!\n\nCustomer: ${customer.name}\nTotal: $${parsedQuote.total.toFixed(2)}`
       };
     } catch (error) {
       console.error('Quote import error:', error);

@@ -372,33 +372,85 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
     // Apply changes to actual tables
     for (const change of sortedChanges) {
       const tableName = mapEntityToTable(change.entity);
-      const row = mapRowToSupabaseFormat(change.entity, change.row);
       
-      // Add workspace_id to all rows
-      row.workspace_id = payload.workspaceId;
+      console.log('Processing change:', {
+        entity: change.entity,
+        operation: change.operation,
+        rowId: change.row.id,
+        quoteNumber: change.entity === 'quotes' ? change.row.quoteNumber : undefined
+      });
 
       try {
-        if (change.operation === 'create') {
-          console.log('Processing change:', {
-            entity: change.entity,
-            operation: change.operation,
-            rowId: change.row.id
-          });
-          
+        if (change.operation === 'delete') {
+          // Handle deletes first - just set deleted_at, no need for row mapping
           const { error } = await supabase
             .from(tableName)
-            .insert(row);
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('id', change.row.id)
+            .eq('workspace_id', payload.workspaceId);
 
-          if (error && error.code !== '23505') { // Ignore unique constraint violations
-            console.error(`Insert error for ${tableName}:`, error);
+          if (error) {
+            console.error(`Delete error for ${tableName}:`, error);
+            throw new Error(`Failed to delete ${change.entity}: ${error.message}`);
+          }
+          
+          console.log(`✅ Deleted ${change.entity} ${change.row.id}`);
+          continue; // Skip to next change
+        }
+
+        // For create/update operations, map the row data
+        const row = mapRowToSupabaseFormat(change.entity, change.row);
+        
+        // Add workspace_id to all rows
+        row.workspace_id = payload.workspaceId;
+
+        if (change.operation === 'create') {
+          
+          // Use upsert to handle both insert and update cases
+          // This is important for full sync where we re-push all data
+          const { error } = await supabase
+            .from(tableName)
+            .upsert(row, { 
+              onConflict: 'id',
+              ignoreDuplicates: false // Always update if exists
+            });
+
+          if (error) {
+            console.error(`Upsert error for ${tableName}:`, error);
             
-            // Provide more helpful error messages for common issues
-            if (error.code === '23503') { // Foreign key violation
+            // Handle unique constraint violations (e.g., duplicate quote_number)
+            if (error.code === '23505') {
+              // Check if this is a quotes/invoices table with quote_number/invoice_number conflict
+              if ((change.entity === 'quotes' || change.entity === 'invoices')) {
+                const numberField = change.entity === 'quotes' ? 'quote_number' : 'invoice_number';
+                const numberValue = row[numberField];
+                
+                console.warn(`Duplicate ${numberField} detected: ${numberValue}. Updating existing record instead.`);
+                
+                // Try to update the existing record with this number
+                const { error: updateError } = await supabase
+                  .from(tableName)
+                  .update(row)
+                  .eq(numberField, numberValue)
+                  .eq('workspace_id', payload.workspaceId);
+                
+                if (updateError) {
+                  console.error(`Failed to update existing ${change.entity}:`, updateError);
+                  // Skip this record instead of failing entire sync
+                  continue;
+                }
+                console.log(`✅ Updated existing ${change.entity} with ${numberField}: ${numberValue}`);
+              } else {
+                // For other entities, just skip duplicates
+                console.warn(`Skipping duplicate ${change.entity}:`, error.message);
+              }
+              continue;
+            } else if (error.code === '23503') { // Foreign key violation
               console.warn(`Skipping ${change.entity} due to missing dependency:`, error.message);
               // Skip this record instead of failing the entire sync
               continue;
             } else {
-              throw new Error(`Failed to insert ${change.entity}: ${error.message}`);
+              throw new Error(`Failed to upsert ${change.entity}: ${error.message}`);
             }
           }
         } else if (change.operation === 'update') {
@@ -411,18 +463,6 @@ export async function pushChanges(payload: PushPayload): Promise<boolean> {
           if (error) {
             console.error(`Update error for ${tableName}:`, error);
             throw new Error(`Failed to update ${change.entity}: ${error.message}`);
-          }
-        } else if (change.operation === 'delete') {
-          // Soft delete by setting deleted_at
-          const { error } = await supabase
-            .from(tableName)
-            .update({ deleted_at: new Date().toISOString() })
-            .eq('id', change.row.id)
-            .eq('workspace_id', payload.workspaceId);
-
-          if (error) {
-            console.error(`Delete error for ${tableName}:`, error);
-            throw new Error(`Failed to delete ${change.entity}: ${error.message}`);
           }
         }
       } catch (entityError) {
@@ -493,24 +533,44 @@ export async function pullChanges(workspaceId: string, since: string | null): Pr
 async function performFullSync(workspaceId: string, serverTime: string): Promise<PullResponse> {
   const changes: ChangeEvent[] = [];
   
+  console.log(`🔄 performFullSync: Starting full sync for workspace ${workspaceId}`);
+  
   const entities = ['customers', 'parts', 'labor_items', 'jobs', 'quotes', 'invoices'];
   
   for (const table of entities) {
     try {
+      console.log(`📋 Fetching ${table} for workspace ${workspaceId}`);
+      
+      // For quotes table, let's also check without the deleted_at filter to see if that's the issue
+      if (table === 'quotes') {
+        const { data: allQuotes, error: allError } = await supabase
+          .from(table)
+          .select('*')
+          .eq('workspace_id', workspaceId);
+        
+        console.log(`🔍 Total quotes in workspace (including deleted): ${allQuotes?.length || 0}`);
+        if (allQuotes && allQuotes.length > 0) {
+          console.log(`🔍 First quote deleted_at:`, allQuotes[0].deleted_at);
+        }
+      }
+      
       const { data, error } = await supabase
         .from(table)
         .select('*')
         .eq('workspace_id', workspaceId)
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false }); // Force fresh query
 
       if (error) {
-        // Removed console.error to reduce development noise - sync status shown in UI instead: (`Error fetching ${table}:`, error);
+        console.error(`❌ Error fetching ${table}:`, error);
         continue;
       }
 
+      console.log(`✅ Fetched ${data?.length || 0} records from ${table}`);
+
       const entityName = table === 'labor_items' ? 'laborItems' : table;
       
-      data.forEach(row => {
+      data?.forEach(row => {
         changes.push({
           id: `${row.id}-sync`,
           entity: entityName as any,
@@ -521,11 +581,13 @@ async function performFullSync(workspaceId: string, serverTime: string): Promise
         });
       });
     } catch (entityError) {
-      // Removed console.error to reduce development noise - sync status shown in UI instead: (`Error processing ${table}:`, entityError);
+      console.error(`❌ Error processing ${table}:`, entityError);
       continue;
     }
   }
 
+  console.log(`📦 Full sync complete: ${changes.length} total changes found`);
+  
   return {
     changes,
     serverTime

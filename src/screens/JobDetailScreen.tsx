@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert, RefreshControl, Modal, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +22,8 @@ const JobDetailScreen = () => {
   const { jobId } = route.params;
   
   const [refreshing, setRefreshing] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   
   const { 
     getJobById, 
@@ -103,20 +105,15 @@ const JobDetailScreen = () => {
       return;
     }
 
-    // Create options for the alert
-    const quoteOptions = availableQuotes.map(quote => ({
-      text: `${quote.quoteNumber} - ${quote.title}`,
-      onPress: () => {
-        updateQuote(quote.id, { jobId: jobId });
-        // Refresh job data
-        const updatedJob = getJobById(jobId);
-        setJob(updatedJob);
-      }
-    }));
+    setShowQuoteModal(true);
+  };
 
-    quoteOptions.push({ text: 'Cancel', onPress: () => {}, style: 'cancel' });
-
-    Alert.alert('Link Existing Quote', 'Select a quote to link to this job:', quoteOptions);
+  const handleSelectQuote = (quoteId: string) => {
+    updateQuote(quoteId, { jobId: jobId });
+    // Refresh job data
+    const updatedJob = getJobById(jobId);
+    setJob(updatedJob);
+    setShowQuoteModal(false);
   };
 
   const handleLinkExistingInvoice = () => {
@@ -128,20 +125,15 @@ const JobDetailScreen = () => {
       return;
     }
 
-    // Create options for the alert
-    const invoiceOptions = availableInvoices.map(invoice => ({
-      text: `${invoice.invoiceNumber} - ${invoice.title}`,
-      onPress: () => {
-        updateInvoice(invoice.id, { jobId: jobId });
-        // Refresh job data
-        const updatedJob = getJobById(jobId);
-        setJob(updatedJob);
-      }
-    }));
+    setShowInvoiceModal(true);
+  };
 
-    invoiceOptions.push({ text: 'Cancel', onPress: () => {}, style: 'cancel' });
-
-    Alert.alert('Link Existing Invoice', 'Select an invoice to link to this job:', invoiceOptions);
+  const handleSelectInvoice = (invoiceId: string) => {
+    updateInvoice(invoiceId, { jobId: jobId });
+    // Refresh job data
+    const updatedJob = getJobById(jobId);
+    setJob(updatedJob);
+    setShowInvoiceModal(false);
   };
 
   const formatCurrency = (amount: number) => {
@@ -153,7 +145,11 @@ const JobDetailScreen = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'not-started': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'waiting-quote': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'quote-sent': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'quote-approved': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'active': return 'bg-green-100 text-green-800 border-green-200';
       case 'on-hold': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
@@ -163,9 +159,13 @@ const JobDetailScreen = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'not-started': return 'pause-circle';
+      case 'waiting-quote': return 'time';
+      case 'quote-sent': return 'mail';
+      case 'quote-approved': return 'checkmark-circle';
       case 'active': return 'play-circle';
-      case 'on-hold': return 'pause-circle';
-      case 'completed': return 'checkmark-circle';
+      case 'on-hold': return 'pause';
+      case 'completed': return 'checkmark-done-circle';
       case 'cancelled': return 'close-circle';
       default: return 'help-circle';
     }
@@ -587,6 +587,181 @@ const JobDetailScreen = () => {
           </Pressable>
         </View>
       </View>
+
+      {/* Quote Selection Modal */}
+      <Modal
+        visible={showQuoteModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowQuoteModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl w-full max-w-md max-h-96" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.25,
+            shadowRadius: 20,
+            elevation: 10
+          }}>
+            {/* Modal Header */}
+            <View className="px-6 py-5 border-b border-gray-100">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
+                    <Ionicons name="document-text" size={20} color="#3B82F6" />
+                  </View>
+                  <View>
+                    <Text className="text-xl font-bold text-gray-900">Link Existing Quote</Text>
+                    <Text className="text-sm text-gray-500">Select a quote to link to this job</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowQuoteModal(false)}
+                  className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center"
+                >
+                  <Ionicons name="close" size={18} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Quote List */}
+            <ScrollView className="max-h-64" showsVerticalScrollIndicator={false}>
+              {quotes.filter(quote => quote.jobId !== jobId).map((quote, index) => (
+                <TouchableOpacity
+                  key={quote.id}
+                  onPress={() => handleSelectQuote(quote.id)}
+                  className="px-6 py-4 border-b border-gray-50 active:bg-blue-50"
+                >
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1 mr-3">
+                      <Text className="text-lg font-semibold text-gray-900 mb-1">
+                        {quote.quoteNumber}
+                      </Text>
+                      <Text className="text-gray-600 mb-2" numberOfLines={2}>
+                        {quote.title}
+                      </Text>
+                      <View className="flex-row items-center">
+                        <View className="bg-green-100 px-2 py-1 rounded-md mr-2">
+                          <Text className="text-green-700 font-medium text-xs">
+                            ${quote.total.toFixed(2)}
+                          </Text>
+                        </View>
+                        <Text className="text-gray-500 text-xs">
+                          {format(new Date(quote.createdAt), 'MMM d, yyyy')}
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Modal Footer */}
+            <View className="px-6 py-4 bg-gray-50 rounded-b-2xl">
+              <TouchableOpacity
+                onPress={() => setShowQuoteModal(false)}
+                className="bg-gray-200 py-3 rounded-xl"
+              >
+                <Text className="text-center font-semibold text-gray-700">Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Invoice Selection Modal */}
+      <Modal
+        visible={showInvoiceModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowInvoiceModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl w-full max-w-md max-h-96" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.25,
+            shadowRadius: 20,
+            elevation: 10
+          }}>
+            {/* Modal Header */}
+            <View className="px-6 py-5 border-b border-gray-100">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center mr-3">
+                    <Ionicons name="receipt" size={20} color="#10B981" />
+                  </View>
+                  <View>
+                    <Text className="text-xl font-bold text-gray-900">Link Existing Invoice</Text>
+                    <Text className="text-sm text-gray-500">Select an invoice to link to this job</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowInvoiceModal(false)}
+                  className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center"
+                >
+                  <Ionicons name="close" size={18} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Invoice List */}
+            <ScrollView className="max-h-64" showsVerticalScrollIndicator={false}>
+              {invoices.filter(invoice => invoice.jobId !== jobId).map((invoice, index) => (
+                <TouchableOpacity
+                  key={invoice.id}
+                  onPress={() => handleSelectInvoice(invoice.id)}
+                  className="px-6 py-4 border-b border-gray-50 active:bg-green-50"
+                >
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1 mr-3">
+                      <Text className="text-lg font-semibold text-gray-900 mb-1">
+                        {invoice.invoiceNumber}
+                      </Text>
+                      <Text className="text-gray-600 mb-2" numberOfLines={2}>
+                        {invoice.title}
+                      </Text>
+                      <View className="flex-row items-center">
+                        <View className="bg-blue-100 px-2 py-1 rounded-md mr-2">
+                          <Text className="text-blue-700 font-medium text-xs">
+                            ${invoice.total.toFixed(2)}
+                          </Text>
+                        </View>
+                        <View className={`px-2 py-1 rounded-md mr-2 ${
+                          invoice.status === 'paid' ? 'bg-green-100' : 
+                          invoice.status === 'sent' ? 'bg-yellow-100' : 'bg-gray-100'
+                        }`}>
+                          <Text className={`font-medium text-xs ${
+                            invoice.status === 'paid' ? 'text-green-700' : 
+                            invoice.status === 'sent' ? 'text-yellow-700' : 'text-gray-700'
+                          }`}>
+                            {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                          </Text>
+                        </View>
+                        <Text className="text-gray-500 text-xs">
+                          {format(new Date(invoice.createdAt), 'MMM d, yyyy')}
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Modal Footer */}
+            <View className="px-6 py-4 bg-gray-50 rounded-b-2xl">
+              <TouchableOpacity
+                onPress={() => setShowInvoiceModal(false)}
+                className="bg-gray-200 py-3 rounded-xl"
+              >
+                <Text className="text-center font-semibold text-gray-700">Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

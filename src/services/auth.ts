@@ -16,6 +16,12 @@ export interface SignUpData {
   password: string;
   name: string;
   businessName?: string;
+  businessEmail?: string;
+  businessPhone?: string;
+  businessStreet?: string;
+  businessCity?: string;
+  businessState?: string;
+  businessZip?: string;
 }
 
 export interface SignInData {
@@ -36,7 +42,7 @@ class AuthService {
   /**
    * Sign up a new user and optionally create a business workspace
    */
-  async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null }> {
+  async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null; inviteCode?: string }> {
     if (!supabase) {
       return { user: null, error: 'Authentication service not available' };
     }
@@ -113,6 +119,28 @@ class AuthService {
               role: 'owner',
               device_id: useJobStore.getState().deviceId
             });
+
+          // Update business settings with the provided details
+          if (data.businessEmail || data.businessPhone || data.businessStreet) {
+            const store = useJobStore.getState();
+            const businessAddress = [
+              data.businessStreet,
+              data.businessCity,
+              data.businessState,
+              data.businessZip
+            ].filter(Boolean).join(', ');
+
+            const updatedSettings = {
+              ...store.settings,
+              businessName: data.businessName || store.settings.businessName,
+              businessEmail: data.businessEmail || store.settings.businessEmail,
+              businessPhone: data.businessPhone || store.settings.businessPhone,
+              businessAddress: businessAddress || store.settings.businessAddress,
+              updatedAt: new Date().toISOString()
+            };
+
+            store.updateSettings(updatedSettings);
+          }
         }
       }
 
@@ -129,7 +157,7 @@ class AuthService {
       const store = useJobStore.getState();
       store.setAuthenticatedUser(user);
 
-      return { user, error: null };
+      return { user, error: null, inviteCode };
     } catch (error) {
       return { user: null, error: error instanceof Error ? error.message : 'Sign up failed' };
     }
@@ -208,6 +236,69 @@ class AuthService {
       return { error: error?.message || null };
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'Sign out failed' };
+    }
+  }
+
+  /**
+   * Get the invite code for the current user's workspace (owners only)
+   */
+  async getWorkspaceInviteCode(): Promise<{ inviteCode: string | null; error: string | null }> {
+    if (!supabase) {
+      return { inviteCode: null, error: 'Authentication service not available' };
+    }
+
+    try {
+      const user = await this.getCurrentUser();
+      if (!user || !user.workspaceId || user.role !== 'owner') {
+        return { inviteCode: null, error: 'Only workspace owners can access invite codes' };
+      }
+
+      const { data: workspace, error } = await supabase
+        .from('workspaces')
+        .select('invite_code')
+        .eq('id', user.workspaceId)
+        .single();
+
+      if (error) {
+        return { inviteCode: null, error: 'Failed to fetch invite code' };
+      }
+
+      return { inviteCode: workspace?.invite_code || null, error: null };
+    } catch (error) {
+      return { inviteCode: null, error: error instanceof Error ? error.message : 'Failed to fetch invite code' };
+    }
+  }
+
+  /**
+   * Regenerate the invite code for the current user's workspace (owners only)
+   */
+  async regenerateInviteCode(): Promise<{ inviteCode: string | null; error: string | null }> {
+    if (!supabase) {
+      return { inviteCode: null, error: 'Authentication service not available' };
+    }
+
+    try {
+      const user = await this.getCurrentUser();
+      if (!user || !user.workspaceId || user.role !== 'owner') {
+        return { inviteCode: null, error: 'Only workspace owners can regenerate invite codes' };
+      }
+
+      const newInviteCode = `INV-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+      const { data: workspace, error } = await supabase
+        .from('workspaces')
+        .update({ invite_code: newInviteCode })
+        .eq('id', user.workspaceId)
+        .select('invite_code')
+        .single();
+
+      if (error) {
+        return { inviteCode: null, error: 'Failed to regenerate invite code' };
+      }
+
+      return { inviteCode: workspace?.invite_code || null, error: null };
+    } catch (error) {
+      return { inviteCode: null, error: error instanceof Error ? error.message : 'Failed to regenerate invite code' };
     }
   }
 
@@ -418,6 +509,46 @@ class AuthService {
       return { success: true, error: null };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to join business' };
+    }
+  }
+
+  /**
+   * Change password for current user
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ error: string | null }> {
+    if (!supabase) {
+      return { error: 'Authentication service not available' };
+    }
+
+    try {
+      // First verify current password by attempting to sign in
+      const currentUser = await this.getCurrentUser();
+      if (!currentUser) {
+        return { error: 'No authenticated user found' };
+      }
+
+      // Verify current password
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: currentUser.email,
+        password: currentPassword
+      });
+
+      if (verifyError) {
+        return { error: 'Current password is incorrect' };
+      }
+
+      // Update to new password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) {
+        return { error: updateError.message };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Password change failed' };
     }
   }
 

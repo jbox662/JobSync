@@ -25,8 +25,8 @@ export interface Part {
 
 export interface LaborItem {
   id: string;
-  name: string; // Add name for consistency
-  description: string;
+  name: string;
+  description?: string;
   hourlyRate: number;
   price: number; // Alias for hourlyRate for compatibility
   category?: string;
@@ -51,7 +51,7 @@ export interface Job {
   customerId: string;
   title: string;
   description?: string;
-  status: 'active' | 'on-hold' | 'completed' | 'cancelled';
+  status: 'not-started' | 'waiting-quote' | 'quote-sent' | 'quote-approved' | 'active' | 'on-hold' | 'completed' | 'cancelled';
   notes?: string;
   createdAt: string;
   updatedAt: string;

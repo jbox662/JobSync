@@ -20,7 +20,7 @@ const EditJobScreen = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [status, setStatus] = useState('active');
+  const [status, setStatus] = useState('not-started');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<JobItem[]>([]);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -37,7 +37,7 @@ const EditJobScreen = () => {
       setTitle(job.title || '');
       setDescription(job.description || '');
       setSelectedCustomer(job.customerId || '');
-      setStatus(job.status || 'active');
+      setStatus(job.status || 'not-started');
       setNotes(job.notes || '');
       setItems(job.items || []);
       
@@ -183,10 +183,14 @@ const EditJobScreen = () => {
   };
 
   const statusOptions = [
-    { key: 'active', label: 'Active' },
-    { key: 'on-hold', label: 'On Hold' },
-    { key: 'completed', label: 'Completed' },
-    { key: 'cancelled', label: 'Cancelled' },
+    { key: 'not-started', label: 'Not Started', icon: 'pause-circle-outline', color: '#6B7280' },
+    { key: 'waiting-quote', label: 'Waiting on Quote', icon: 'time-outline', color: '#F59E0B' },
+    { key: 'quote-sent', label: 'Quote Sent', icon: 'mail-outline', color: '#3B82F6' },
+    { key: 'quote-approved', label: 'Quote Approved', icon: 'checkmark-circle-outline', color: '#10B981' },
+    { key: 'active', label: 'Active', icon: 'play-circle-outline', color: '#059669' },
+    { key: 'on-hold', label: 'On Hold', icon: 'pause-outline', color: '#EF4444' },
+    { key: 'completed', label: 'Completed', icon: 'checkmark-done-outline', color: '#10B981' },
+    { key: 'cancelled', label: 'Cancelled', icon: 'close-circle-outline', color: '#EF4444' },
   ];
 
   return (
@@ -212,18 +216,21 @@ const EditJobScreen = () => {
             <View className="mb-4">
               <Text className="text-gray-700 font-medium mb-2">Status *</Text>
               <View className="border border-gray-300 rounded-lg bg-white">
-                {statusOptions.map((option) => (
+                {statusOptions.map((option, index) => (
                   <Pressable
                     key={option.key}
                     onPress={() => setStatus(option.key)}
-                    className={`p-3 flex-row items-center border-b border-gray-100 last:border-b-0 ${
+                    className={`p-3 flex-row items-center ${index < statusOptions.length - 1 ? 'border-b border-gray-100' : ''} ${
                       status === option.key ? 'bg-blue-50' : ''
                     }`}
                   >
                     <View className={`w-4 h-4 rounded-full border-2 mr-3 ${
                       status === option.key ? 'bg-blue-600 border-blue-600' : 'border-gray-400'
                     }`} />
-                    <Text className="text-gray-900 font-medium">{option.label}</Text>
+                    <Ionicons name={option.icon as any} size={20} color={option.color} style={{ marginRight: 8 }} />
+                    <Text className={`font-medium ${status === option.key ? 'text-blue-900' : 'text-gray-900'}`}>
+                      {option.label}
+                    </Text>
                   </Pressable>
                 ))}
               </View>

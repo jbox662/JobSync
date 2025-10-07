@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import { useJobStore } from "../state/store";
 import { isSupabaseAvailable, supabase } from "../api/supabase";
+import { triggerAppRemount } from "../../App";
 
 const JoinBusinessScreen = () => {
   const insets = useSafeAreaInsets();
@@ -254,28 +255,42 @@ const JoinBusinessScreen = () => {
       
       // Update authentication state immediately
       const store = useJobStore.getState();
-      store.setAuthenticatedUser({
+      const newAuthUser = {
         id: authData.user.id,
         name: name.trim(),
         email: email.trim().toLowerCase(),
         role: 'member',
         workspaceId: workspace.id,
         workspaceName: workspace.name
-      });
+      };
+      
+      console.log('🔐 Setting authenticated user after join:', newAuthUser);
+      store.setAuthenticatedUser(newAuthUser);
+      
+      // Verify the state was set correctly
+      setTimeout(() => {
+        const updatedState = useJobStore.getState();
+        console.log('🔐 State after setAuthenticatedUser:', {
+          isAuthenticated: updatedState.isAuthenticated,
+          workspaceId: updatedState.workspaceId,
+          authenticatedUser: updatedState.authenticatedUser
+        });
+      }, 50);
       
       setLoading(false);
       
-      // Show success message
+      // Show success message - App.tsx should automatically detect the state change
       Alert.alert(
         'Success!', 
         'Account created! Welcome to ' + (workspace.name || 'the business') + '!',
         [{ 
-          text: 'OK',
+          text: 'Continue',
           onPress: () => {
-            // The authentication state is already set
-            // The app should automatically navigate due to the state change
-            // If it doesn't work, the user can manually restart the app
-            console.log('Authentication complete - app should navigate automatically');
+            console.log('✅ Join successful - forcing app remount to navigate');
+            // Force a complete app remount to ensure navigation works
+            setTimeout(() => {
+              triggerAppRemount();
+            }, 100);
           }
         }]
       );

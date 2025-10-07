@@ -13,6 +13,7 @@ const EditLaborScreen = () => {
   const { laborId } = route.params;
   const { updateLaborItem, getLaborItemById } = useJobStore();
   
+  const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
   const [customTotal, setCustomTotal] = useState('');
@@ -23,6 +24,7 @@ const EditLaborScreen = () => {
   useEffect(() => {
     const laborItem = getLaborItemById(laborId);
     if (laborItem) {
+      setName(laborItem.name || '');
       setDescription(laborItem.description || '');
       setHourlyRate(laborItem.hourlyRate?.toString() || '');
       setCustomTotal(laborItem.hourlyRate?.toString() || '');
@@ -31,8 +33,8 @@ const EditLaborScreen = () => {
   }, [laborId, getLaborItemById]);
 
   const handleSave = () => {
-    if (!description.trim()) {
-      Alert.alert('Error', 'Please enter a description');
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter a labor item name');
       return;
     }
 
@@ -62,7 +64,8 @@ const EditLaborScreen = () => {
     }
 
     updateLaborItem(laborId, {
-      description: description.trim(),
+      name: name.trim(),
+      description: description.trim() || undefined,
       hourlyRate: rate,
       category: category.trim() || undefined,
     });
@@ -73,12 +76,28 @@ const EditLaborScreen = () => {
   return (
     <View className="flex-1 bg-white">
       <ScrollView className="flex-1 p-4">
+        <View className="mb-6">
+          <Text className="text-2xl font-bold text-gray-900 mb-2">Edit Labor Item</Text>
+          <Text className="text-gray-600">Update labor service details</Text>
+        </View>
+
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Description *</Text>
+          <Text className="text-gray-700 font-medium mb-2">Labor Item Name *</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g., Electrical Installation, Plumbing Repair"
+            className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-gray-700 font-medium mb-2">Description</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
-            placeholder="Enter labor description"
+            placeholder="Optional detailed description of the labor service"
             multiline
             numberOfLines={3}
             className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"

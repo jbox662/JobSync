@@ -147,7 +147,8 @@ export interface Database {
         Row: {
           id: string
           workspace_id: string
-          description: string
+          name: string
+          description: string | null
           hourly_rate: number
           category: string | null
           created_at: string
@@ -157,7 +158,8 @@ export interface Database {
         Insert: {
           id?: string
           workspace_id: string
-          description: string
+          name: string
+          description?: string | null
           hourly_rate: number
           category?: string | null
           created_at?: string
@@ -167,7 +169,8 @@ export interface Database {
         Update: {
           id?: string
           workspace_id?: string
-          description?: string
+          name?: string
+          description?: string | null
           hourly_rate?: number
           category?: string | null
           created_at?: string

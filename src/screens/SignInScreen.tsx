@@ -176,34 +176,19 @@ const SignInScreen = () => {
           <View className="flex-1 h-px bg-gray-300" />
         </View>
 
-        {/* Business Options */}
-        <View className="space-y-3">
-          <Pressable
-            onPress={() => {
-              console.log('CreateBusiness button pressed');
-              navigation.navigate('CreateBusiness');
-            }}
-            className="border border-gray-300 rounded-xl py-4 items-center"
-          >
-            <View className="flex-row items-center">
-              <Ionicons name="add-circle-outline" size={20} color="#6B7280" />
-              <Text className="ml-2 text-gray-700 font-medium">Create New Business</Text>
-            </View>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              console.log('JoinBusiness button pressed');
-              navigation.navigate('JoinBusiness');
-            }}
-            className="border border-gray-300 rounded-xl py-4 items-center"
-          >
-            <View className="flex-row items-center">
-              <Ionicons name="people-outline" size={20} color="#6B7280" />
-              <Text className="ml-2 text-gray-700 font-medium">Join Existing Business</Text>
-            </View>
-          </Pressable>
-        </View>
+        {/* Join Business Option */}
+        <Pressable
+          onPress={() => {
+            console.log('JoinBusiness button pressed');
+            navigation.navigate('JoinBusiness');
+          }}
+          className="border border-blue-300 bg-blue-50 rounded-xl py-4 items-center"
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="people-outline" size={20} color="#2563EB" />
+            <Text className="ml-2 text-blue-700 font-medium">Join Business with Invite Code</Text>
+          </View>
+        </Pressable>
       </ScrollView>
     </View>
   );

@@ -184,23 +184,15 @@ export const useJobStore = create<JobStore>()(
         }
       };
 
-      // Auto-sync helper - triggers background sync after changes
-      let autoSyncTimeout: NodeJS.Timeout | null = null;
+      // Auto-sync helper - triggers immediate background sync after changes
       const triggerAutoSync = () => {
-        // Clear any pending sync
-        if (autoSyncTimeout) {
-          clearTimeout(autoSyncTimeout);
+        const state = get();
+        if (state.isAuthenticated && state.workspaceId && !state.isSyncing) {
+          // Immediate sync - no delay
+          state.syncNow().catch(() => {
+            // Silent failure - user can manually sync if needed
+          });
         }
-        
-        // Schedule sync after 2 seconds of inactivity
-        autoSyncTimeout = setTimeout(() => {
-          const state = get();
-          if (state.isAuthenticated && state.workspaceId && !state.isSyncing) {
-            state.syncNow().catch(() => {
-              // Silent failure - user can manually sync if needed
-            });
-          }
-        }, 2000); // Wait 2 seconds after last change before syncing
       };
 
       const syncTopLevel = (getStore?: () => any, setState?: (state: any) => void, getUserId?: (() => string | null) | string) => {

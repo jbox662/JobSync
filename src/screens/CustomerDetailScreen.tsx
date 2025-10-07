@@ -29,7 +29,9 @@ const CustomerDetailScreen = () => {
     updateCustomer,
     deleteCustomer,
     jobs, 
-    customers
+    customers,
+    quotes,
+    invoices
   } = useJobStore();
 
   const [customer, setCustomer] = useState(() => getCustomerById(customerId));
@@ -39,7 +41,7 @@ const CustomerDetailScreen = () => {
     useCallback(() => {
       const updatedCustomer = getCustomerById(customerId);
       setCustomer(updatedCustomer);
-    }, [customerId, customers])
+    }, [customerId, customers, jobs, quotes, invoices])
   );
 
   const onRefresh = useCallback(async () => {
@@ -53,17 +55,31 @@ const CustomerDetailScreen = () => {
   
   const filteredJobs = customerJobs.filter(job => {
     if (!selectedFilter) return true;
-    if (selectedFilter === 'active') return ['quote', 'approved', 'in-progress'].includes(job.status);
-    if (selectedFilter === 'completed') return job.status === 'completed';
     return job.status === selectedFilter;
   }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
+  // Calculate live statistics
+  const customerQuotes = quotes.filter(quote => quote.customerId === customerId);
+  const customerInvoices = invoices.filter(invoice => invoice.customerId === customerId);
+  
   const stats = {
     totalJobs: customerJobs.length,
     completedJobs: customerJobs.filter(job => job.status === 'completed').length,
-    activeJobs: customerJobs.filter(job => job.status === 'active').length,
-    totalRevenue: 0, // Calculate from related quotes/invoices
-    pendingValue: 0 // Calculate from related quotes/invoices
+    activeJobs: customerJobs.filter(job => ['not-started', 'waiting-quote', 'quote-sent', 'quote-approved', 'active'].includes(job.status)).length,
+    totalRevenue: customerInvoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + (invoice.paidAmount || invoice.total), 0),
+    pendingValue: customerQuotes
+      .filter(quote => ['sent', 'approved'].includes(quote.status))
+      .reduce((sum, quote) => sum + quote.total, 0) +
+      customerInvoices
+      .filter(invoice => invoice.status === 'sent')
+      .reduce((sum, invoice) => sum + invoice.total, 0),
+    totalQuotes: customerQuotes.length,
+    totalInvoices: customerInvoices.length,
+    averageJobValue: customerInvoices.length > 0 
+      ? customerInvoices.reduce((sum, invoice) => sum + invoice.total, 0) / customerInvoices.length 
+      : 0
   };
 
   const formatCurrency = (amount: number) => {
@@ -71,6 +87,18 @@ const CustomerDetailScreen = () => {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
+  };
+
+  const formatCompactCurrency = (amount: number) => {
+    if (amount >= 1000000) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      }).format(amount);
+    }
+    return formatCurrency(amount);
   };
 
   const getStatusColor = (status: string) => {
@@ -134,9 +162,14 @@ const CustomerDetailScreen = () => {
 
   const filterOptions = [
     { key: null, label: 'All', count: customerJobs.length },
+    { key: 'not-started', label: 'Not Started', count: customerJobs.filter(j => j.status === 'not-started').length },
+    { key: 'waiting-quote', label: 'Waiting Quote', count: customerJobs.filter(j => j.status === 'waiting-quote').length },
+    { key: 'quote-sent', label: 'Quote Sent', count: customerJobs.filter(j => j.status === 'quote-sent').length },
+    { key: 'quote-approved', label: 'Quote Approved', count: customerJobs.filter(j => j.status === 'quote-approved').length },
     { key: 'active', label: 'Active', count: stats.activeJobs },
-    { key: 'completed', label: 'Completed', count: stats.completedJobs },
     { key: 'on-hold', label: 'On Hold', count: customerJobs.filter(j => j.status === 'on-hold').length },
+    { key: 'completed', label: 'Completed', count: stats.completedJobs },
+    { key: 'cancelled', label: 'Cancelled', count: customerJobs.filter(j => j.status === 'cancelled').length },
   ];
 
   const StatCard = ({ title, value, icon, color, subtitle }: {
@@ -148,15 +181,22 @@ const CustomerDetailScreen = () => {
   }) => (
     <View className="bg-white rounded-xl p-4 flex-1 mx-1 shadow-sm border border-gray-100">
       <View className="flex-row items-center justify-between">
-        <View className="flex-1">
+        <View className="flex-1 mr-3">
           <Text className="text-gray-600 text-sm font-medium">{title}</Text>
-          <Text className="text-2xl font-bold text-gray-900 mt-1" numberOfLines={1}>{value}</Text>
+          <Text 
+            className="text-lg font-bold text-gray-900 mt-1" 
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.5}
+          >
+            {value}
+          </Text>
           {subtitle && (
             <Text className="text-gray-500 text-xs mt-1">{subtitle}</Text>
           )}
         </View>
-        <View className={`w-12 h-12 rounded-full items-center justify-center ${color}`}>
-          <Ionicons name={icon} size={24} color="white" />
+        <View className={`w-8 h-8 rounded-full items-center justify-center ${color} flex-shrink-0`}>
+          <Ionicons name={icon} size={16} color="white" />
         </View>
       </View>
     </View>
@@ -342,7 +382,7 @@ const CustomerDetailScreen = () => {
             />
             <StatCard
               title="Revenue"
-              value={formatCurrency(stats.totalRevenue)}
+              value={formatCompactCurrency(stats.totalRevenue)}
               icon="trending-up"
               color="bg-purple-500"
               subtitle="From completed jobs"
@@ -356,7 +396,7 @@ const CustomerDetailScreen = () => {
                 <View className="ml-3 flex-1">
                   <Text className="font-semibold text-yellow-800">Pending Value</Text>
                   <Text className="text-yellow-700 text-lg font-bold">
-                    {formatCurrency(stats.pendingValue)}
+                    {formatCompactCurrency(stats.pendingValue)}
                   </Text>
                   <Text className="text-yellow-600 text-sm">
                     From active jobs and quotes

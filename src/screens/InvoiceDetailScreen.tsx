@@ -240,22 +240,40 @@ const InvoiceDetailScreen = () => {
         }
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
       >
-        {/* Invoice Header */}
-        <View className="px-4 pt-4">
-          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        {/* Professional Invoice Header */}
+        <View className="px-6 pt-6">
+          <View className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 4
+          }}>
             {/* Invoice Number and Status */}
-            <View className="flex-row items-center justify-between mb-4">
+            <View className="flex-row items-center justify-between mb-6">
               <View className="flex-row items-center">
-                <View className="bg-green-100 rounded-lg p-2 mr-3">
-                  <Ionicons name="receipt" size={20} color="#059669" />
+                <View className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-3 mr-4" style={{
+                  shadowColor: '#10B981',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 3
+                }}>
+                  <Ionicons name="receipt" size={24} color="white" />
                 </View>
                 <View>
-                  <Text className="text-sm text-gray-500 font-medium">Invoice Number</Text>
-                  <Text className="text-lg font-bold text-gray-900">{invoice.invoiceNumber}</Text>
+                  <Text className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Invoice Number</Text>
+                  <Text className="text-2xl font-bold text-gray-900 mt-1">{invoice.invoiceNumber}</Text>
                 </View>
               </View>
-              <View className={`px-3 py-2 rounded-lg ${getStatusColor(invoice.status)}`}>
-                <Text className="text-sm font-semibold">{getStatusLabel(invoice.status)}</Text>
+              <View className={`px-4 py-2 rounded-xl border-2 ${getStatusColor(invoice.status)}`} style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                elevation: 1
+              }}>
+                <Text className="text-sm font-bold">{getStatusLabel(invoice.status)}</Text>
               </View>
             </View>
 
@@ -278,71 +296,117 @@ const InvoiceDetailScreen = () => {
           </View>
         </View>
 
-        {/* Invoice Summary */}
-        <View className="px-4 pt-4">
-          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <Text className="text-lg font-bold text-gray-900 mb-4">Invoice Summary</Text>
+        {/* Professional Invoice Summary */}
+        <View className="px-6 pt-6">
+          <View className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 4
+          }}>
+            <View className="flex-row items-center mb-6">
+              <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="calculator" size={20} color="#10B981" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900">Invoice Summary</Text>
+            </View>
             
             {/* Items Count */}
-            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
               <View className="flex-row items-center">
-                <Ionicons name="list-outline" size={20} color="#6B7280" />
-                <Text className="text-gray-700 font-medium ml-3">Line Items</Text>
+                <View className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center mr-3">
+                  <Ionicons name="list" size={16} color="#3B82F6" />
+                </View>
+                <Text className="text-gray-700 font-semibold">Line Items</Text>
               </View>
-              <Text className="text-gray-900 font-semibold">{invoice.items.length} items</Text>
+              <View className="bg-blue-100 px-3 py-1 rounded-full">
+                <Text className="text-blue-700 font-bold text-sm">{invoice.items.length} items</Text>
+              </View>
             </View>
 
             {/* Subtotal */}
-            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
               <View className="flex-row items-center">
-                <Ionicons name="calculator-outline" size={20} color="#6B7280" />
-                <Text className="text-gray-700 font-medium ml-3">Subtotal</Text>
+                <View className="w-8 h-8 bg-gray-100 rounded-lg items-center justify-center mr-3">
+                  <Ionicons name="calculator" size={16} color="#6B7280" />
+                </View>
+                <Text className="text-gray-700 font-semibold">Subtotal</Text>
               </View>
-              <Text className="text-gray-900 font-semibold">{formatCurrency(invoice.subtotal)}</Text>
+              <Text className="text-gray-900 font-bold text-lg">{formatCurrency(invoice.subtotal)}</Text>
             </View>
 
             {/* Tax */}
-            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
               <View className="flex-row items-center">
-                <Ionicons name="receipt-outline" size={20} color="#6B7280" />
-                <Text className="text-gray-700 font-medium ml-3">Tax ({invoice.taxRate || 0}%)</Text>
+                <View className="w-8 h-8 bg-orange-100 rounded-lg items-center justify-center mr-3">
+                  <Ionicons name="receipt" size={16} color="#F59E0B" />
+                </View>
+                <Text className="text-gray-700 font-semibold">Tax ({invoice.taxRate || 0}%)</Text>
               </View>
-              <Text className="text-gray-900 font-semibold">{formatCurrency(invoice.tax || 0)}</Text>
+              <Text className="text-gray-900 font-bold text-lg">{formatCurrency(invoice.tax || 0)}</Text>
             </View>
 
             {/* Due Date */}
-            <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
               <View className="flex-row items-center">
-                <Ionicons name="calendar-outline" size={20} color="#6B7280" />
-                <Text className="text-gray-700 font-medium ml-3">Due Date</Text>
+                <View className={`w-8 h-8 rounded-lg items-center justify-center mr-3 ${isOverdue ? 'bg-red-100' : 'bg-purple-100'}`}>
+                  <Ionicons name="calendar" size={16} color={isOverdue ? '#EF4444' : '#8B5CF6'} />
+                </View>
+                <Text className="text-gray-700 font-semibold">Due Date</Text>
               </View>
               <View className="items-end">
-                <Text className="text-gray-900 font-semibold">
+                <Text className={`font-bold text-lg ${isOverdue ? 'text-red-600' : 'text-gray-900'}`}>
                   {format(new Date(invoice.dueDate), 'MMM d, yyyy')}
                 </Text>
                 {isOverdue && (
-                  <Text className="text-red-600 text-xs font-medium">
-                    {Math.ceil((new Date().getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days overdue
-                  </Text>
+                  <View className="bg-red-100 px-2 py-1 rounded-md mt-1">
+                    <Text className="text-red-700 text-xs font-bold">
+                      {Math.ceil((new Date().getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days overdue
+                    </Text>
+                  </View>
                 )}
               </View>
             </View>
 
             {/* Total */}
-            <View className="flex-row items-center justify-between py-4">
+            <View className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mt-4 border border-green-100">
               <View className="flex-row items-center">
-                <Ionicons name="card-outline" size={20} color="#059669" />
-                <Text className="text-green-600 font-bold ml-3 text-lg">Total</Text>
+                <View className="w-10 h-10 bg-green-600 rounded-xl items-center justify-center mr-3" style={{
+                  shadowColor: '#10B981',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 2
+                }}>
+                  <Ionicons name="card" size={20} color="white" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-green-900 font-bold text-lg mb-1">Total</Text>
+                  <Text className="text-green-600 font-bold text-2xl" numberOfLines={1}>
+                    {formatCurrency(invoice.total)}
+                  </Text>
+                </View>
               </View>
-              <Text className="text-green-600 font-bold text-xl">{formatCurrency(invoice.total)}</Text>
             </View>
           </View>
         </View>
 
         {/* Customer & Details */}
-        <View className="px-4 pt-4">
-          <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <Text className="text-lg font-bold text-gray-900 mb-4">Customer Information</Text>
+        <View className="px-6 pt-6">
+          <View className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 4
+          }}>
+            <View className="flex-row items-center mb-6">
+              <View className="w-10 h-10 bg-purple-100 rounded-full items-center justify-center mr-3">
+                <Ionicons name="person" size={20} color="#8B5CF6" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900">Customer Information</Text>
+            </View>
             
             {/* Customer */}
             <Pressable onPress={handleViewCustomer} className="flex-row items-center justify-between p-4 bg-gray-50 rounded-xl mb-4">
@@ -512,38 +576,161 @@ const InvoiceDetailScreen = () => {
         )}
       </ScrollView>
 
-      {/* Quick Actions */}
+      {/* Professional Action Bar */}
       <View 
-        className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 flex-row"
-        style={{ paddingBottom: insets.bottom + 16 }}
+        className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
+        style={{ 
+          paddingBottom: insets.bottom + 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          elevation: 8
+        }}
       >
-        {customer?.email && (
-          <View className="mr-3">
-            <EmailButton
-              type="invoice"
-              document={invoice}
-              variant="button"
-              size="medium"
-              onEmailSent={() => {
-                console.log('Invoice emailed successfully');
+        <View className="px-6 py-5">
+          <View className="flex-row items-center space-x-3">
+            {/* Email Button */}
+            {customer?.email && (
+              <EmailButton
+                type="invoice"
+                document={invoice}
+                variant="icon"
+                size="medium"
+                onEmailSent={() => {
+                  console.log('Invoice emailed successfully');
+                }}
+              />
+            )}
+            
+            {/* Edit Button */}
+            <Pressable
+              onPress={handleEdit}
+              className="flex-1 bg-green-600 py-3 px-4 rounded-xl"
+              style={{
+                shadowColor: '#10B981',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3
               }}
-            />
+            >
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="create-outline" size={18} color="white" />
+                <Text className="text-white font-semibold ml-2 text-sm">Edit Invoice</Text>
+              </View>
+            </Pressable>
+
+            {/* Secondary Actions */}
+            {job && (
+              <Pressable
+                onPress={handleViewJob}
+                className="w-11 h-11 bg-gray-100 rounded-xl items-center justify-center"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 2,
+                  elevation: 1
+                }}
+              >
+                <Ionicons name="briefcase-outline" size={18} color="#6B7280" />
+              </Pressable>
+            )}
+            
+            {customer && (
+              <Pressable
+                onPress={handleViewCustomer}
+                className="w-11 h-11 bg-gray-100 rounded-xl items-center justify-center"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 2,
+                  elevation: 1
+                }}
+              >
+                <Ionicons name="person-outline" size={18} color="#6B7280" />
+              </Pressable>
+            )}
+            
+            <Pressable
+              onPress={handleDelete}
+              className="w-11 h-11 bg-red-100 rounded-xl items-center justify-center"
+              style={{
+                shadowColor: '#EF4444',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.1,
+                shadowRadius: 2,
+                elevation: 1
+              }}
+            >
+              <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            </Pressable>
           </View>
-        )}
-        
-        <Pressable
-          onPress={handleEdit}
-          className="px-4 py-4 bg-gray-100 rounded-xl mr-3"
-        >
-          <Ionicons name="create-outline" size={24} color="#6B7280" />
-        </Pressable>
-        
-        <Pressable
-          onPress={handleDelete}
-          className="px-4 py-4 bg-red-100 rounded-xl"
-        >
-          <Ionicons name="trash-outline" size={24} color="#EF4444" />
-        </Pressable>
+
+          {/* Status Actions Row */}
+          {invoice.status === 'draft' && (
+            <View className="mt-3 pt-3 border-t border-gray-100">
+              <View className="flex-row items-center space-x-3">
+                <Pressable
+                  onPress={() => updateInvoice(invoice.id, { status: 'sent', sentAt: new Date().toISOString() })}
+                  className="flex-1 bg-blue-600 py-2.5 px-3 rounded-lg"
+                  style={{
+                    shadowColor: '#3B82F6',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 2,
+                    elevation: 2
+                  }}
+                >
+                  <View className="flex-row items-center justify-center">
+                    <Ionicons name="send-outline" size={16} color="white" />
+                    <Text className="text-white font-semibold ml-1.5 text-xs">Mark as Sent</Text>
+                  </View>
+                </Pressable>
+                
+                <Pressable
+                  onPress={() => updateInvoice(invoice.id, { status: 'paid', paidAt: new Date().toISOString() })}
+                  className="flex-1 bg-emerald-600 py-2.5 px-3 rounded-lg"
+                  style={{
+                    shadowColor: '#059669',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 2,
+                    elevation: 2
+                  }}
+                >
+                  <View className="flex-row items-center justify-center">
+                    <Ionicons name="checkmark-circle-outline" size={16} color="white" />
+                    <Text className="text-white font-semibold ml-1.5 text-xs">Mark Paid</Text>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+          )}
+
+          {invoice.status === 'sent' && (
+            <View className="mt-3 pt-3 border-t border-gray-100">
+              <Pressable
+                onPress={() => updateInvoice(invoice.id, { status: 'paid', paidAt: new Date().toISOString() })}
+                className="bg-emerald-600 py-2.5 px-3 rounded-lg"
+                style={{
+                  shadowColor: '#059669',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 2,
+                  elevation: 2
+                }}
+              >
+                <View className="flex-row items-center justify-center">
+                  <Ionicons name="checkmark-circle-outline" size={16} color="white" />
+                  <Text className="text-white font-semibold ml-1.5 text-xs">Mark as Paid</Text>
+                </View>
+              </Pressable>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );

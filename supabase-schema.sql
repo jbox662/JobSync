@@ -56,7 +56,8 @@ CREATE TABLE parts (
 CREATE TABLE labor_items (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
-  description TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
   hourly_rate DECIMAL(10,2) NOT NULL,
   category TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -71,7 +72,7 @@ CREATE TABLE jobs (
   customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
-  status TEXT CHECK (status IN ('active', 'on-hold', 'completed', 'cancelled')) NOT NULL,
+  status TEXT CHECK (status IN ('not-started', 'waiting-quote', 'quote-sent', 'quote-approved', 'active', 'on-hold', 'completed', 'cancelled')) NOT NULL,
   notes TEXT,
   start_date TIMESTAMP WITH TIME ZONE,
   due_date TIMESTAMP WITH TIME ZONE,
