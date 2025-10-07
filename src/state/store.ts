@@ -688,14 +688,8 @@ export const useJobStore = create<JobStore>()(
                 // Use captured uid value to prevent closure context loss
                 syncTopLevel(getStore, setState, () => capturedUid);
               } catch (storeError: any) {
-                console.error('🚨 Store context lost during pull processing:', storeError);
-                console.error('Store error details:', {
-                  hasGetStore: !!getStore,
-                  hasSetState: !!setState,
-                  capturedUid,
-                  errorMessage: storeError?.message || 'Unknown error',
-                  errorStack: storeError?.stack || 'No stack trace available'
-                });
+                console.log('Store context lost during pull processing');
+                console.log('Error:', storeError?.message || 'Unknown error');
               }
             } else if (pull) {
               try {
@@ -719,13 +713,8 @@ export const useJobStore = create<JobStore>()(
                   } 
                 });
               } catch (storeError: any) {
-                console.error('🚨 Store context lost during timestamp update:', storeError);
-                console.error('Timestamp update error details:', {
-                  hasGetStore: !!getStore,
-                  hasSetState: !!setState,
-                  capturedUid,
-                  errorMessage: storeError?.message || 'Unknown error'
-                });
+                console.log('Store context lost during timestamp update');
+                console.log('Error:', storeError?.message || 'Unknown error');
               }
             }
             
