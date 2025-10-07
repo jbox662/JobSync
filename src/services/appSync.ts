@@ -1,4 +1,4 @@
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, NativeEventSubscription } from 'react-native';
 import { useJobStore } from '../state/store';
 
 class AppSyncService {
@@ -6,6 +6,7 @@ class AppSyncService {
   private isInitialized = false;
   private lastSyncTime: number = 0;
   private readonly SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  private appStateSubscription: NativeEventSubscription | null = null;
 
   static getInstance(): AppSyncService {
     if (!AppSyncService.instance) {
@@ -19,8 +20,8 @@ class AppSyncService {
     
     this.isInitialized = true;
     
-    // Listen for app state changes
-    AppState.addEventListener('change', this.handleAppStateChange);
+    // Listen for app state changes - store the subscription
+    this.appStateSubscription = AppState.addEventListener('change', this.handleAppStateChange);
     
     // Initial sync when app starts
     this.performFullSync();
@@ -103,7 +104,11 @@ class AppSyncService {
   }
 
   cleanup() {
-    AppState.removeEventListener('change', this.handleAppStateChange);
+    // Use the new React Native API - call remove() on the subscription
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
     this.isInitialized = false;
   }
 }
