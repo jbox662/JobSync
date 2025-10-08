@@ -375,19 +375,25 @@ class AuthService {
       }
 
       // Try to get user (this may trigger token refresh)
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.log('👤 Error getting user:', userError.message);
+      // Wrap in try-catch to handle refresh token errors silently
+      let user;
+      try {
+        const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
         
-        // Handle specific authentication errors
-        if (userError.message?.includes('refresh') || 
-            userError.message?.includes('token') || 
-            userError.message?.includes('Invalid')) {
-          console.log('🔑 Token/refresh error detected, clearing stale session');
-          await this.clearStaleSession();
+        if (userError) {
+          throw userError;
         }
-        return null;
+        user = authUser;
+      } catch (refreshError: any) {
+        // Silently handle refresh token errors
+        if (refreshError.message?.includes('Invalid Refresh Token') || 
+            refreshError.message?.includes('Refresh Token Not Found') ||
+            refreshError.message?.includes('refresh_token')) {
+          console.log('🔄 Refresh token invalid, clearing session');
+          await this.clearStaleSession();
+          return null;
+        }
+        throw refreshError; // Re-throw other errors
       }
       
       if (!user) {
@@ -441,17 +447,13 @@ class AuthService {
       }
 
     } catch (error: any) {
-      console.error('❌ Failed to get current user:', error);
-      
-      // Handle specific Supabase auth errors
+      // Final catch for any unexpected errors
       if (error.message?.includes('Invalid Refresh Token') || 
           error.message?.includes('refresh_token') ||
-          error.message?.includes('Refresh Token Not Found')) {
-        console.log('🔄 Refresh token error detected, clearing stale session');
-        await this.clearStaleSession();
-      } else if (error.message?.includes('JWT') || 
-                 error.message?.includes('token')) {
-        console.log('🎟️ Token error detected, clearing authentication state');
+          error.message?.includes('Refresh Token Not Found') ||
+          error.message?.includes('JWT') || 
+          error.message?.includes('token')) {
+        console.log('🔄 Token error, clearing stale session');
         await this.clearStaleSession();
       }
       
