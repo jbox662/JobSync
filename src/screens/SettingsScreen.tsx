@@ -616,14 +616,6 @@ const SettingsScreen = () => {
                 <Text className="text-gray-900 font-medium capitalize">{Platform.OS}</Text>
               </View>
               
-              {__DEV__ && (
-                <View className="flex-row justify-between items-center py-2">
-                  <Text className="text-gray-600">Environment</Text>
-                  <View className="bg-orange-100 px-2 py-1 rounded">
-                    <Text className="text-orange-800 text-xs font-medium">Development</Text>
-                  </View>
-                </View>
-              )}
             </View>
           </View>
 
