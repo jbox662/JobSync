@@ -192,7 +192,7 @@ function setupCredentials() {
 // Main initialization process
 async function main() {
   console.log('🚀 EAS Project Initialization\n');
-  console.log('This script will initialize your JobSync app for EAS Build');
+  console.log('This script will initialize your BizFlow app for EAS Build');
   console.log('=' * 60);
   
   // Step 1: Load environment

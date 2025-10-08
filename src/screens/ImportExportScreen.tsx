@@ -56,7 +56,7 @@ const ImportExportScreen = () => {
   const handleImport = async () => {
     Alert.alert(
       'Import Data',
-      'This will import data from a JobSync export file. Existing data will not be overwritten.\n\nDo you want to continue?',
+      'This will import data from a BizFlow export file. Existing data will not be overwritten.\n\nDo you want to continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -166,7 +166,7 @@ const ImportExportScreen = () => {
         <View className="mb-6">
           <Text className="text-2xl font-bold text-gray-900 mb-2">Import & Export</Text>
           <Text className="text-gray-600">
-            Backup your data or import from other JobSync installations
+            Backup your data or import from other BizFlow installations
           </Text>
         </View>
 
@@ -208,7 +208,7 @@ const ImportExportScreen = () => {
           
           <ActionButton
             title="Import from File"
-            description="Import data from a JobSync export file"
+            description="Import data from a BizFlow export file"
             icon="cloud-upload-outline"
             onPress={handleImport}
             loading={isImporting}

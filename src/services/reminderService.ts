@@ -118,7 +118,7 @@ Please remit payment at your earliest convenience. If you have any questions abo
 Thank you for your business!
 
 Best regards,
-JobSync Team
+BizFlow Team
     `.trim();
 
     return { subject, body };

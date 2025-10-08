@@ -14,7 +14,6 @@ const DashboardScreen = () => {
     customers, 
     parts, 
     laborItems, 
-    generateSampleData,
     invoices,
     quotes
   } = useJobStore();
@@ -143,29 +142,9 @@ const DashboardScreen = () => {
         {/* Header */}
         <View className="mb-6">
           <Text className="text-3xl font-bold text-gray-900">Dashboard</Text>
-          <Text className="text-gray-600 mt-1">Welcome back to JobSync</Text>
+          <Text className="text-gray-600 mt-1">Welcome back to BizFlow</Text>
         </View>
 
-        {/* Sample Data Generation */}
-        {totalJobs === 0 && (
-          <View className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 mb-6 shadow-lg">
-            <View className="flex-row items-center">
-              <View className="flex-1">
-                <Text className="text-white text-lg font-bold mb-1">Get Started</Text>
-                <Text className="text-blue-100 mb-4">No data yet? Generate some sample data to explore the app!</Text>
-                <Pressable
-                  onPress={generateSampleData}
-                  className="bg-white rounded-xl px-6 py-3 self-start"
-                >
-                  <Text className="text-blue-600 font-semibold">Generate Sample Data</Text>
-                </Pressable>
-              </View>
-              <View className="w-16 h-16 bg-white/20 rounded-full items-center justify-center ml-4">
-                <Ionicons name="rocket-outline" size={32} color="white" />
-              </View>
-            </View>
-          </View>
-        )}
 
         {/* Revenue Overview */}
         <View className="bg-gray-900 rounded-2xl p-6 mb-6 shadow-lg">

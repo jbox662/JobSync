@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "JobSync",
-    "slug": "jobsync",
+    "name": "BizFlow",
+    "slug": "bizflow",
     "scheme": "vibecode",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,7 +15,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vibecode.jobsync.yos9j3",
+      "bundleIdentifier": "com.vibecode.bizflow.yos9j3",
       "buildNumber": "18",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -48,7 +48,7 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "package": "com.vibecode.jobsync.yos9j3",
+      "package": "com.vibecode.bizflow.yos9j3",
       "versionCode": 1,
       "permissions": [
         "CAMERA",
@@ -78,6 +78,16 @@
       "eas": {
         "projectId": "1a20e6d8-8967-49b2-a3ba-ea0fd65e26d6"
       }
-    }
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-build-properties",
+      "expo-font",
+      "expo-mail-composer",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-video",
+      "expo-web-browser"
+    ]
   }
 }

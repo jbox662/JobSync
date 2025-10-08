@@ -136,7 +136,7 @@ const CustomDrawerContent = (props: any) => {
             <Ionicons name="briefcase" size={24} color="white" />
           </View>
           <View>
-            <Text className="text-white text-xl font-bold">JobSync</Text>
+            <Text className="text-white text-xl font-bold">BizFlow</Text>
             <Text className="text-gray-400 text-sm">Professional Edition</Text>
           </View>
         </View>

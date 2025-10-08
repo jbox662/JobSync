@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { useJobStore } from "../state/store";
 import { isSupabaseAvailable, supabase } from "../api/supabase";
-import { triggerAppRemount } from "../../App";
+import { triggerAppRemount } from "../utils/appUtils";
 
 const JoinBusinessScreen = () => {
   const insets = useSafeAreaInsets();

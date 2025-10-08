@@ -35,6 +35,14 @@ import { AppState, View, Text, ActivityIndicator } from "react-native";
 import { useJobStore } from "./src/state/store";
 import { authService } from "./src/services/auth";
 
+// Loading screen component to avoid inline function warning
+const LoadingScreen = () => (
+  <View className="flex-1 items-center justify-center bg-white">
+    <ActivityIndicator size="large" color="#2563EB" />
+    <Text className="mt-4 text-gray-600">Loading...</Text>
+  </View>
+);
+
 export default function App() {
   const syncNow = useJobStore((s) => s.syncNow);
   const workspaceId = useJobStore((s) => s.workspaceId);
@@ -114,12 +122,7 @@ export default function App() {
       <SafeAreaProvider>
         <NavigationContainer>
           <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-            <AuthStack.Screen name="Loading" component={() => (
-              <View className="flex-1 items-center justify-center bg-white">
-                <ActivityIndicator size="large" color="#2563EB" />
-                <Text className="mt-4 text-gray-600">Loading...</Text>
-              </View>
-            )} />
+            <AuthStack.Screen name="Loading" component={LoadingScreen} />
           </AuthStack.Navigator>
         </NavigationContainer>
       </SafeAreaProvider>

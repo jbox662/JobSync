@@ -54,7 +54,7 @@ export class ImportExportService {
       if (isAvailable) {
         await Sharing.shareAsync(fileUri, {
           mimeType: 'application/json',
-          dialogTitle: 'Export JobSync Data',
+          dialogTitle: 'Export BizFlow Data',
         });
         return true;
       } else {
@@ -98,7 +98,7 @@ export class ImportExportService {
         return {
           success: false,
           imported: { laborItems: 0, jobs: 0, customers: 0 },
-          errors: ['Invalid file format. Expected JobSync export file.'],
+          errors: ['Invalid file format. Expected BizFlow export file.'],
         };
       }
 

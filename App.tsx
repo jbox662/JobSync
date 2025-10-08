@@ -37,17 +37,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useJobStore } from "./src/state/store";
 import { authService } from "./src/services/auth";
 import { appSyncService } from "./src/services/appSync";
+import { setAppRemountFunction, clearAppRemountFunction } from "./src/utils/appUtils";
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
-// Global function to force app remount
-let forceAppRemount: (() => void) | null = null;
-
-export const triggerAppRemount = () => {
-  if (forceAppRemount) {
-    forceAppRemount();
-  } else {
-    console.warn('App remount function not available');
-  }
-};
+// Loading screen component to avoid inline function warning
+const LoadingScreen = () => (
+  <View className="flex-1 items-center justify-center bg-white">
+    <ActivityIndicator size="large" color="#2563EB" />
+    <Text className="mt-4 text-gray-600">Loading...</Text>
+  </View>
+);
 
 export default function App() {
   const syncNow = useJobStore((s) => s.syncNow);
@@ -64,13 +63,15 @@ export default function App() {
 
   // Set up global remount function
   useEffect(() => {
-    forceAppRemount = () => {
+    const remountFn = () => {
       console.log('🔄 Forcing complete app remount');
       setAppKey(prev => prev + 1);
     };
     
+    setAppRemountFunction(remountFn);
+    
     return () => {
-      forceAppRemount = null;
+      clearAppRemountFunction();
     };
   }, []);
 
@@ -261,18 +262,15 @@ export default function App() {
   // Show loading screen while checking authentication
   if (isLoading) {
     return (
-      <SafeAreaProvider>
-        <NavigationContainer>
-          <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-            <AuthStack.Screen name="Loading" component={() => (
-              <View className="flex-1 items-center justify-center bg-white">
-                <ActivityIndicator size="large" color="#2563EB" />
-                <Text className="mt-4 text-gray-600">Loading...</Text>
-              </View>
-            )} />
-          </AuthStack.Navigator>
-        </NavigationContainer>
-      </SafeAreaProvider>
+      <KeyboardProvider>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+              <AuthStack.Screen name="Loading" component={LoadingScreen} />
+            </AuthStack.Navigator>
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </KeyboardProvider>
     );
   }
 
@@ -280,19 +278,21 @@ export default function App() {
   if (!isAuthenticated) {
     console.log('🔐 Showing authentication screens - not authenticated');
     return (
-      <SafeAreaProvider>
-        <NavigationContainer>
-          <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-            {/* @ts-ignore */}
-            <AuthStack.Screen name="SignIn" component={SignInScreen} />
-            {/* @ts-ignore */}
-            <AuthStack.Screen name="SignUp" component={SignUpScreen} />
-            {/* @ts-ignore */}
-            <AuthStack.Screen name="JoinBusiness" component={JoinBusinessScreen} />
-          </AuthStack.Navigator>
-          <StatusBar style="auto" />
-        </NavigationContainer>
-      </SafeAreaProvider>
+      <KeyboardProvider>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+              {/* @ts-ignore */}
+              <AuthStack.Screen name="SignIn" component={SignInScreen} />
+              {/* @ts-ignore */}
+              <AuthStack.Screen name="SignUp" component={SignUpScreen} />
+              {/* @ts-ignore */}
+              <AuthStack.Screen name="JoinBusiness" component={JoinBusinessScreen} />
+            </AuthStack.Navigator>
+            <StatusBar style="auto" />
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </KeyboardProvider>
     );
   }
 
@@ -312,29 +312,33 @@ export default function App() {
   if (needsOnboarding) {
     console.log('🏢 Showing onboarding screens - authenticated but no workspace');
     return (
-      <SafeAreaProvider>
-        <NavigationContainer>
-          <OnbStack.Navigator screenOptions={{ headerShown: false }}>
-            {/* @ts-ignore */}
-            <OnbStack.Screen name="OnboardingChoice" component={OnboardingChoiceScreen} />
-            {/* @ts-ignore */}
-            <OnbStack.Screen name="CreateBusiness" component={CreateBusinessScreen} />
-            {/* @ts-ignore */}
-            <OnbStack.Screen name="JoinBusiness" component={JoinBusinessScreen} />
-          </OnbStack.Navigator>
-          <StatusBar style="auto" />
-        </NavigationContainer>
-      </SafeAreaProvider>
+      <KeyboardProvider>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <OnbStack.Navigator screenOptions={{ headerShown: false }}>
+              {/* @ts-ignore */}
+              <OnbStack.Screen name="OnboardingChoice" component={OnboardingChoiceScreen} />
+              {/* @ts-ignore */}
+              <OnbStack.Screen name="CreateBusiness" component={CreateBusinessScreen} />
+              {/* @ts-ignore */}
+              <OnbStack.Screen name="JoinBusiness" component={JoinBusinessScreen} />
+            </OnbStack.Navigator>
+            <StatusBar style="auto" />
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </KeyboardProvider>
     );
   }
 
   // Show main app if authenticated and has workspace
   return (
-    <SafeAreaProvider key={`app-${appKey}`}>
-      <NavigationContainer>
-        <AppNavigator />
-        <StatusBar style="auto" />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <KeyboardProvider>
+      <SafeAreaProvider key={`app-${appKey}`}>
+        <NavigationContainer>
+          <AppNavigator />
+          <StatusBar style="auto" />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </KeyboardProvider>
   );
 }
