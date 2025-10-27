@@ -34,6 +34,8 @@ const openai_api_key = Constants.expoConfig.extra.apikey;
 import React, { useEffect, useState } from "react";
 import { AppState, View, Text, ActivityIndicator } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Font from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from "./src/state/store";
 import { authService } from "./src/services/auth";
 import { appSyncService } from "./src/services/appSync";
@@ -56,10 +58,30 @@ export default function App() {
   const setAuthenticatedUser = useJobStore((s) => s.setAuthenticatedUser);
   const clearAuthentication = useJobStore((s) => s.clearAuthentication);
   const syncError = useJobStore ((s) => s.syncError);
-  
+
   const [isLoading, setIsLoading] = useState(true);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
   const [forceRender, setForceRender] = useState(0);
   const [appKey, setAppKey] = useState(0);
+
+  // Load fonts before anything else
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          ...Ionicons.font,
+        });
+        console.log('✅ Fonts loaded successfully');
+        setFontsLoaded(true);
+      } catch (error) {
+        console.error('❌ Error loading fonts:', error);
+        // Set fontsLoaded to true anyway to prevent app from being stuck
+        setFontsLoaded(true);
+      }
+    }
+
+    loadFonts();
+  }, []);
 
   // Set up global remount function
   useEffect(() => {
@@ -258,9 +280,9 @@ export default function App() {
 
   const AuthStack = createNativeStackNavigator();
   const OnbStack = createNativeStackNavigator();
-  
-  // Show loading screen while checking authentication
-  if (isLoading) {
+
+  // Show loading screen while fonts are loading or checking authentication
+  if (!fontsLoaded || isLoading) {
     return (
       <KeyboardProvider>
         <SafeAreaProvider>
