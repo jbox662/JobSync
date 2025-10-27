@@ -36,9 +36,58 @@ const CreatePartScreen = () => {
 
       Alert.alert('Success', 'Part details have been filled from the QR code');
     } catch (error) {
-      // If it's not JSON, treat it as a plain SKU
-      setSku(scannedCode);
-      Alert.alert('Success', `SKU "${scannedCode}" has been added`);
+      // Not JSON - try to parse as text with labels
+      let partName = '';
+      let partNumber = '';
+
+      // Look for "Part Name:" or "Name:" pattern
+      const nameMatch = scannedCode.match(/(?:Part Name|Name)\s*:\s*([^\n\r]+?)(?=\s*(?:Part Number|Number|SKU|$))/i);
+      if (nameMatch && nameMatch[1]) {
+        partName = nameMatch[1].trim();
+      }
+
+      // Look for "Part Number:" or "Number:" or "SKU:" pattern
+      const numberMatch = scannedCode.match(/(?:Part Number|Number|SKU)\s*:\s*([^\n\r]+?)(?=\s*(?:Part Name|Name|Price|Brand|Category|Description|$))/i);
+      if (numberMatch && numberMatch[1]) {
+        partNumber = numberMatch[1].trim();
+      }
+
+      // Look for "Price:" pattern
+      const priceMatch = scannedCode.match(/(?:Price|Unit Price)\s*:\s*([0-9.]+)/i);
+      let price = '';
+      if (priceMatch && priceMatch[1]) {
+        price = priceMatch[1].trim();
+      }
+
+      // Look for "Brand:" pattern
+      const brandMatch = scannedCode.match(/Brand\s*:\s*([^\n\r]+?)(?=\s*(?:Price|Category|Description|$))/i);
+      let brandValue = '';
+      if (brandMatch && brandMatch[1]) {
+        brandValue = brandMatch[1].trim();
+      }
+
+      // Look for "Category:" pattern
+      const categoryMatch = scannedCode.match(/Category\s*:\s*([^\n\r]+?)(?=\s*(?:Price|Brand|Description|$))/i);
+      let categoryValue = '';
+      if (categoryMatch && categoryMatch[1]) {
+        categoryValue = categoryMatch[1].trim();
+      }
+
+      // Apply the extracted values
+      if (partName) setName(partName);
+      if (partNumber) setSku(partNumber);
+      if (price) setUnitPrice(price);
+      if (brandValue) setBrand(brandValue);
+      if (categoryValue) setCategory(categoryValue);
+
+      // If we found structured data, show success
+      if (partName || partNumber) {
+        Alert.alert('Success', `Filled in: ${partName ? 'Name' : ''}${partName && partNumber ? ', ' : ''}${partNumber ? 'SKU' : ''}`);
+      } else {
+        // If no patterns matched, treat the whole thing as SKU
+        setSku(scannedCode);
+        Alert.alert('Success', `SKU "${scannedCode}" has been added`);
+      }
     }
   };
 
