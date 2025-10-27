@@ -1047,10 +1047,13 @@ export const useJobStore = create<JobStore>()(
           syncTopLevel(get, set, getCurrentUserId);
           triggerAutoSync();
         },
-        updateInvoice: (id, updates) => { 
+        updateInvoice: (id, updates) => {
           const slice = getWorkspaceData();
           if (!slice) return;
-          
+
+          const originalInvoice = (slice.invoices || []).find((i) => i.id === id);
+          if (!originalInvoice) return;
+
           const updatedInvoices = (slice.invoices || []).map((invoice) => {
             if (invoice.id === id) {
               const updatedInvoice = { ...invoice, ...updates, updatedAt: new Date().toISOString() };
@@ -1061,12 +1064,61 @@ export const useJobStore = create<JobStore>()(
               return updatedInvoice;
             }
             return invoice;
-          }); 
-          const updated = { ...slice, invoices: updatedInvoices }; 
-          setWorkspaceData(updated); 
-          const row = updatedInvoices.find((i) => i.id === id); 
+          });
+
+          let updatedParts = slice.parts || [];
+
+          // If items were updated, adjust stock accordingly
+          if (updates.items) {
+            const newItems = updates.items;
+            const oldItems = originalInvoice.items;
+
+            // Calculate stock changes for each part
+            const stockChanges = new Map<string, number>(); // partId -> quantity change
+
+            // Process old items (restore stock)
+            oldItems.forEach(item => {
+              if (item.type === 'part' && item.itemId) {
+                const currentChange = stockChanges.get(item.itemId) || 0;
+                stockChanges.set(item.itemId, currentChange + item.quantity);
+              }
+            });
+
+            // Process new items (reduce stock)
+            newItems.forEach(item => {
+              if (item.type === 'part' && item.itemId) {
+                const currentChange = stockChanges.get(item.itemId) || 0;
+                stockChanges.set(item.itemId, currentChange - item.quantity);
+              }
+            });
+
+            // Apply stock changes
+            updatedParts = updatedParts.map(part => {
+              const change = stockChanges.get(part.id);
+              if (change !== undefined && change !== 0) {
+                const newStock = Math.max(0, part.stock + change);
+                console.log(`📦 Stock update for ${part.name}: ${part.stock} + (${change}) = ${newStock}`);
+                return { ...part, stock: newStock, updatedAt: new Date().toISOString() };
+              }
+              return part;
+            });
+
+            // Log part updates as changes
+            stockChanges.forEach((change, partId) => {
+              if (change !== 0) {
+                const updatedPart = updatedParts.find(p => p.id === partId);
+                if (updatedPart) {
+                  appendChange('parts', 'update', updatedPart, get, set, getCurrentUserId);
+                }
+              }
+            });
+          }
+
+          const updated = { ...slice, invoices: updatedInvoices, parts: updatedParts };
+          setWorkspaceData(updated);
+          const row = updatedInvoices.find((i) => i.id === id);
           if (row) {
-            appendChange('invoices', 'update', row, get, set, getCurrentUserId); 
+            appendChange('invoices', 'update', row, get, set, getCurrentUserId);
           }
           syncTopLevel(get, set, getCurrentUserId);
           triggerAutoSync();
