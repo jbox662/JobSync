@@ -53,8 +53,8 @@ const PartDetailScreen = () => {
   // Find usage of this part in jobs, quotes, and invoices
   const partUsage = {
     jobs: jobs.filter(job => job.items?.some(item => item.type === 'part' && item.itemId === partId) || false),
-    quotes: quotes.filter(quote => quote.items.some(item => item.type === 'part' && item.id === partId)),
-    invoices: invoices.filter(invoice => invoice.items.some(item => item.type === 'part' && item.id === partId))
+    quotes: quotes.filter(quote => quote.items.some(item => item.type === 'part' && item.itemId === partId)),
+    invoices: invoices.filter(invoice => invoice.items.some(item => item.type === 'part' && item.itemId === partId))
   };
 
   const totalUsage = partUsage.jobs.length + partUsage.quotes.length + partUsage.invoices.length;
