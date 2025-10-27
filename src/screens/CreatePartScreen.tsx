@@ -19,8 +19,27 @@ const CreatePartScreen = () => {
   const [showQRScanner, setShowQRScanner] = useState(false);
 
   const handleQRScan = (scannedCode: string) => {
-    setSku(scannedCode);
-    Alert.alert('Success', `SKU "${scannedCode}" has been added to the part`);
+    try {
+      // Try to parse as JSON first (in case it's structured data)
+      const parsedData = JSON.parse(scannedCode);
+
+      // Fill in all available fields from the parsed data
+      if (parsedData.sku) setSku(parsedData.sku);
+      if (parsedData.name) setName(parsedData.name);
+      if (parsedData.price) setUnitPrice(parsedData.price.toString());
+      if (parsedData.unitPrice) setUnitPrice(parsedData.unitPrice.toString());
+      if (parsedData.brand) setBrand(parsedData.brand);
+      if (parsedData.category) setCategory(parsedData.category);
+      if (parsedData.description) setDescription(parsedData.description);
+      if (parsedData.stock !== undefined) setStock(parsedData.stock.toString());
+      if (parsedData.lowStockThreshold !== undefined) setLowStockThreshold(parsedData.lowStockThreshold.toString());
+
+      Alert.alert('Success', 'Part details have been filled from the QR code');
+    } catch (error) {
+      // If it's not JSON, treat it as a plain SKU
+      setSku(scannedCode);
+      Alert.alert('Success', `SKU "${scannedCode}" has been added`);
+    }
   };
 
   const handleSave = () => {
