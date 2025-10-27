@@ -73,8 +73,8 @@ const CreatePartScreen = () => {
         console.log('❌ Price pattern did not match');
       }
 
-      // Look for "Brand:" pattern - capture until next known label or delimiter
-      const brandMatch = scannedCode.match(/Brand[\s:]+([^\n\r|]+?)(?=\s*(?:Price|Category|Description|Part Name|Part Number|SKU|Number|\||$))/i);
+      // Look for "Brand:" pattern - simplified to capture everything until newline
+      const brandMatch = scannedCode.match(/Brand[\s:]+([^\n\r|]+)/i);
       if (brandMatch && brandMatch[1]) {
         brandValue = brandMatch[1].trim();
         console.log('✅ Found Brand:', brandValue);
