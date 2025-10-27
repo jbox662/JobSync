@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert, RefreshControl, Share } from 'react-native';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import QRCode from 'react-native-qrcode-svg';
 import { useJobStore } from '../state/store';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { format } from 'date-fns';
@@ -234,7 +235,7 @@ const PartDetailScreen = () => {
         {/* Part Information */}
         <View className="bg-white px-4 py-4 border-b border-gray-200">
           <Text className="text-lg font-semibold text-gray-900 mb-3">Part Information</Text>
-          
+
           <View className="flex-row items-center mb-3">
             <Ionicons name="pricetag-outline" size={18} color="#6B7280" />
             <View className="ml-3 flex-1">
@@ -242,6 +243,27 @@ const PartDetailScreen = () => {
               <Text className="text-gray-600 text-sm">{formatCurrency(part.unitPrice || part.price || 0)}</Text>
             </View>
           </View>
+
+          <View className="flex-row items-center mb-3">
+            <Ionicons name="cube-outline" size={18} color="#6B7280" />
+            <View className="ml-3 flex-1">
+              <Text className="text-gray-700 font-medium">Stock</Text>
+              <Text className={`text-sm ${part.lowStockThreshold && part.stock <= part.lowStockThreshold ? 'text-red-600 font-semibold' : 'text-gray-600'}`}>
+                {part.stock} units
+                {part.lowStockThreshold && part.stock <= part.lowStockThreshold && ' (Low Stock!)'}
+              </Text>
+            </View>
+          </View>
+
+          {part.lowStockThreshold && (
+            <View className="flex-row items-center mb-3">
+              <Ionicons name="warning-outline" size={18} color="#6B7280" />
+              <View className="ml-3 flex-1">
+                <Text className="text-gray-700 font-medium">Low Stock Alert</Text>
+                <Text className="text-gray-600 text-sm">Alert when below {part.lowStockThreshold} units</Text>
+              </View>
+            </View>
+          )}
 
           <View className="flex-row items-center mb-3">
             <Ionicons name="calendar-outline" size={18} color="#6B7280" />
@@ -261,6 +283,31 @@ const PartDetailScreen = () => {
                 {format(new Date(part.updatedAt), 'MMM d, yyyy h:mm a')}
               </Text>
             </View>
+          </View>
+        </View>
+
+        {/* QR Code Section */}
+        <View className="bg-white px-4 py-6 border-b border-gray-200">
+          <Text className="text-lg font-semibold text-gray-900 mb-3">QR Code</Text>
+          <Text className="text-gray-600 text-sm mb-4">
+            Scan this code to quickly add this part to quotes or invoices
+          </Text>
+
+          <View className="items-center justify-center py-4">
+            <View className="bg-white p-4 rounded-xl border-2 border-gray-200">
+              <QRCode
+                value={JSON.stringify({
+                  type: 'part',
+                  id: part.id,
+                  name: part.name,
+                  price: part.unitPrice || part.price || 0
+                })}
+                size={200}
+              />
+            </View>
+            <Text className="text-gray-500 text-xs mt-3 text-center">
+              Part ID: {part.id.substring(0, 8)}...
+            </Text>
           </View>
         </View>
 

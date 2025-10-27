@@ -1000,23 +1000,49 @@ export const useJobStore = create<JobStore>()(
         },
 
         // Invoice CRUD
-        addInvoice: (invoiceData) => { 
+        addInvoice: (invoiceData) => {
           const slice = getWorkspaceData();
           if (!slice) return;
-          
+
           const invoiceNumber = get().generateInvoiceNumber();
           const totals = get().calculateInvoiceTotal(invoiceData.items, invoiceData.taxRate);
-          const invoice: Invoice = { 
-            ...invoiceData, 
-            id: uuidv4(), 
+          const invoice: Invoice = {
+            ...invoiceData,
+            id: uuidv4(),
             invoiceNumber,
             ...totals,
-            createdAt: new Date().toISOString(), 
-            updatedAt: new Date().toISOString() 
-          }; 
-          const updated = { ...slice, invoices: [...(slice.invoices || []), invoice] }; 
-          setWorkspaceData(updated); 
-          appendChange('invoices', 'create', invoice, get, set, getCurrentUserId); 
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          // Reduce stock for parts in the invoice
+          const updatedParts = (slice.parts || []).map((part) => {
+            const partItem = invoice.items.find(item => item.type === 'part' && item.itemId === part.id);
+            if (partItem) {
+              const newStock = Math.max(0, part.stock - partItem.quantity);
+              return { ...part, stock: newStock, updatedAt: new Date().toISOString() };
+            }
+            return part;
+          });
+
+          const updated = {
+            ...slice,
+            invoices: [...(slice.invoices || []), invoice],
+            parts: updatedParts
+          };
+          setWorkspaceData(updated);
+          appendChange('invoices', 'create', invoice, get, set, getCurrentUserId);
+
+          // Also log part updates as changes
+          invoice.items.forEach(item => {
+            if (item.type === 'part') {
+              const updatedPart = updatedParts.find(p => p.id === item.itemId);
+              if (updatedPart) {
+                appendChange('parts', 'update', updatedPart, get, set, getCurrentUserId);
+              }
+            }
+          });
+
           syncTopLevel(get, set, getCurrentUserId);
           triggerAutoSync();
         },

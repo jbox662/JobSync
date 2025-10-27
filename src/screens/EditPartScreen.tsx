@@ -1,19 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useJobStore } from '../state/store';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-const CreatePartScreen = () => {
-  const navigation = useNavigation();
-  const { addPart } = useJobStore();
-  const [name, setName] = useState('');
-  const [brand, setBrand] = useState('');
-  const [unitPrice, setUnitPrice] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
-  const [stock, setStock] = useState('0');
-  const [lowStockThreshold, setLowStockThreshold] = useState('');
-  const [sku, setSku] = useState('');
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RouteProps = {
+  key: string;
+  name: 'EditPart';
+  params: { partId: string };
+};
+
+const EditPartScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
+  const { partId } = route.params;
+  const { getPartById, updatePart } = useJobStore();
+
+  const part = getPartById(partId);
+
+  const [name, setName] = useState(part?.name || '');
+  const [brand, setBrand] = useState(part?.brand || '');
+  const [unitPrice, setUnitPrice] = useState(part?.unitPrice?.toString() || '');
+  const [category, setCategory] = useState(part?.category || '');
+  const [description, setDescription] = useState(part?.description || '');
+  const [stock, setStock] = useState(part?.stock?.toString() || '0');
+  const [lowStockThreshold, setLowStockThreshold] = useState(part?.lowStockThreshold?.toString() || '');
+  const [sku, setSku] = useState(part?.sku || '');
+
+  useEffect(() => {
+    if (!part) {
+      Alert.alert('Error', 'Part not found');
+      navigation.goBack();
+    }
+  }, [part, navigation]);
 
   const handleSave = () => {
     if (!name.trim() || !unitPrice.trim()) {
@@ -40,7 +61,7 @@ const CreatePartScreen = () => {
       return;
     }
 
-    addPart({
+    updatePart(partId, {
       name: name.trim(),
       description: description.trim() || undefined,
       unitPrice: price,
@@ -54,8 +75,12 @@ const CreatePartScreen = () => {
     navigation.goBack();
   };
 
+  if (!part) {
+    return null;
+  }
+
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       className="flex-1 bg-white"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
@@ -106,7 +131,7 @@ const CreatePartScreen = () => {
         </View>
 
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Initial Stock Quantity</Text>
+          <Text className="text-gray-700 font-medium mb-2">Current Stock Quantity</Text>
           <TextInput
             value={stock}
             onChangeText={setStock}
@@ -163,11 +188,11 @@ const CreatePartScreen = () => {
           onPress={handleSave}
           className="bg-blue-600 rounded-lg py-4 items-center"
         >
-          <Text className="text-white font-semibold text-lg">Add Part</Text>
+          <Text className="text-white font-semibold text-lg">Save Changes</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
 };
 
-export default CreatePartScreen;
+export default EditPartScreen;

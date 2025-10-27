@@ -32,8 +32,10 @@ const PartsScreen = () => {
   };
 
   const PartCard = ({ part }: { part: any }) => {
+    const isLowStock = part.lowStockThreshold && part.stock <= part.lowStockThreshold;
+
     return (
-      <Pressable 
+      <Pressable
         onPress={() => navigation.navigate('PartDetail', { partId: part.id })}
         className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100"
       >
@@ -42,13 +44,13 @@ const PartsScreen = () => {
             <Text className="font-semibold text-gray-900 text-lg" numberOfLines={1}>
               {part.name}
             </Text>
-            
+
             {part.description && (
               <Text className="text-gray-600 text-sm mt-1" numberOfLines={2}>
                 {part.description}
               </Text>
             )}
-            
+
             {part.sku && (
               <View className="flex-row items-center mt-2">
                 <Ionicons name="barcode-outline" size={14} color="#6B7280" />
@@ -58,7 +60,7 @@ const PartsScreen = () => {
               </View>
             )}
           </View>
-          
+
           <View className="items-end ml-3">
             <Text className="font-bold text-gray-900 text-lg">
               {formatCurrency(part.unitPrice)}
@@ -68,12 +70,17 @@ const PartsScreen = () => {
 
         <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-gray-100">
           <View className="flex-row items-center">
-            <Ionicons name="cube-outline" size={16} color="#6B7280" />
-            <Text className="text-gray-600 text-sm ml-1">
+            <Ionicons
+              name={isLowStock ? "warning" : "cube-outline"}
+              size={16}
+              color={isLowStock ? "#EF4444" : "#6B7280"}
+            />
+            <Text className={`text-sm ml-1 ${isLowStock ? 'text-red-600 font-semibold' : 'text-gray-600'}`}>
               Stock: {part.stock}
+              {isLowStock && ' (Low)'}
             </Text>
           </View>
-          
+
           {part.category && (
             <View className="bg-gray-100 px-2 py-1 rounded-full">
               <Text className="text-gray-600 text-xs font-medium">

@@ -16,6 +16,7 @@ export interface Part {
   unitPrice: number;
   price: number; // Alias for unitPrice for compatibility
   stock: number;
+  lowStockThreshold?: number; // Alert when stock falls below this
   sku?: string;
   brand?: string;
   category?: string;

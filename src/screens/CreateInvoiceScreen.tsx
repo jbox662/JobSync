@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
 import { JobItem } from '../types';
 import AttachmentManager from '../components/AttachmentManager';
+import QRScanner from '../components/QRScanner';
 
 const CreateInvoiceScreen = () => {
   const navigation = useNavigation();
@@ -25,6 +26,7 @@ const CreateInvoiceScreen = () => {
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [convertFromQuote, setConvertFromQuote] = useState(!!((route.params as any)?.quoteId));
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const [attachments, setAttachments] = useState<Array<{
     id: string;
     name: string;
@@ -119,6 +121,54 @@ const CreateInvoiceScreen = () => {
 
   const removeItem = (itemId: string) => {
     setItems(items.filter(item => item.id !== itemId));
+  };
+
+  const handleQRScan = (data: { type: string; id: string; name: string; price: number }) => {
+    const part = getPartById(data.id);
+
+    if (!part) {
+      Alert.alert('Error', 'Part not found');
+      return;
+    }
+
+    // Check stock
+    if (part.stock <= 0) {
+      Alert.alert(
+        'Low Stock Warning',
+        `This part has no stock available (Current stock: ${part.stock}). Do you still want to add it?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Add Anyway', onPress: () => addScannedPart(part) }
+        ]
+      );
+    } else if (part.lowStockThreshold && part.stock <= part.lowStockThreshold) {
+      Alert.alert(
+        'Low Stock Warning',
+        `This part is low on stock (Current stock: ${part.stock}). Do you still want to add it?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Add', onPress: () => addScannedPart(part) }
+        ]
+      );
+    } else {
+      addScannedPart(part);
+    }
+  };
+
+  const addScannedPart = (part: any) => {
+    const newItem: JobItem = {
+      id: Date.now().toString(),
+      type: 'part',
+      itemId: part.id,
+      quantity: 1,
+      unitPrice: part.unitPrice,
+      rate: part.unitPrice,
+      total: part.unitPrice,
+      description: part.name,
+    };
+
+    setItems([...items, newItem]);
+    Alert.alert('Success', `${part.name} added to invoice`);
   };
 
   const handleSave = () => {
@@ -410,13 +460,22 @@ const CreateInvoiceScreen = () => {
         <View className="mb-6">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-lg font-semibold text-gray-900">Invoice Items</Text>
-            <Pressable
-              onPress={() => setShowAddItem(true)}
-              className="bg-green-600 rounded-lg px-4 py-2 flex-row items-center"
-            >
-              <Ionicons name="add" size={20} color="white" />
-              <Text className="text-white font-medium ml-1">Add Item</Text>
-            </Pressable>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => setShowQRScanner(true)}
+                className="bg-purple-600 rounded-lg px-4 py-2 flex-row items-center"
+              >
+                <Ionicons name="qr-code-outline" size={20} color="white" />
+                <Text className="text-white font-medium ml-1">Scan QR</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setShowAddItem(true)}
+                className="bg-green-600 rounded-lg px-4 py-2 flex-row items-center"
+              >
+                <Ionicons name="add" size={20} color="white" />
+                <Text className="text-white font-medium ml-1">Add Item</Text>
+              </Pressable>
+            </View>
           </View>
 
           {items.length === 0 ? (
@@ -563,6 +622,13 @@ const CreateInvoiceScreen = () => {
           <Text className="text-white font-semibold text-lg">Generate Invoice</Text>
         </Pressable>
       </View>
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        visible={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onScan={handleQRScan}
+      />
     </KeyboardAvoidingView>
   );
 };
