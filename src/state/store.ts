@@ -1048,11 +1048,19 @@ export const useJobStore = create<JobStore>()(
           triggerAutoSync();
         },
         updateInvoice: (id, updates) => {
+          console.log('🔧 updateInvoice called with id:', id, 'updates.items:', !!updates.items);
+
           const slice = getWorkspaceData();
           if (!slice) return;
 
           const originalInvoice = (slice.invoices || []).find((i) => i.id === id);
-          if (!originalInvoice) return;
+          if (!originalInvoice) {
+            console.log('❌ Original invoice not found for id:', id);
+            return;
+          }
+
+          console.log('📋 Original invoice items count:', originalInvoice.items.length);
+          console.log('📋 New items count:', updates.items ? updates.items.length : 'N/A');
 
           const updatedInvoices = (slice.invoices || []).map((invoice) => {
             if (invoice.id === id) {
@@ -1070,6 +1078,7 @@ export const useJobStore = create<JobStore>()(
 
           // If items were updated, adjust stock accordingly
           if (updates.items) {
+            console.log('🔍 Processing stock updates...');
             const newItems = updates.items;
             const oldItems = originalInvoice.items;
 
@@ -1081,6 +1090,7 @@ export const useJobStore = create<JobStore>()(
               if (item.type === 'part' && item.itemId) {
                 const currentChange = stockChanges.get(item.itemId) || 0;
                 stockChanges.set(item.itemId, currentChange + item.quantity);
+                console.log(`  Old item: ${item.itemId}, qty: ${item.quantity}, restore: +${item.quantity}`);
               }
             });
 
@@ -1089,8 +1099,11 @@ export const useJobStore = create<JobStore>()(
               if (item.type === 'part' && item.itemId) {
                 const currentChange = stockChanges.get(item.itemId) || 0;
                 stockChanges.set(item.itemId, currentChange - item.quantity);
+                console.log(`  New item: ${item.itemId}, qty: ${item.quantity}, reduce: -${item.quantity}`);
               }
             });
+
+            console.log(`📊 Stock changes for ${stockChanges.size} parts`);
 
             // Apply stock changes
             updatedParts = updatedParts.map(part => {
@@ -1112,6 +1125,8 @@ export const useJobStore = create<JobStore>()(
                 }
               }
             });
+          } else {
+            console.log('⚠️ No items in updates, skipping stock update');
           }
 
           const updated = { ...slice, invoices: updatedInvoices, parts: updatedParts };
