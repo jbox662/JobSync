@@ -87,7 +87,14 @@
       "expo-secure-store",
       "expo-sqlite",
       "expo-video",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "This app needs access to camera to scan QR codes and barcodes on parts.",
+          "enableCodeScanner": true
+        }
+      ]
     ]
   }
 }

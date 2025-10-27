@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Modal, Pressable, Alert, StyleSheet } from 'react-native';
-import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 
 interface QRScannerProps {
@@ -10,48 +10,55 @@ interface QRScannerProps {
 }
 
 const QRScanner: React.FC<QRScannerProps> = ({ visible, onClose, onScan }) => {
-  const [hasPermission, setHasPermission] = useState(false);
-  const device = useCameraDevice('back');
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanned, setScanned] = useState(false);
 
-  useEffect(() => {
-    const requestPermission = async () => {
-      const permission = await Camera.requestCameraPermission();
-      setHasPermission(permission === 'granted');
-
-      if (permission === 'denied') {
-        Alert.alert(
-          'Camera Permission Required',
-          'Please enable camera access in your device settings to scan QR codes.',
-          [{ text: 'OK', onPress: onClose }]
-        );
-      }
-    };
-
-    if (visible) {
-      requestPermission();
-    }
-  }, [visible, onClose]);
-
-  const codeScanner = useCodeScanner({
-    codeTypes: ['qr', 'ean-13', 'ean-8', 'code-128', 'code-39'],
-    onCodeScanned: (codes) => {
-      if (codes.length > 0 && codes[0].value) {
-        onScan(codes[0].value);
+  const handleBarCodeScanned = ({ data }: { type: string; data: string }) => {
+    if (!scanned) {
+      setScanned(true);
+      onScan(data);
+      setTimeout(() => {
+        setScanned(false);
         onClose();
-      }
-    },
-  });
+      }, 100);
+    }
+  };
 
   if (!visible) {
     return null;
   }
 
+  if (!permission) {
+    return null;
+  }
+
+  if (!permission.granted) {
+    return (
+      <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Camera Permission</Text>
+            <Pressable onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={28} color="#FFFFFF" />
+            </Pressable>
+          </View>
+
+          <View style={styles.permissionContainer}>
+            <Ionicons name="camera-outline" size={64} color="#9CA3AF" />
+            <Text style={styles.permissionText}>
+              Camera access is required to scan QR codes
+            </Text>
+            <Pressable onPress={requestPermission} style={styles.permissionButton}>
+              <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -62,33 +69,26 @@ const QRScanner: React.FC<QRScannerProps> = ({ visible, onClose, onScan }) => {
         </View>
 
         {/* Camera View */}
-        {device && hasPermission ? (
-          <View style={styles.cameraContainer}>
-            <Camera
-              style={StyleSheet.absoluteFill}
-              device={device}
-              isActive={visible}
-              codeScanner={codeScanner}
-            />
+        <View style={styles.cameraContainer}>
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            facing="back"
+            onBarcodeScanned={handleBarCodeScanned}
+            barcodeScannerSettings={{
+              barcodeTypes: ['qr', 'ean13', 'ean8', 'code128', 'code39'],
+            }}
+          />
 
-            {/* Scanning Frame Overlay */}
-            <View style={styles.overlay}>
-              <View style={styles.scanFrame}>
-                <View style={[styles.corner, styles.topLeft]} />
-                <View style={[styles.corner, styles.topRight]} />
-                <View style={[styles.corner, styles.bottomLeft]} />
-                <View style={[styles.corner, styles.bottomRight]} />
-              </View>
+          {/* Scanning Frame Overlay */}
+          <View style={styles.overlay}>
+            <View style={styles.scanFrame}>
+              <View style={[styles.corner, styles.topLeft]} />
+              <View style={[styles.corner, styles.topRight]} />
+              <View style={[styles.corner, styles.bottomLeft]} />
+              <View style={[styles.corner, styles.bottomRight]} />
             </View>
           </View>
-        ) : (
-          <View style={styles.permissionContainer}>
-            <Ionicons name="camera-outline" size={64} color="#9CA3AF" />
-            <Text style={styles.permissionText}>
-              {!hasPermission ? 'Camera permission required' : 'No camera available'}
-            </Text>
-          </View>
-        )}
+        </View>
 
         {/* Instructions */}
         <View style={styles.instructionsContainer}>
@@ -176,12 +176,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#111827',
+    padding: 20,
   },
   permissionText: {
     marginTop: 16,
     fontSize: 16,
     color: '#9CA3AF',
     textAlign: 'center',
+  },
+  permissionButton: {
+    marginTop: 24,
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  permissionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   instructionsContainer: {
     padding: 20,
