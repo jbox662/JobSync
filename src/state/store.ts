@@ -75,6 +75,7 @@ interface JobStore extends AppState {
   // Utility functions
   getCustomerById: (id: string) => Customer | undefined;
   getPartById: (id: string) => Part | undefined;
+  getPartBySku: (sku: string) => Part | undefined;
   getLaborItemById: (id: string) => LaborItem | undefined;
   getJobById: (id: string) => Job | undefined;
   getQuoteById: (id: string) => Quote | undefined;
@@ -1087,6 +1088,7 @@ export const useJobStore = create<JobStore>()(
         // Utility functions
         getCustomerById: (id) => get().customers.find((c) => c.id === id),
         getPartById: (id) => get().parts.find((p) => p.id === id),
+        getPartBySku: (sku) => get().parts.find((p) => p.sku && p.sku.toLowerCase() === sku.toLowerCase()),
         getLaborItemById: (id) => get().laborItems.find((it) => it.id === id),
         getJobById: (id) => get().jobs.find((j) => j.id === id),
         getQuoteById: (id) => get().quotes.find((q) => q.id === id),

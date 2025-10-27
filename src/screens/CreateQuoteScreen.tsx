@@ -10,7 +10,7 @@ import QRScanner from '../components/QRScanner';
 const CreateQuoteScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { addQuote, jobs, customers, parts, laborItems, getCustomerById, getPartById, getLaborItemById, settings, workspaceId } = useJobStore();
+  const { addQuote, jobs, customers, parts, laborItems, getCustomerById, getPartById, getPartBySku, getLaborItemById, settings, workspaceId, addPart } = useJobStore();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -120,39 +120,50 @@ const CreateQuoteScreen = () => {
     setItems(items.filter(item => item.id !== itemId));
   };
 
-  const handleQRScan = (data: { type: string; id: string; name: string; price: number }) => {
-    const part = getPartById(data.id);
+  const handleQRScan = (scannedCode: string) => {
+    // Try to find existing part by SKU
+    const existingPart = getPartBySku(scannedCode);
 
-    if (!part) {
-      Alert.alert('Error', 'Part not found');
-      return;
-    }
-
-    // Check stock
-    if (part.stock <= 0) {
-      Alert.alert(
-        'Low Stock Warning',
-        `This part has no stock available (Current stock: ${part.stock}). Do you still want to add it?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Add Anyway', onPress: () => addScannedPart(part) }
-        ]
-      );
-    } else if (part.lowStockThreshold && part.stock <= part.lowStockThreshold) {
-      Alert.alert(
-        'Low Stock Warning',
-        `This part is low on stock (Current stock: ${part.stock}). Do you still want to add it?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Add', onPress: () => addScannedPart(part) }
-        ]
-      );
+    if (existingPart) {
+      // Part exists - check stock and add
+      if (existingPart.stock <= 0) {
+        Alert.alert(
+          'Low Stock Warning',
+          `${existingPart.name} has no stock available (Current stock: ${existingPart.stock}). Do you still want to add it?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Add Anyway', onPress: () => addExistingPart(existingPart) }
+          ]
+        );
+      } else if (existingPart.lowStockThreshold && existingPart.stock <= existingPart.lowStockThreshold) {
+        Alert.alert(
+          'Low Stock Warning',
+          `${existingPart.name} is low on stock (Current stock: ${existingPart.stock}). Do you still want to add it?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Add', onPress: () => addExistingPart(existingPart) }
+          ]
+        );
+      } else {
+        addExistingPart(existingPart);
+      }
     } else {
-      addScannedPart(part);
+      // Part doesn't exist - prompt to create new part
+      Alert.alert(
+        'Part Not Found',
+        `No part found with SKU "${scannedCode}". Would you like to create a new part?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Create Part',
+            onPress: () => promptCreateNewPart(scannedCode)
+          }
+        ]
+      );
     }
   };
 
-  const addScannedPart = (part: any) => {
+  const addExistingPart = (part: any) => {
     const newItem: JobItem = {
       id: Date.now().toString(),
       type: 'part',
@@ -166,6 +177,63 @@ const CreateQuoteScreen = () => {
 
     setItems([...items, newItem]);
     Alert.alert('Success', `${part.name} added to quote`);
+  };
+
+  const promptCreateNewPart = (sku: string) => {
+    Alert.prompt(
+      'Create New Part',
+      'Enter part name:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Next',
+          onPress: (partName) => {
+            if (!partName || !partName.trim()) {
+              Alert.alert('Error', 'Part name is required');
+              return;
+            }
+
+            Alert.prompt(
+              'Create New Part',
+              'Enter unit price:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Create',
+                  onPress: (priceStr) => {
+                    const price = parseFloat(priceStr || '0');
+                    if (isNaN(price) || price < 0) {
+                      Alert.alert('Error', 'Please enter a valid price');
+                      return;
+                    }
+
+                    // Create the part
+                    addPart({
+                      name: partName.trim(),
+                      unitPrice: price,
+                      stock: 0,
+                      sku: sku,
+                    });
+
+                    // Get the newly created part and add it to quote
+                    setTimeout(() => {
+                      const newPart = getPartBySku(sku);
+                      if (newPart) {
+                        addExistingPart(newPart);
+                      }
+                    }, 100);
+                  }
+                }
+              ],
+              'plain-text',
+              '',
+              'numeric'
+            );
+          }
+        }
+      ],
+      'plain-text'
+    );
   };
 
   const handleSave = () => {

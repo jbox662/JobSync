@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 interface QRScannerProps {
   visible: boolean;
   onClose: () => void;
-  onScan: (data: { type: string; id: string; name: string; price: number }) => void;
+  onScan: (scannedData: string) => void;
 }
 
 const QRScanner: React.FC<QRScannerProps> = ({ visible, onClose, onScan }) => {
@@ -33,21 +33,11 @@ const QRScanner: React.FC<QRScannerProps> = ({ visible, onClose, onScan }) => {
   }, [visible, onClose]);
 
   const codeScanner = useCodeScanner({
-    codeTypes: ['qr'],
+    codeTypes: ['qr', 'ean-13', 'ean-8', 'code-128', 'code-39'],
     onCodeScanned: (codes) => {
       if (codes.length > 0 && codes[0].value) {
-        try {
-          const data = JSON.parse(codes[0].value);
-
-          if (data.type === 'part' && data.id && data.name && data.price !== undefined) {
-            onScan(data);
-            onClose();
-          } else {
-            Alert.alert('Invalid QR Code', 'This QR code is not a valid part code.');
-          }
-        } catch (error) {
-          Alert.alert('Invalid QR Code', 'Unable to read this QR code.');
-        }
+        onScan(codes[0].value);
+        onClose();
       }
     },
   });
@@ -65,7 +55,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ visible, onClose, onScan }) => {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerText}>Scan Part QR Code</Text>
+          <Text style={styles.headerText}>Scan Part Code</Text>
           <Pressable onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={28} color="#FFFFFF" />
           </Pressable>
@@ -103,7 +93,10 @@ const QRScanner: React.FC<QRScannerProps> = ({ visible, onClose, onScan }) => {
         {/* Instructions */}
         <View style={styles.instructionsContainer}>
           <Text style={styles.instructionsText}>
-            Position the QR code within the frame to scan
+            Scan the QR code or barcode on your part
+          </Text>
+          <Text style={styles.instructionsSubtext}>
+            Supports QR codes, barcodes, and SKU labels
           </Text>
         </View>
       </View>
@@ -198,6 +191,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#D1D5DB',
     textAlign: 'center',
+    fontWeight: '600',
+  },
+  instructionsSubtext: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
 

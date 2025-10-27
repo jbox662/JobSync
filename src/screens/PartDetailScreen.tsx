@@ -1,10 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Alert, RefreshControl, Share } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert, RefreshControl } from 'react-native';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import QRCode from 'react-native-qrcode-svg';
 import { useJobStore } from '../state/store';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { format } from 'date-fns';
@@ -283,31 +282,6 @@ const PartDetailScreen = () => {
                 {format(new Date(part.updatedAt), 'MMM d, yyyy h:mm a')}
               </Text>
             </View>
-          </View>
-        </View>
-
-        {/* QR Code Section */}
-        <View className="bg-white px-4 py-6 border-b border-gray-200">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">QR Code</Text>
-          <Text className="text-gray-600 text-sm mb-4">
-            Scan this code to quickly add this part to quotes or invoices
-          </Text>
-
-          <View className="items-center justify-center py-4">
-            <View className="bg-white p-4 rounded-xl border-2 border-gray-200">
-              <QRCode
-                value={JSON.stringify({
-                  type: 'part',
-                  id: part.id,
-                  name: part.name,
-                  price: part.unitPrice || part.price || 0
-                })}
-                size={200}
-              />
-            </View>
-            <Text className="text-gray-500 text-xs mt-3 text-center">
-              Part ID: {part.id.substring(0, 8)}...
-            </Text>
           </View>
         </View>
 
