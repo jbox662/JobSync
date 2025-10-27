@@ -19,6 +19,10 @@ const CreatePartScreen = () => {
   const [showQRScanner, setShowQRScanner] = useState(false);
 
   const handleQRScan = (scannedCode: string) => {
+    // Log the full scanned code for debugging
+    console.log('📱 Scanned QR Code Full Text:', scannedCode);
+    console.log('📱 QR Code length:', scannedCode.length);
+
     try {
       // Try to parse as JSON first (in case it's structured data)
       const parsedData = JSON.parse(scannedCode);
@@ -36,41 +40,64 @@ const CreatePartScreen = () => {
 
       Alert.alert('Success', 'Part details have been filled from the QR code');
     } catch (error) {
+      console.log('🔍 Not JSON, attempting text parsing...');
+
       // Not JSON - try to parse as text with labels
       let partName = '';
       let partNumber = '';
+      let price = '';
+      let brandValue = '';
+      let categoryValue = '';
+      let descriptionValue = '';
 
       // Look for "Part Name:" or "Name:" pattern
-      const nameMatch = scannedCode.match(/(?:Part Name|Name)\s*:\s*([^\n\r]+?)(?=\s*(?:Part Number|Number|SKU|$))/i);
+      const nameMatch = scannedCode.match(/(?:Part Name|Name)\s*:\s*([^\n\r]+?)(?=\s*(?:Part Number|Number|SKU|Price|Brand|Category|Description|\||$))/i);
       if (nameMatch && nameMatch[1]) {
         partName = nameMatch[1].trim();
+        console.log('✅ Found Part Name:', partName);
       }
 
       // Look for "Part Number:" or "Number:" or "SKU:" pattern
-      const numberMatch = scannedCode.match(/(?:Part Number|Number|SKU)\s*:\s*([^\n\r]+?)(?=\s*(?:Part Name|Name|Price|Brand|Category|Description|$))/i);
+      const numberMatch = scannedCode.match(/(?:Part Number|Number|SKU)\s*:\s*([^\n\r]+?)(?=\s*(?:Part Name|Name|Price|Brand|Category|Description|\||$))/i);
       if (numberMatch && numberMatch[1]) {
         partNumber = numberMatch[1].trim();
+        console.log('✅ Found Part Number:', partNumber);
       }
 
-      // Look for "Price:" pattern
-      const priceMatch = scannedCode.match(/(?:Price|Unit Price)\s*:\s*([0-9.]+)/i);
-      let price = '';
+      // Look for "Price:" pattern - very flexible, can handle with or without colon
+      const priceMatch = scannedCode.match(/(?:Price|Unit Price|Cost)[\s:]*\$?\s*([0-9.,]+)/i);
       if (priceMatch && priceMatch[1]) {
-        price = priceMatch[1].trim();
+        price = priceMatch[1].replace(/,/g, '').trim();
+        console.log('✅ Found Price:', price);
+      } else {
+        console.log('❌ Price pattern did not match');
       }
 
-      // Look for "Brand:" pattern
-      const brandMatch = scannedCode.match(/Brand\s*:\s*([^\n\r]+?)(?=\s*(?:Price|Category|Description|$))/i);
-      let brandValue = '';
+      // Look for "Brand:" pattern - capture until next known label or delimiter
+      const brandMatch = scannedCode.match(/Brand[\s:]+([^\n\r|]+?)(?=\s*(?:Price|Category|Description|Part Name|Part Number|SKU|Number|\||$))/i);
       if (brandMatch && brandMatch[1]) {
         brandValue = brandMatch[1].trim();
+        console.log('✅ Found Brand:', brandValue);
+      } else {
+        console.log('❌ Brand pattern did not match');
       }
 
-      // Look for "Category:" pattern
-      const categoryMatch = scannedCode.match(/Category\s*:\s*([^\n\r]+?)(?=\s*(?:Price|Brand|Description|$))/i);
-      let categoryValue = '';
+      // Look for "Category:" pattern - capture until next known label or delimiter
+      const categoryMatch = scannedCode.match(/Category[\s:]+([^\n\r|]+?)(?=\s*(?:Price|Brand|Description|Part Name|Part Number|SKU|Number|\||$))/i);
       if (categoryMatch && categoryMatch[1]) {
         categoryValue = categoryMatch[1].trim();
+        console.log('✅ Found Category:', categoryValue);
+      } else {
+        console.log('❌ Category pattern did not match');
+      }
+
+      // Look for "Description:" pattern - capture until next known label or delimiter
+      const descriptionMatch = scannedCode.match(/Description[\s:]+([^\n\r|]+?)(?=\s*(?:Price|Brand|Category|Part Name|Part Number|SKU|Number|\||$))/i);
+      if (descriptionMatch && descriptionMatch[1]) {
+        descriptionValue = descriptionMatch[1].trim();
+        console.log('✅ Found Description:', descriptionValue);
+      } else {
+        console.log('❌ Description pattern did not match');
       }
 
       // Apply the extracted values
@@ -79,10 +106,22 @@ const CreatePartScreen = () => {
       if (price) setUnitPrice(price);
       if (brandValue) setBrand(brandValue);
       if (categoryValue) setCategory(categoryValue);
+      if (descriptionValue) setDescription(descriptionValue);
+
+      // Build success message
+      const filledFields = [];
+      if (partName) filledFields.push('Name');
+      if (partNumber) filledFields.push('SKU');
+      if (price) filledFields.push('Price');
+      if (brandValue) filledFields.push('Brand');
+      if (categoryValue) filledFields.push('Category');
+      if (descriptionValue) filledFields.push('Description');
+
+      console.log('📊 Summary - Filled fields:', filledFields.join(', '));
 
       // If we found structured data, show success
-      if (partName || partNumber) {
-        Alert.alert('Success', `Filled in: ${partName ? 'Name' : ''}${partName && partNumber ? ', ' : ''}${partNumber ? 'SKU' : ''}`);
+      if (filledFields.length > 0) {
+        Alert.alert('Success', `Filled in: ${filledFields.join(', ')}`);
       } else {
         // If no patterns matched, treat the whole thing as SKU
         setSku(scannedCode);
