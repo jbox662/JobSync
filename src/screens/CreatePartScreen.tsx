@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../state/store';
+import QRScanner from '../components/QRScanner';
 
 const CreatePartScreen = () => {
   const navigation = useNavigation();
@@ -14,6 +16,12 @@ const CreatePartScreen = () => {
   const [stock, setStock] = useState('0');
   const [lowStockThreshold, setLowStockThreshold] = useState('');
   const [sku, setSku] = useState('');
+  const [showQRScanner, setShowQRScanner] = useState(false);
+
+  const handleQRScan = (scannedCode: string) => {
+    setSku(scannedCode);
+    Alert.alert('Success', `SKU "${scannedCode}" has been added to the part`);
+  };
 
   const handleSave = () => {
     if (!name.trim() || !unitPrice.trim()) {
@@ -72,11 +80,20 @@ const CreatePartScreen = () => {
         </View>
 
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">SKU / Part Number</Text>
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-gray-700 font-medium">SKU / Part Number</Text>
+            <Pressable
+              onPress={() => setShowQRScanner(true)}
+              className="bg-purple-600 px-3 py-1.5 rounded-lg flex-row items-center"
+            >
+              <Ionicons name="qr-code-outline" size={16} color="white" />
+              <Text className="text-white text-sm font-medium ml-1">Scan</Text>
+            </Pressable>
+          </View>
           <TextInput
             value={sku}
             onChangeText={setSku}
-            placeholder="Enter SKU or part number"
+            placeholder="Enter SKU or scan QR code"
             className="border border-gray-300 rounded-lg px-3 py-3 text-gray-900"
             placeholderTextColor="#9CA3AF"
           />
@@ -166,6 +183,13 @@ const CreatePartScreen = () => {
           <Text className="text-white font-semibold text-lg">Add Part</Text>
         </Pressable>
       </View>
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        visible={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onScan={handleQRScan}
+      />
     </KeyboardAvoidingView>
   );
 };
