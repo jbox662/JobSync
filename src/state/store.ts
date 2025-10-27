@@ -1136,7 +1136,10 @@ export const useJobStore = create<JobStore>()(
             appendChange('invoices', 'update', row, get, set, getCurrentUserId);
           }
           syncTopLevel(get, set, getCurrentUserId);
-          triggerAutoSync();
+          // Don't auto-sync immediately after invoice update to avoid race condition
+          // where pull fetches stale part data before push commits the stock changes
+          // Background sync will handle it after a delay
+          // triggerAutoSync();
         },
         deleteInvoice: (id) => { 
           const slice = getWorkspaceData();
