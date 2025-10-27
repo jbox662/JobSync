@@ -121,8 +121,28 @@ const CreateQuoteScreen = () => {
   };
 
   const handleQRScan = (scannedCode: string) => {
+    console.log('📱 [Quote] Scanned QR Code:', scannedCode);
+
+    let skuToSearch = scannedCode;
+
+    // Try to parse as JSON first
+    try {
+      const parsedData = JSON.parse(scannedCode);
+      if (parsedData.sku) {
+        skuToSearch = parsedData.sku;
+      }
+    } catch (error) {
+      // Not JSON - try to extract SKU from text
+      const numberMatch = scannedCode.match(/(?:Part Number|Number|SKU)\s*:\s*([^\n\r]+?)(?=\s*(?:Part Name|Name|Price|Brand|Category|Description|\||$))/i);
+      if (numberMatch && numberMatch[1]) {
+        skuToSearch = numberMatch[1].trim();
+        console.log('✅ [Quote] Extracted SKU from text:', skuToSearch);
+      }
+    }
+
     // Try to find existing part by SKU
-    const existingPart = getPartBySku(scannedCode);
+    const existingPart = getPartBySku(skuToSearch);
+    console.log('🔍 [Quote] Looking for part with SKU:', skuToSearch, 'Found:', !!existingPart);
 
     if (existingPart) {
       // Part exists - check stock and add
@@ -151,7 +171,7 @@ const CreateQuoteScreen = () => {
       // Part doesn't exist - prompt to create new part
       Alert.alert(
         'Part Not Found',
-        `No part found with SKU "${scannedCode}". Would you like to create a new part?`,
+        `No part found with SKU "${skuToSearch}". Would you like to create a new part?`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
