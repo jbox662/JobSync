@@ -112,6 +112,8 @@ export interface Database {
           stock: number
           sku: string | null
           category: string | null
+          brand: string | null
+          low_stock_threshold: number | null
           created_at: string
           updated_at: string
           deleted_at: string | null
@@ -125,6 +127,8 @@ export interface Database {
           stock: number
           sku?: string | null
           category?: string | null
+          brand?: string | null
+          low_stock_threshold?: number | null
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
@@ -138,6 +142,8 @@ export interface Database {
           stock?: number
           sku?: string | null
           category?: string | null
+          brand?: string | null
+          low_stock_threshold?: number | null
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
