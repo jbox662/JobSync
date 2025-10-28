@@ -89,10 +89,9 @@
       "expo-video",
       "expo-web-browser",
       [
-        "react-native-vision-camera",
+        "expo-camera",
         {
-          "cameraPermissionText": "This app needs access to camera to scan QR codes and barcodes on parts.",
-          "enableCodeScanner": true
+          "cameraPermissionText": "This app needs access to camera to scan QR codes and barcodes on parts."
         }
       ]
     ]
